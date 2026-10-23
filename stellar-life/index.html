@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stellar Life</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Interactive life of a star: from cloud collapse to white dwarf, neutron star or black hole, with fusion, nucleosynthesis, H-R diagram and spacetime.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap masthead-inner">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="16" cy="16" r="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".6"/><circle cx="16" cy="16" r="3.5" fill="currentColor"/></svg>
+      <div>
+        <h1>Stellar Life</h1>
+        <p class="tagline">From a cold cloud to a white dwarf, neutron star or black hole. Mass decides everything.</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="controlbar" role="region" aria-label="Star controls">
+  <div class="wrap controls">
+    <div class="mass-ctl">
+      <label for="mass">Birth mass</label>
+      <input id="mass" type="range" min="0" max="1000" step="1" value="500" aria-describedby="massOut">
+      <output id="massOut" for="mass">1.00 M☉</output>
+    </div>
+    <div class="presets" role="group" aria-label="Mass presets">
+      <button type="button" data-m="0.3">Red dwarf</button>
+      <button type="button" data-m="1">Sun</button>
+      <button type="button" data-m="5">5 M☉</button>
+      <button type="button" data-m="15">15 M☉</button>
+      <button type="button" data-m="30">30 M☉</button>
+    </div>
+    <label class="toggle" for="binary"><input id="binary" type="checkbox"><span class="track" aria-hidden="true"></span>Binary partner</label>
+    <p id="fateLine" class="fate" aria-live="polite"></p>
+  </div>
+</div>
+
+<main class="wrap">
+  <section class="timeline" aria-label="Life stages">
+    <button type="button" class="nav-btn" id="prev" aria-label="Previous stage">←</button>
+    <ol id="chips" class="chips"></ol>
+    <button type="button" class="nav-btn" id="next" aria-label="Next stage">→</button>
+  </section>
+
+  <section class="stage-grid">
+    <div class="viewer">
+      <div class="canvas-box"><canvas id="stageCanvas" aria-label="3D view of the current stage"></canvas></div>
+      <div id="legend" class="legend"></div>
+    </div>
+
+    <article class="stage-panel" aria-live="polite">
+      <p class="eyebrow" id="stPhase"></p>
+      <h2 id="stTitle"></h2>
+      <dl class="readout">
+        <div><dt>Fusion</dt><dd id="stFusion"></dd></div>
+        <div><dt>Lasts</dt><dd id="stDur"></dd></div>
+        <div><dt>Temperature</dt><dd id="stTemp"></dd></div>
+      </dl>
+      <div class="balance" id="balance"></div>
+      <div id="stBody" class="prose"></div>
+      <dl id="stFacts" class="facts"></dl>
+      <aside id="stMyth" class="myth"></aside>
+    </article>
+  </section>
+
+  <section class="hr-section">
+    <div class="hr-head">
+      <h2>Hertzsprung–Russell diagram</h2>
+      <p class="sub">Brightness against surface temperature. Hot stars on the left. The line is this star's path; click a point to jump to that stage.</p>
+    </div>
+    <div class="hr-box"><svg id="hr" viewBox="0 0 640 460" role="img" aria-label="H-R diagram with this star's evolutionary track"></svg></div>
+  </section>
+
+  <nav class="tabs" role="tablist" aria-label="Topics">
+    <button role="tab" id="tab-fusion" aria-controls="fusion" aria-selected="true">Fusion</button>
+    <button role="tab" id="tab-elements" aria-controls="elements" aria-selected="false">Gold &amp; platinum</button>
+    <button role="tab" id="tab-spacetime" aria-controls="spacetime" aria-selected="false">Spacetime</button>
+    <button role="tab" id="tab-equations" aria-controls="equations" aria-selected="false">Equations</button>
+    <button role="tab" id="tab-quiz" aria-controls="quiz" aria-selected="false">Quiz</button>
+    <button role="tab" id="tab-glossary" aria-controls="glossary" aria-selected="false">Glossary</button>
+  </nav>
+
+  <section id="fusion" role="tabpanel" aria-labelledby="tab-fusion" class="panel">
+    <div class="panel-intro">
+      <h2>How stars fuse</h2>
+      <p>Every stage is a new fuel. Pick a reaction, then step through it. Colours match the cutaway: hydrogen blue, helium yellow, carbon grey, nitrogen violet, oxygen teal.</p>
+    </div>
+    <div class="seg" role="group" aria-label="Reaction">
+      <button type="button" data-rx="pp" aria-pressed="true">p-p chain</button>
+      <button type="button" data-rx="cno" aria-pressed="false">CNO cycle</button>
+      <button type="button" data-rx="ta" aria-pressed="false">Triple-alpha</button>
+    </div>
+    <div class="rx-grid">
+      <div class="rx-stage">
+        <svg id="rxSvg" viewBox="0 0 560 220" role="img" aria-label="Animated nuclear reaction"></svg>
+        <div class="rx-controls">
+          <button type="button" id="rxPrev" class="btn">Previous step</button>
+          <button type="button" id="rxPlay" class="btn btn-primary">Play all</button>
+          <button type="button" id="rxNext" class="btn">Next step</button>
+        </div>
+        <p id="rxNet" class="rx-net"></p>
+      </div>
+      <div class="rx-info">
+        <h3 id="rxName"></h3>
+        <p id="rxWhere" class="muted"></p>
+        <p id="rxRate" class="muted"></p>
+        <ol id="rxSteps" class="rx-steps"></ol>
+        <p id="rxExtra" class="note"></p>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h3>Burning up to iron</h3>
+        <p class="muted">Core conditions in a 25 M☉ star (Woosley, Heger &amp; Weaver 2002). Each fuel burns hotter and far faster than the last.</p>
+        <div class="table-wrap">
+          <table class="burn">
+            <thead><tr><th>Fuel</th><th>Makes</th><th>Core T (K)</th><th>Lasts</th></tr></thead>
+            <tbody id="burnBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h3>Why it stops at iron</h3>
+        <p class="muted">Binding energy per nucleon. Moving up the curve releases energy. Light nuclei fuse uphill; heavy nuclei split uphill. Both meet at the iron peak.</p>
+        <div class="chart-wrap"><svg id="bindSvg" viewBox="0 0 560 300" role="img" aria-label="Binding energy per nucleon versus mass number"></svg></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="elements" role="tabpanel" aria-labelledby="tab-elements" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Making gold and platinum</h2>
+      <p>Fusion stops at iron. Everything heavier is built by <b>neutron capture</b>: a nucleus absorbs neutrons (no electric repulsion to fight), then a neutron turns into a proton by β⁻ decay, moving it up one element.</p>
+    </div>
+    <div class="seg" role="group" aria-label="Process">
+      <button type="button" data-np="s" aria-pressed="false">s-process (slow)</button>
+      <button type="button" data-np="r" aria-pressed="true">r-process (rapid)</button>
+    </div>
+    <div class="np-grid">
+      <div class="chart-wrap np-chart"><svg id="npSvg" viewBox="0 0 620 420" role="img" aria-label="Chart of nuclides with neutron-capture paths"></svg></div>
+      <div id="npInfo" class="np-info"></div>
+    </div>
+    <div class="table-wrap">
+      <table class="compare">
+        <thead><tr><th></th><th>s-process</th><th>r-process</th></tr></thead>
+        <tbody>
+          <tr><th>Neutron capture vs β decay</th><td>Slower than β decay (years to millennia between captures)</td><td>Many captures before any decay (fractions of a second)</td></tr>
+          <tr><th>Neutron density</th><td>~10⁷–10¹¹ per cm³</td><td>&gt; 10²⁰ per cm³</td></tr>
+          <tr><th>Path on the chart</th><td>Hugs the valley of stability</td><td>Runs far out on the neutron-rich side, then decays back</td></tr>
+          <tr><th>Where</th><td>AGB stars (thermal pulses); some in massive stars</td><td>Neutron star mergers (seen in GW170817); possibly rare collapsars</td></tr>
+          <tr><th>Signature elements</th><td>Strontium, barium, lead</td><td>Gold, platinum, europium, uranium</td></tr>
+          <tr><th>Share of Solar System gold</th><td>~5%</td><td>~95%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="spacetime" role="tabpanel" aria-labelledby="tab-spacetime" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Spacetime and proper time</h2>
+      <p>General relativity: mass curves spacetime, and objects follow the curvature. The sheet shows the curved <i>spatial</i> geometry (an embedding diagram). The colour shows the other half, which matters more for everyday gravity: <dfn data-g="proper">proper time</dfn> runs slower deeper in the well.</p>
+    </div>
+    <div class="seg" role="group" aria-label="Object" id="stObjects"></div>
+    <div class="st-grid">
+      <div class="canvas-box st-box"><canvas id="stCanvas" aria-label="Spacetime embedding diagram"></canvas></div>
+      <div class="st-info">
+        <label for="probe" class="probe-label">Probe clock distance: <output id="probeOut"></output></label>
+        <input id="probe" type="range" min="0" max="1000" value="200">
+        <dl id="stStats" class="facts"></dl>
+        <div class="ramp" aria-hidden="true"><span>time normal</span><i></i><span>time slowest</span></div>
+        <p class="formula">dτ/dt = √(1 − r<sub>s</sub>/r) &nbsp; outside the mass &nbsp;·&nbsp; r<sub>s</sub> = 2GM/c²</p>
+        <p class="note">Inside a star the app uses the uniform-density interior solution: dτ/dt = 1.5√(1 − r<sub>s</sub>/R) − 0.5√(1 − r<sub>s</sub>r²/R³). Real stars are centrally concentrated, so this is approximate.</p>
+        <p class="note">You live with this every day: GPS satellite clocks run ~45 μs/day fast from weaker gravity and ~7 μs/day slow from orbital speed. Without the ~38 μs/day correction, positions would drift ~10 km per day.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="equations" role="tabpanel" aria-labelledby="tab-equations" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Equations, live</h2>
+      <p>Each calculator starts from the star you selected. Change any input. Values use CODATA constants and IAU solar values.</p>
+    </div>
+    <div id="eqGrid" class="eq-grid"></div>
+  </section>
+
+  <section id="quiz" role="tabpanel" aria-labelledby="tab-quiz" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>No-notes quiz</h2>
+      <p>Fifteen questions across the whole life cycle. Answer, check, and read why.</p>
+    </div>
+    <div id="quizBox" class="quiz"></div>
+  </section>
+
+  <section id="glossary" role="tabpanel" aria-labelledby="tab-glossary" class="panel" hidden>
+    <div class="panel-intro"><h2>Glossary</h2><p>Terms underlined with dots anywhere in the app show these definitions on hover or focus.</p></div>
+    <dl id="glossList" class="gloss"></dl>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>Scaling relations and tracks are schematic approximations of published stellar models; mass cutoffs are approximate and depend on metallicity, rotation and mass loss. See the README for sources and simplifications.</p>
+</footer>
+
+<div id="tip" class="tip" role="tooltip" hidden></div>
+
+<script src="js/physics.js"></script>
+<script src="js/data.js"></script>
+<script src="js/render3d.js"></script>
+<script src="js/spacetime.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
