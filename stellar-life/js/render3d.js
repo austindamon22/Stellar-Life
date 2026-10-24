@@ -90,8 +90,17 @@
       this.yaw = -0.785; this.pitch = spec.mode === 'disk' || spec.mode === 'binary' || spec.mode === 'merger' ? 0.42 : 0.38;
       this.layers = spec.layers ? spec.layers.map((l) => Object.assign({}, l, { rgb: hexRGB(l.color) })) : null;
       this.surfRGB = P.blackbodyRGB(spec.surfaceT || 5772);
+      this.interior = null;
       this._initParticles(spec);
       this.start();
+    }
+
+    // Live interior from the evolution model: update colours without resetting the view.
+    setInterior(lut, surfaceT, flags) {
+      this.interior = lut;
+      this.interiorFlags = flags || {};
+      this.surfRGB = P.blackbodyRGB(surfaceT || 5772);
+      if (!this.running) this.draw();
     }
 
     start() {
@@ -161,6 +170,8 @@
       // Collapse animation: iron core shrinks on a 4 s loop.
       const collapseF = spec.collapse ? Math.min(1, frac(t / 4) * 1.6) : 0;
       const radii = L.map((l, i) => (spec.collapse && i === 0) ? l.r * (1 - 0.75 * ease(collapseF)) : l.r);
+      const IN = this.interior;
+      const inFlash = IN && this.interiorFlags.flash ? (0.5 + 0.5 * Math.sin(t * 9)) : 0;
 
       for (let j = 0; j < RT; j++) {
         const v = (1 - (j + 0.5) / RT * 2) * s;
@@ -193,10 +204,23 @@
             if (d[2] !== 0) { const tt = -oz / d[2]; if (tt > t0) { const x = ox + d[0] * tt, y = oy + d[1] * tt; if (x >= 0 && y >= 0 && x * x + y * y <= 1 && tt < best) { best = tt; nx = 0; ny = 0; nz = 1; hx = x; hy = y; hz = 0; } } }
             if (best === 1e9) { buf[idx] = 0; continue; }
             const rr = Math.sqrt(hx * hx + hy * hy + hz * hz);
+            const lam = 0.68 + 0.32 * Math.max(0, nx * Lo[0] + ny * Lo[1] + nz * Lo[2]);
+            if (IN) {
+              const bin = Math.min(IN.N - 1, (rr * IN.N) | 0);
+              r = IN.rgb[bin * 3] * lam; g = IN.rgb[bin * 3 + 1] * lam; bl = IN.rgb[bin * 3 + 2] * lam;
+              const gw = IN.glow[bin];
+              if (gw > 0.01) {
+                const w = Math.min(0.92, gw * (0.5 + 0.22 * pulse) + gw * inFlash * 0.5);
+                r = lerp(r, 255, w); g = lerp(g, 232, w); bl = lerp(bl, 178, w);
+              }
+              if (IN.edge[bin]) { r *= 0.62; g *= 0.62; bl *= 0.62; }
+              r = r > 255 ? 255 : r; g = g > 255 ? 255 : g; bl = bl > 255 ? 255 : bl;
+              buf[idx] = (255 << 24) | ((bl | 0) << 16) | ((g | 0) << 8) | (r | 0);
+              continue;
+            }
             let li = L.length - 1;
             for (let q = 0; q < L.length; q++) { if (rr <= radii[q]) { li = q; break; } }
             const lay = L[li] || { rgb: [128, 128, 128] };
-            const lam = 0.68 + 0.32 * Math.max(0, nx * Lo[0] + ny * Lo[1] + nz * Lo[2]);
             r = lay.rgb[0] * lam; g = lay.rgb[1] * lam; bl = lay.rgb[2] * lam;
             const inner = li > 0 ? radii[li - 1] : 0;
             if (lay.glow) {
@@ -231,7 +255,7 @@
       c.drawImage(this.rt, cx - size / 2, cy - size / 2, size, size);
 
       if (spec.beams) this._drawBeams(R, cx, cy, rad);
-      if (spec.collapse) {
+      if (spec.collapse && !IN) {
         const f = ease(collapseF);
         this.label(f < 0.98 ? 'iron core collapsing (~0.25 s)' : 'core bounce → shock', 12 * this.dpr, H - 14 * this.dpr);
       }

@@ -54,6 +54,15 @@
   <section class="stage-grid">
     <div class="viewer">
       <div class="canvas-box"><canvas id="stageCanvas" aria-label="3D view of the current stage"></canvas></div>
+      <div class="scrub" id="scrubBox">
+        <div class="scrub-head">
+          <label for="scrub">Inside the star: <b id="scrubPhase"></b></label>
+          <button type="button" class="btn btn-small" id="scrubPlay" aria-pressed="false">Play life</button>
+        </div>
+        <input id="scrub" type="range" min="0" max="1000" step="1" value="0" aria-describedby="scrubAge">
+        <div class="scrub-ticks" id="scrubTicks" aria-hidden="true"></div>
+        <p class="scrub-age" id="scrubAge"></p>
+      </div>
       <div id="legend" class="legend"></div>
     </div>
 
@@ -72,6 +81,27 @@
     </article>
   </section>
 
+  <section class="inside" id="inside" aria-labelledby="insideTitle">
+    <div class="hr-head">
+      <h2 id="insideTitle">What it is made of, layer by layer</h2>
+      <p class="sub">Mass fraction of each element from the centre outward, for the moment you picked on the slider above. Glowing bands mark where fusion is happening. Drag the slider and watch the hydrogen core turn to helium, the burning move into a shell, and new layers stack up.</p>
+    </div>
+    <div class="inside-empty" id="insideEmpty" hidden>
+      <p>This stage has no fusing interior to chart: it is <span id="insideWhy"></span>. The layer chart covers the star's life from the zero-age main sequence to core collapse.</p>
+      <button type="button" class="btn btn-primary" id="insideJump">Show the star on the main sequence</button>
+    </div>
+    <div class="inside-grid" id="insideGrid">
+      <div class="chart-wrap"><svg id="compSvg" viewBox="0 0 560 300" role="img" aria-label="Composition versus radius"></svg></div>
+      <div class="inside-side">
+        <dl class="readout readout-4" id="insideRead"></dl>
+        <h3>Where fusion is happening</h3>
+        <ul id="burnList" class="burn-list"></ul>
+      </div>
+    </div>
+    <div class="table-wrap" id="lifeWrap"><table class="life"><caption id="lifeCap"></caption><thead><tr><th>Phase</th><th>Lasts</th><th>Surface T</th><th>Luminosity</th><th>Radius</th></tr></thead><tbody id="lifeBody"></tbody></table></div>
+    <div id="textbookSun"></div>
+  </section>
+
   <section class="hr-section">
     <div class="hr-head">
       <h2>Hertzsprung–Russell diagram</h2>
@@ -84,6 +114,10 @@
     <button role="tab" id="tab-fusion" aria-controls="fusion" aria-selected="true">Fusion</button>
     <button role="tab" id="tab-elements" aria-controls="elements" aria-selected="false">Gold &amp; platinum</button>
     <button role="tab" id="tab-spacetime" aria-controls="spacetime" aria-selected="false">Spacetime</button>
+    <button role="tab" id="tab-clusters" aria-controls="clusters" aria-selected="false">Clusters</button>
+    <button role="tab" id="tab-distances" aria-controls="distances" aria-selected="false">Distances</button>
+    <button role="tab" id="tab-birth" aria-controls="birth" aria-selected="false">Star birth</button>
+    <button role="tab" id="tab-binaries" aria-controls="binaries" aria-selected="false">Binaries &amp; bursts</button>
     <button role="tab" id="tab-equations" aria-controls="equations" aria-selected="false">Equations</button>
     <button role="tab" id="tab-quiz" aria-controls="quiz" aria-selected="false">Quiz</button>
     <button role="tab" id="tab-glossary" aria-controls="glossary" aria-selected="false">Glossary</button>
@@ -168,20 +202,293 @@
   <section id="spacetime" role="tabpanel" aria-labelledby="tab-spacetime" class="panel" hidden>
     <div class="panel-intro">
       <h2>Spacetime and proper time</h2>
-      <p>General relativity: mass curves spacetime, and objects follow the curvature. The sheet shows the curved <i>spatial</i> geometry (an embedding diagram). The colour shows the other half, which matters more for everyday gravity: <dfn data-g="proper">proper time</dfn> runs slower deeper in the well.</p>
+      <p>Mass curves spacetime, and objects follow the curves. Your chapter 24 slide shows the key idea: the Sun and the white dwarf it will become have almost the same mass, but the white dwarf's well is deeper. Here every object sits on <b>one shared well</b>, measured in its own Schwarzschild radius r<sub>s</sub>. Outside, the wells are identical; what changes is how far down you can go before you hit the surface.</p>
     </div>
-    <div class="seg" role="group" aria-label="Object" id="stObjects"></div>
+    <div class="st-controls">
+      <div class="seg" role="group" aria-label="Object" id="stObjects"></div>
+      <button type="button" class="btn btn-primary" id="stMorph" aria-pressed="false">Same mass, denser and denser</button>
+    </div>
     <div class="st-grid">
-      <div class="canvas-box st-box"><canvas id="stCanvas" aria-label="Spacetime embedding diagram"></canvas></div>
+      <figure class="st-fig">
+        <div class="canvas-box st-box"><canvas id="stCanvas" aria-label="Shared gravity well with this object's surface"></canvas></div>
+        <figcaption class="note">Radius on a log scale in units of r<sub>s</sub>; height shows how strongly time is slowed (log). Outside the surface, every mass has this same well. Dashed rings mark where other objects' surfaces would sit. The log scale hugely exaggerates shallow wells: at the Sun's surface clocks slow by only 2 parts in a million. Drag to rotate.</figcaption>
+      </figure>
       <div class="st-info">
-        <label for="probe" class="probe-label">Probe clock distance: <output id="probeOut"></output></label>
-        <input id="probe" type="range" min="0" max="1000" value="200">
+        <p id="stHeadline" class="st-headline"></p>
+        <label for="probe" class="probe-label">Probe clock at r = <output id="probeOut"></output></label>
+        <input id="probe" type="range" min="0" max="1000" value="400">
         <dl id="stStats" class="facts"></dl>
         <div class="ramp" aria-hidden="true"><span>time normal</span><i></i><span>time slowest</span></div>
-        <p class="formula">dτ/dt = √(1 − r<sub>s</sub>/r) &nbsp; outside the mass &nbsp;·&nbsp; r<sub>s</sub> = 2GM/c²</p>
-        <p class="note">Inside a star the app uses the uniform-density interior solution: dτ/dt = 1.5√(1 − r<sub>s</sub>/R) − 0.5√(1 − r<sub>s</sub>r²/R³). Real stars are centrally concentrated, so this is approximate.</p>
-        <p class="note">You live with this every day: GPS satellite clocks run ~45 μs/day fast from weaker gravity and ~7 μs/day slow from orbital speed. Without the ~38 μs/day correction, positions would drift ~10 km per day.</p>
+        <p class="formula">dτ/dt = √(1 − r<sub>s</sub>/r) &nbsp;outside · r<sub>s</sub> = 2GM/c²</p>
+        <p class="note">Inside a star the app uses the uniform-density interior solution, dτ/dt = 1.5√(1 − r<sub>s</sub>/R) − 0.5√(1 − r<sub>s</sub>r²/R³). Real stars are denser at the centre, so interior values are approximate.</p>
       </div>
+    </div>
+
+    <div class="st-clock">
+      <div class="hr-head">
+        <h3>Does time stop at the event horizon?</h3>
+        <p class="sub">Only for someone watching from far away. A clock dropped from rest at 10 r<sub>s</sub> into a 10 M☉ black hole, shown both ways:</p>
+      </div>
+      <div class="canvas-box clock-box"><canvas id="clockCanvas" aria-label="Falling clock seen from far away and in its own time"></canvas></div>
+      <div class="tr-callout">
+        <div><p class="h">Far away</p><p>The falling clock ticks slower and slower and its light shifts red and fades. It seems to freeze just outside the horizon and never cross. dτ/dt → 0 there.</p></div>
+        <div><p class="h">On the clock</p><p>Its own time never slows for it. It crosses the horizon after a finite time, notices nothing special, and reaches the singularity a fraction of a millisecond later. No clock can hover at or inside r<sub>s</sub>, so "the clock's rate there" has no meaning.</p></div>
+      </div>
+      <p class="note">Simplification: the far view uses Schwarzschild coordinate time and ignores the extra delay for light to travel out.</p>
+    </div>
+
+    <div class="evidence">
+      <h3>The evidence (chapter 24)</h3>
+      <div class="ev-grid">
+        <div class="ev">
+          <h4>Light bends: Eddington, 1919</h4>
+          <svg id="bendSvg" viewBox="0 0 420 220" role="img" aria-label="Starlight bending past the Sun"></svg>
+          <label for="bendB" class="probe-label">Ray passes at <output id="bendBOut">1.0</output> solar radii</label>
+          <input id="bendB" type="range" min="1" max="10" step="0.1" value="1">
+          <p class="ev-out" id="bendOut"></p>
+        </div>
+        <div class="ev">
+          <h4>Mercury's orbit swings around</h4>
+          <canvas id="mercCanvas" class="ev-canvas" aria-label="Precessing orbit of Mercury"></canvas>
+          <p class="ev-out" id="mercOut"></p>
+        </div>
+        <div class="ev">
+          <h4>Gravitational redshift</h4>
+          <p class="note">Light climbing out of a gravity well loses energy and shifts red: 1 + z = 1/√(1 − r<sub>s</sub>/R).</p>
+          <div class="table-wrap"><table><thead><tr><th>Surface</th><th>z</th><th>cz*</th></tr></thead><tbody id="zBody"></tbody></table></div>
+          <p class="note">*cz is shown only for comparison with Doppler shifts; it is not a real velocity, and the comparison breaks down for large z like the neutron star's.</p>
+        </div>
+        <div class="ev">
+          <h4>GPS has to correct for it</h4>
+          <div class="gps" id="gps"></div>
+          <p class="note">Satellites orbit ~20,000 km up, where the gravitational potential is ~4× shallower (gravity itself is ~17× weaker; clock rate follows the potential). Without the correction, positions drift ~11 km (7 miles) per day.</p>
+        </div>
+        <div class="ev">
+          <h4>Where it starts: the equivalence principle</h4>
+          <svg id="eqpSvg" viewBox="0 0 420 200" role="img" aria-label="Light bending in an accelerating rocket and in gravity"></svg>
+          <p class="note">Inside a closed rocket accelerating at 1 g you cannot tell, by any experiment, that you are not sitting on Earth. A light beam crossing the accelerating cabin hits the far wall lower, so light must also bend in gravity. Einstein built general relativity from this idea (section 24.1).</p>
+        </div>
+        <div class="ev">
+          <h4>Supermassive black holes</h4>
+          <label class="eq-row" for="smbh"><span>Mass: <output id="smbhOut"></output> M☉</span><input id="smbh" type="range" min="0" max="1000" value="327"></label>
+          <p class="ev-out ev-steps" id="smbhRes"></p>
+          <p class="note">Sgr A* at the centre of the Milky Way: ~4 million M☉, weighed from the 16-year orbit of the star S2 (Nobel Prize 2020). The Event Horizon Telescope imaged M87* (2019) and Sgr A* (2022). Bigger black holes have <i>lower</i> average density inside the horizon.</p>
+        </div>
+        <div class="ev ev-wide">
+          <h4>Gravitational waves: LIGO's chirp (GW150914)</h4>
+          <svg id="chirpSvg" viewBox="0 0 560 200" role="img" aria-label="Gravitational-wave chirp from merging black holes"></svg>
+          <p class="note">Two black holes (~36 and ~29 M☉) spiral together. Frequency and amplitude rise (the chirp) until merger, then the new ~62 M☉ black hole rings down. About 3 M☉ c² left as gravitational waves. The waveform here uses the leading-order chirp formula f(τ) ∝ τ<sup>−3/8</sup>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="clusters" role="tabpanel" aria-labelledby="tab-clusters" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Clusters: watching stars age</h2>
+      <p>One star changes too slowly to watch. A cluster gives us thousands of stars born together with different masses, so the heavy ones age first. Drag the age and watch the main sequence peel away from the top. The point where it bends off, the <b>turnoff</b>, tells you the cluster's age (chapter 22).</p>
+    </div>
+    <div class="cl-controls">
+      <label for="clAge" class="probe-label">Cluster age: <output id="clAgeOut"></output></label>
+      <input id="clAge" type="range" min="600" max="1012" value="800">
+      <div class="seg" role="group" aria-label="Example clusters">
+        <button type="button" data-cl="1e6">Newborn (1 Myr)</button>
+        <button type="button" data-cl="1.1e8">Pleiades (~110 Myr)</button>
+        <button type="button" data-cl="4e9">M67 (~4 Gyr)</button>
+        <button type="button" data-cl="1.2e10">Omega Centauri (~12 Gyr)</button>
+      </div>
+      <label class="toggle" for="clBS"><input id="clBS" type="checkbox" checked><span class="track" aria-hidden="true"></span>Show blue stragglers</label>
+    </div>
+    <div class="cl-grid">
+      <div class="canvas-box cl-box"><canvas id="clCanvas" aria-label="Cluster H-R diagram"></canvas></div>
+      <div class="inside-side">
+        <dl class="readout readout-4" id="clRead"></dl>
+        <p class="note">Newborn clusters still have low-mass stars above the main sequence (still contracting). Old clusters have lost their massive stars and show a red giant branch and white dwarfs. <dfn data-g="blue">Blue stragglers</dfn> look too young for their cluster: they gained mass from a partner or merged, which is common in crowded globular clusters where stars are ~1 light-year apart.</p>
+        <p class="note">The model uses solar composition. Real globular clusters such as Omega Centauri are metal-poor (Population II), so their helium-burning stars spread into a bluer horizontal branch where RR Lyrae live.</p>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table><caption class="cap">Characteristics of star clusters (OpenStax Table 22.3, from your notes)</caption>
+        <thead><tr><th></th><th>Globular</th><th>Open</th><th>Associations</th></tr></thead>
+        <tbody>
+          <tr><th>Number in the Galaxy</th><td>~150</td><td>Thousands</td><td>Thousands</td></tr>
+          <tr><th>Location</th><td>Halo and central bulge</td><td>Disk (and spiral arms)</td><td>Spiral arms</td></tr>
+          <tr><th>Diameter (ly)</th><td>50–450</td><td>&lt; 30</td><td>100–500</td></tr>
+          <tr><th>Mass (M☉)</th><td>10⁴–10⁶</td><td>10²–10³</td><td>10²–10³</td></tr>
+          <tr><th>Number of stars</th><td>10⁴–10⁶</td><td>50–1,000</td><td>10²–10⁴</td></tr>
+          <tr><th>Brightest stars</th><td>Red</td><td>Red or blue</td><td>Blue</td></tr>
+          <tr><th>Typical ages</th><td>Billions of years</td><td>A few hundred million years</td><td>Up to ~10⁷ years</td></tr>
+          <tr><th>Population</th><td>II (metal-poor)</td><td>I (metal-rich)</td><td>I</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="distances" role="tabpanel" aria-labelledby="tab-distances" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>The distance ladder</h2>
+      <p>Every distance in astronomy rests on the one below it (chapter 19). Radar measures the Solar System, which gives the AU. The AU is the baseline for parallax. Parallax calibrates the standard candles. The root of everything is trigonometric parallax.</p>
+    </div>
+    <div class="chart-wrap"><svg id="ladderSvg" viewBox="0 0 620 214" role="img" aria-label="Distance ladder ranges"></svg></div>
+    <div class="ev-grid">
+      <div class="ev">
+        <h4>1 · Radar</h4>
+        <p class="note">Radio waves travel at c. Time the echo, halve it.</p>
+        <label class="eq-row" for="radarT"><span>Round-trip time (s)</span><input id="radarT" type="number" step="any" value="2.5" inputmode="decimal"></label>
+        <p class="ev-out" id="radarOut"></p>
+      </div>
+      <div class="ev">
+        <h4>2 · Trigonometric parallax</h4>
+        <svg id="plxSvg" viewBox="0 0 440 300" role="img" aria-label="Parallax geometry"></svg>
+        <label for="plx" class="probe-label">Parallax p = <output id="plxOut"></output> milliarcseconds</label>
+        <input id="plx" type="range" min="-100" max="300" value="250">
+        <div class="seg" role="group" aria-label="Example stars">
+          <button type="button" data-plx="768.07">Proxima</button>
+          <button type="button" data-plx="379.21">Sirius</button>
+          <button type="button" data-plx="130.23">Vega</button>
+          <button type="button" data-plx="7.54">Polaris</button>
+        </div>
+        <p class="ev-out" id="plxRes"></p>
+        <p class="note">1 parsec (parallax of one arcsecond) = 3.26 light-years. Air blurs tiny angles, so Hipparcos and Gaia measure from space.</p>
+      </div>
+      <div class="ev">
+        <h4>3 · Standard candles</h4>
+        <p class="note">Know how bright it really is (L), measure how bright it looks, and the inverse-square law gives the distance. Henrietta Leavitt found the Cepheid period–luminosity law in 1912.</p>
+        <div class="eq-rows">
+          <label class="eq-row" for="candleType"><span>Type</span><select id="candleType"><option value="cep">Cepheid</option><option value="rr">RR Lyrae</option><option value="ia">Type Ia supernova</option></select></label>
+          <label class="eq-row" id="candlePRow" for="candleP"><span>Period (days)</span><input id="candleP" type="number" step="any" value="10" inputmode="decimal"></label>
+          <label class="eq-row" for="candleM"><span>Apparent magnitude m</span><input id="candleM" type="number" step="any" value="15" inputmode="decimal"></label>
+        </div>
+        <p class="ev-out ev-steps" id="candleOut"></p>
+      </div>
+      <div class="ev">
+        <h4>The Leavitt law</h4>
+        <svg id="leavittSvg" viewBox="0 0 460 240" role="img" aria-label="Period–luminosity relation"></svg>
+        <p class="note">Longer period means brighter Cepheid. RR Lyrae all have about the same luminosity whatever their period (hours to a day), so they need no period at all.</p>
+      </div>
+      <div class="ev ev-wide">
+        <h4>4 · Spectroscopic parallax: distance from the H-R diagram</h4>
+        <p class="note">No parallax is involved. The spectrum gives the star's type and luminosity class (V dwarf, III giant, I supergiant), which places it on the H-R diagram and so gives its true brightness (section 19.4).</p>
+        <div class="eq-rows sp-rows">
+          <label class="eq-row" for="spClass"><span>Luminosity class</span><select id="spClass"><option value="V">V (dwarf)</option><option value="III">III (giant)</option><option value="I">I (supergiant)</option></select></label>
+          <label class="eq-row" for="spType"><span>Spectral type</span><select id="spType"></select></label>
+          <label class="eq-row" for="spM"><span>Apparent magnitude m</span><input id="spM" type="number" step="any" value="8" inputmode="decimal"></label>
+        </div>
+        <p class="ev-out ev-steps" id="spOut"></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="birth" role="tabpanel" aria-labelledby="tab-birth" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Gas, dust and the birth of stars</h2>
+      <p>The interstellar medium is the raw material (chapters 20–21). Only about 1% of a molecular cloud becomes stars.</p>
+    </div>
+    <div class="ism-grid">
+      <div class="ism"><i style="background:#ff5a6e"></i><h4>Emission nebula (H II region)</h4><p>Hot O and B stars ionize hydrogen; it glows red (H-alpha) as electrons recombine. Orion Nebula, Rosette.</p></div>
+      <div class="ism"><i style="background:#6fa8ff"></i><h4>Reflection nebula</h4><p>Dust scatters starlight. Blue scatters most, so it looks blue. The Pleiades' wisps.</p></div>
+      <div class="ism"><i style="background:#1d1a24;border:1px solid #444"></i><h4>Dark nebula</h4><p>Dense dust blocks light behind it: Barnard 68 (a Bok globule), the Horsehead, the Coal Sack. Infrared sees through.</p></div>
+      <div class="ism"><i style="background:#c0623a"></i><h4>Molecular cloud</h4><p>Cold (10–20 K), dense H₂ with dust. Stellar nurseries. Mapped by CO and infrared.</p></div>
+    </div>
+    <div class="two-col">
+      <div class="ev">
+        <h4>Dust dims and reddens starlight</h4>
+        <div class="swatches"><div><span class="sw-big" id="swTrue"></span><p>true colour</p></div><div><span class="sw-big" id="swSeen"></span><p>what we see</p></div></div>
+        <label for="av" class="probe-label">Dust: A<sub>V</sub> = <output id="avOut"></output> magnitudes</label>
+        <input id="av" type="range" min="0" max="50" value="15">
+        <label for="avT" class="probe-label">Star temperature: <output id="avTOut"></output> K</label>
+        <input id="avT" type="range" min="3000" max="30000" step="500" value="20000">
+        <p class="ev-out" id="avRes"></p>
+        <p class="note">Like a morning fog: extinction dims, and because blue is scattered more, the star looks redder than it is. Not the same as redshift.</p>
+      </div>
+      <div class="ev">
+        <h4>Protostars on the H-R diagram</h4>
+        <svg id="pmsSvg" viewBox="0 0 520 320" role="img" aria-label="Pre-main-sequence tracks"></svg>
+        <p class="note">Low-mass protostars start cooler but much brighter than they will be on the main sequence, then drop down (Hayashi track) and slide left (Henyey track). Massive stars contract in only ~10⁵ years and are still hidden in dust when they ignite.</p>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="ev">
+        <h4>Seeing cold hydrogen: the 21-cm line</h4>
+        <svg id="spinSvg" viewBox="0 0 420 150" role="img" aria-label="Hydrogen spin flip emitting a 21-centimetre photon"></svg>
+        <p class="note">In a neutral hydrogen atom the electron and proton spins can be parallel or opposite. Flipping from parallel to opposite releases a tiny photon at 21.1 cm (1,420 MHz). One atom waits ~10 million years, but there is so much H I that radio telescopes map it across the Galaxy, and its Doppler shift traces the spiral arms.</p>
+      </div>
+      <div class="ev">
+        <h4>Cosmic rays</h4>
+        <p>Not rays at all: charged particles moving at nearly light speed. About 90% are protons, ~9% helium nuclei, the rest heavier nuclei and electrons.</p>
+        <p class="note">Most are accelerated by supernova shock waves in our Galaxy. When one hits the upper atmosphere it shatters a nucleus and starts a shower of secondary particles (pions, muons, neutrinos) that reaches the ground.</p>
+      </div>
+    </div>
+    <div class="ev">
+      <h4>Finding exoplanets (sections 21.4–21.5)</h4>
+      <div class="two-col">
+        <div class="exo">
+          <p class="h">Transit: the planet blocks some starlight</p>
+          <label class="eq-row" for="exRp"><span>Planet radius: <output id="exRpOut"></output> R⊕</span><input id="exRp" type="range" min="5" max="150" value="10"></label>
+          <label class="eq-row" for="exRs"><span>Star radius: <output id="exRsOut"></output> R☉</span><input id="exRs" type="range" min="10" max="200" value="100"></label>
+          <svg id="exLC" viewBox="0 0 420 120" role="img" aria-label="Transit light curve"></svg>
+          <p class="ev-out" id="exTr"></p>
+        </div>
+        <div class="exo">
+          <p class="h">Doppler: the star wobbles</p>
+          <label class="eq-row" for="exMp"><span>Planet mass: <output id="exMpOut"></output> M⊕</span><input id="exMp" type="range" min="0" max="350" value="250"></label>
+          <label class="eq-row" for="exP"><span>Orbital period: <output id="exPOut"></output></span><input id="exP" type="range" min="0" max="400" value="356"></label>
+          <p class="ev-out" id="exDop"></p>
+          <p class="note">K = 28.4 m/s × (M<sub>p</sub> sin i / M<sub>J</sub>) × (P / 1 yr)<sup>−1/3</sup> × (M<sub>★</sub>/M☉)<sup>−2/3</sup>. The best spectrographs reach ~0.3–1 m/s, so heavy planets close to their stars were found first (51 Pegasi b, 1995).</p>
+        </div>
+      </div>
+    </div>
+    <div class="ev">
+      <h4>The nebular hypothesis in five steps</h4>
+      <div class="seg" role="group" aria-label="Step">
+        <button type="button" data-neb="0">1 · Globule</button><button type="button" data-neb="1">2 · Disk</button><button type="button" data-neb="2">3 · Rings</button><button type="button" data-neb="3">4 · Planetesimals</button><button type="button" data-neb="4">5 · Planets</button>
+      </div>
+      <svg id="nebSvg" viewBox="0 0 420 220" role="img" aria-label="Stage of the nebular hypothesis"></svg>
+      <p id="nebText"></p>
+    </div>
+  </section>
+
+  <section id="binaries" role="tabpanel" aria-labelledby="tab-binaries" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Binaries and bursts</h2>
+      <p>For a single low-mass star the white dwarf is the end. With a partner, it is not (chapter 23).</p>
+    </div>
+    <div class="two-col">
+      <div class="ev">
+        <h4>Feed a white dwarf</h4>
+        <div class="eq-rows">
+          <label class="eq-row" for="wdM0"><span>Starting mass: <output id="wdM0Out"></output> M☉</span><input id="wdM0" type="range" min="60" max="130" value="100"></label>
+          <label class="eq-row" for="wdRate"><span>Gas arrives</span><select id="wdRate"><option value="low">Slowly, piles up</option><option value="high">Fast, burns steadily</option></select></label>
+        </div>
+        <div class="wd-gauge"><span class="lbl">White dwarf mass</span><div class="gbar"><i id="wdBar"></i><b class="limit" title="Chandrasekhar limit">1.4</b></div><span id="wdMass" class="val"></span></div>
+        <div class="wd-gauge"><span class="lbl">Hydrogen layer</span><div class="gbar"><i id="wdEnv" class="env"></i></div><span class="val">to ignition</span></div>
+        <div class="wd-flash" id="wdFlash" aria-hidden="true"></div>
+        <div class="rx-controls"><button type="button" class="btn btn-primary" id="wdRun" aria-pressed="false">Start accreting</button><button type="button" class="btn" id="wdReset">Reset</button></div>
+        <ol class="wd-log" id="wdLog" aria-live="polite"></ol>
+        <p class="note">Schematic. The hydrogen layer needed to ignite shrinks steeply as the white dwarf gets heavier. Type Ia supernovae may also come from two white dwarfs merging.</p>
+      </div>
+      <div class="ev">
+        <h4>Light curves</h4>
+        <svg id="lcSvg" viewBox="0 0 560 260" role="img" aria-label="Light curves of a nova, Type Ia and Type II supernova"></svg>
+        <p class="note">All Type Ia supernovae peak near the same brightness, which makes them standard candles. Type II brightness depends on the star's mass. Spectra: Ia has no hydrogen lines; II does.</p>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="table-wrap"><table><caption class="cap">X-ray binaries: neutron star or black hole?</caption>
+        <thead><tr><th></th><th>Neutron star</th><th>Black hole</th></tr></thead>
+        <tbody>
+          <tr><th>X-rays from</th><td>Accretion disk and bursts when gas detonates on the surface</td><td>Accretion disk only: no surface to hit</td></tr>
+          <tr><th>Mass of unseen star</th><td>~1.4–2 M☉</td><td>Above ~3 M☉ (Cygnus X-1: ~21 M☉)</td></tr>
+          <tr><th>Might also be</th><td>A pulsar, if a beam sweeps Earth</td><td>—</td></tr>
+        </tbody></table></div>
+      <div class="table-wrap"><table><caption class="cap">Gamma-ray bursts</caption>
+        <thead><tr><th></th><th>Long</th><th>Short</th></tr></thead>
+        <tbody>
+          <tr><th>Duration</th><td>More than ~2 s, up to minutes</td><td>Under ~2 s</td></tr>
+          <tr><th>Source</th><td>Collapse of a massive, rapidly spinning star (collapsar)</td><td>Merger of two neutron stars, or a neutron star and a black hole</td></tr>
+          <tr><th>Why so bright</th><td colspan="2">The energy is beamed in narrow jets, like a pulsar. We only see bursts aimed at us, so there are many more than we detect. Found in distant galaxies, spread evenly over the sky.</td></tr>
+          <tr><th>Discovered</th><td colspan="2">By satellites watching for nuclear tests (1960s); confirmed far away by Compton and Swift.</td></tr>
+        </tbody></table></div>
     </div>
   </section>
 
@@ -196,7 +503,7 @@
   <section id="quiz" role="tabpanel" aria-labelledby="tab-quiz" class="panel" hidden>
     <div class="panel-intro">
       <h2>No-notes quiz</h2>
-      <p>Fifteen questions across the whole life cycle. Answer, check, and read why.</p>
+      <p>Thirty questions across chapters 19–24. Answer, check, and read why.</p>
     </div>
     <div id="quizBox" class="quiz"></div>
   </section>
@@ -215,8 +522,11 @@
 
 <script src="js/physics.js"></script>
 <script src="js/data.js"></script>
+<script src="js/evolution.js"></script>
 <script src="js/render3d.js"></script>
 <script src="js/spacetime.js"></script>
+<script src="js/relativity.js"></script>
+<script src="js/modules.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

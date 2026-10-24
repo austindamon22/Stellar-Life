@@ -77,6 +77,13 @@
     [25, 6.4e6], [40, 4.3e6], [60, 3.5e6], [120, 2.6e6],
   ];
   function msLifetime(M) {
+    // Fully convective red dwarfs burn nearly all their hydrogen (Laughlin et al. 1997:
+    // ~10^12 yr at 0.25 Msun, ~6 x 10^12 yr at 0.1 Msun). Blend into the M^-2.5 rule by 0.45 Msun.
+    if (M < 0.45) {
+      const rd = 1e12 * Math.pow(M / 0.25, -1.96), rule = 1e10 * Math.pow(M, -2.5);
+      const f = clamp((M - 0.3) / 0.15, 0, 1);
+      return Math.pow(10, log10(rd) * (1 - f) + log10(rule) * f);
+    }
     if (M <= 1) return 1e10 * Math.pow(M, -2.5);
     const T = LIFETIME_TABLE;
     for (let i = 0; i < T.length - 1; i++) {
@@ -89,6 +96,16 @@
     return T[T.length - 1][1];
   }
   const simpleLifetime = (M) => 1e10 * Math.pow(M, -2.5);
+  // Pre-main-sequence contraction time (yr), interpolated from Palla & Stahler-type values.
+  const PMS = [[0.5, 1e8], [1, 4e7], [3, 2e6], [15, 1e5], [40, 3e4]];
+  function preMSTime(M) {
+    if (M <= PMS[0][0]) return PMS[0][1] * Math.pow(M / PMS[0][0], -1.3);
+    for (let i = 0; i < PMS.length - 1; i++) {
+      const [m0, t0] = PMS[i], [m1, t1] = PMS[i + 1];
+      if (M <= m1) { const f = (log10(M) - log10(m0)) / (log10(m1) - log10(m0)); return Math.pow(10, log10(t0) + f * (log10(t1) - log10(t0))); }
+    }
+    return PMS[PMS.length - 1][1];
+  }
 
   /* ---------- Remnants ---------- */
 
@@ -191,7 +208,7 @@
 
   function agbLuminosity(M) {
     // Core-mass luminosity relation (Paczynski 1970), floor for low masses.
-    return clamp(59250 * (whiteDwarfMass(M) - 0.48), 3000, 5e4);
+    return clamp(59250 * (whiteDwarfMass(M) - 0.48), 5200, 5e4); // floor matches the Sun's AGB tip (~5,200 L☉, OpenStax)
   }
 
   // Returns {logT, logL, off?} or null if the object is not on the diagram.
@@ -203,14 +220,16 @@
     switch (stageId) {
       case 'protostar':
         return M < 2 ? P(Math.min(z.T * 0.85, 4200), z.L * 4) : pt(lT - 0.12, lL - 0.1);
-      case 'zams': return pt(lT, lL);
-      case 'ms': return pt(lT - (M > LIMITS.cno ? 0.07 : 0.03), lL + 0.25);
+      // ZAMS ~0.7 of the mid-main-sequence luminosity (the young Sun was ~0.7 L☉),
+      // so the Sun passes (5,772 K, 1 L☉) about 46% of the way through.
+      case 'zams': return P(z.T * Math.pow(0.7 / 0.79, 0.25), z.L * 0.7);
+      case 'ms': { const f = clamp((M - 1) / 1.5, 0, 1); return pt(lT + 0.017 * (1 - f) - 0.07 * f, lL + 0.182 * (1 - f) + 0.2 * f); }
       case 'rd_far': return P(Math.min(8000, z.T * 2.4), z.L * 3);
       case 'subgiant':
         return M < LIMITS.heliumFlash ? P(5000, z.L * 2.8) : pt((lT + log10(4500)) / 2, lL + 0.3);
       case 'rgb':
-        return M < LIMITS.heliumFlash ? P(3300, 2200) : P(4100, z.L * 4);
-      case 'heflash': return P(3300, 2200);
+        return M < LIMITS.heliumFlash ? P(3100, 2300) : P(4100, z.L * 4); // textbook RGB tip: 3,100 K, 2,300 L☉ (→ ~165 R☉)
+      case 'heflash': return P(3100, 2300);
       case 'hb': return P(4800, 50);
       case 'blueloop': {
         const L = lL + 0.75;
@@ -226,9 +245,12 @@
         const m = whiteDwarfMass(M), R = whiteDwarfRadius(m), T = 10000;
         return P(T, R * R * Math.pow(T / K.Tsun, 4));
       }
-      case 'rsg': case 'onion': case 'corecollapse':
-        return M <= LIMITS.blackHole ? P(3600, z.L * 1.4) : P(25000, z.L * 1.25);
-      case 'sn2': return M <= LIMITS.blackHole ? pt(log10(3600), 9, { off: true }) : pt(log10(25000), 9, { off: true });
+      case 'rsg': case 'onion': case 'corecollapse': case 'sn2': {
+        // red supergiant up to ~30 Msun; blue supergiant / Wolf-Rayet by ~40 Msun (strong winds)
+        const f = clamp((M - 25) / 15, 0, 1);
+        const lt = log10(3600) + f * (log10(25000) - log10(3600));
+        return stageId === 'sn2' ? pt(lt, 9, { off: true }) : pt(lt, lL + log10(1.4) - f * 0.05);
+      }
       default: return null;
     }
   }
@@ -245,7 +267,7 @@
   }
 
   global.Phys = {
-    K, LIMITS, clamp, zams, msLuminosity, msRadius, tempFromLR, msLifetime, simpleLifetime,
+    K, LIMITS, clamp, zams, msLuminosity, msRadius, tempFromLR, msLifetime, simpleLifetime, preMSTime,
     whiteDwarfMass, whiteDwarfRadius, NS_MASS, NS_RADIUS_KM, blackHoleMass, remnantOf,
     luminositySB, wienPeak, escapeVelocity, surfaceGravity, schwarzschildRadius,
     dilationOutside, dilationInside, dilationAt, embeddingProfile,
