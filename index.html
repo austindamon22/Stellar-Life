@@ -114,6 +114,7 @@
     <button role="tab" id="tab-fusion" aria-controls="fusion" aria-selected="true">Fusion</button>
     <button role="tab" id="tab-elements" aria-controls="elements" aria-selected="false">Gold &amp; platinum</button>
     <button role="tab" id="tab-spacetime" aria-controls="spacetime" aria-selected="false">Spacetime</button>
+    <button role="tab" id="tab-blackhole" aria-controls="blackhole" aria-selected="false">Black hole camera</button>
     <button role="tab" id="tab-clusters" aria-controls="clusters" aria-selected="false">Clusters</button>
     <button role="tab" id="tab-distances" aria-controls="distances" aria-selected="false">Distances</button>
     <button role="tab" id="tab-birth" aria-controls="birth" aria-selected="false">Star birth</button>
@@ -281,6 +282,76 @@
         </div>
       </div>
     </div>
+  </section>
+
+  <section id="blackhole" role="tabpanel" aria-labelledby="tab-blackhole" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Black hole camera</h2>
+      <p>What would you actually <i>see</i> near a black hole? Every pixel here is a light ray traced backwards through curved spacetime, using the same Schwarzschild geometry as the Spacetime tab. Light that skims the hole bends around it, so the disk behind the hole shows up above and below it. Drag to fly around.</p>
+    </div>
+    <div class="seg" role="group" aria-label="View presets" id="bhPresets"></div>
+    <div class="bh-grid">
+      <figure class="bh-fig">
+        <div class="bh-box">
+          <canvas id="bhCanvas" aria-label="Ray-traced view of a black hole and its accretion disk. Drag to change the viewing angle."></canvas>
+          <canvas id="bhOverlay" class="bh-overlay" aria-hidden="true"></canvas>
+          <div id="bhFallback" class="bh-fallback" hidden><p>This view needs WebGL, which your browser has turned off. Everything else in the app still works.</p></div>
+        </div>
+        <figcaption class="note">Non-spinning black hole, thin disk from 3 r<sub>s</sub> outward. Disk temperatures are shifted into visible colours (a real disk around a stellar black hole glows in X-rays). The disk texture turns at the real Keplerian rate, so inner rings lap outer ones. Sizes scale with mass, so the picture is the same for every black hole.</figcaption>
+        <p id="bhEhtNote" class="note bh-eht" hidden>EHT view: blurred to the telescope's resolution (about half the ring's width) and drawn in the EHT's orange colour scale. The real image is radio light at 1.3 mm from hot gas, not a thin disk, but the ring and its lopsided brightness come from the same physics.</p>
+      </figure>
+      <div class="bh-side">
+        <div class="bh-ctrl">
+          <label for="bhIncl" class="probe-label">Viewing angle from the disk's axis <output id="bhInclOut"></output></label>
+          <input id="bhIncl" type="range" min="0" max="90" step="1">
+          <label for="bhDist" class="probe-label">Camera distance <output id="bhDistOut"></output></label>
+          <input id="bhDist" type="range" min="6" max="60" step="1">
+          <label for="bhRout" class="probe-label">Disk outer edge <output id="bhRoutOut"></output></label>
+          <input id="bhRout" type="range" min="5" max="20" step="1">
+          <div class="bh-toggles">
+            <label class="toggle" for="bh_dopp"><input id="bh_dopp" type="checkbox"><span class="track" aria-hidden="true"></span>Doppler beaming</label>
+            <label class="toggle" for="bh_grav"><input id="bh_grav" type="checkbox"><span class="track" aria-hidden="true"></span>Gravitational redshift</label>
+            <label class="toggle" for="bh_disk"><input id="bh_disk" type="checkbox"><span class="track" aria-hidden="true"></span>Accretion disk</label>
+            <label class="toggle" for="bh_sky"><input id="bh_sky" type="checkbox"><span class="track" aria-hidden="true"></span>Grid sky</label>
+            <label class="toggle" for="bh_eht"><input id="bh_eht" type="checkbox"><span class="track" aria-hidden="true"></span>EHT blur</label>
+            <label class="toggle" for="bh_labels"><input id="bh_labels" type="checkbox"><span class="track" aria-hidden="true"></span>Labels</label>
+            <label class="toggle" for="bh_spin"><input id="bh_spin" type="checkbox"><span class="track" aria-hidden="true"></span>Animate</label>
+          </div>
+          <p class="probe-label">Colour the disk by</p>
+          <div class="seg" role="group" aria-label="Disk colouring" id="bhHl"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bh-learn">
+      <h3>What you're seeing</h3>
+      <p class="sub">Click any one to set up the view that shows it best.</p>
+      <div class="bh-feats">
+        <button type="button" class="bh-feat" data-bhfeat="shadow"><b>1 · The <dfn data-g="bhshadow">shadow</dfn> is not the horizon</b><span>The dark disk is 2.6× wider than the event horizon. Any ray aimed closer than b = (3√3/2) r<sub>s</sub> falls in, so the hole blocks a patch of sky far bigger than itself.</span></button>
+        <button type="button" class="bh-feat" data-bhfeat="ring"><b>2 · The photon ring</b><span>Light can orbit at the <dfn data-g="photonsphere">photon sphere</dfn> (1.5 r<sub>s</sub>). Rays that loop once or more before escaping stack into a thin bright ring: orange went straight to you, blue swung under or over the hole, pink circled it.</span></button>
+        <button type="button" class="bh-feat" data-bhfeat="hat"><b>3 · The disk "over the top"</b><span>The arch above the hole is the <i>far</i> side of the disk, behind the hole. Its light curved up and over to reach you. The thin arc below is the far side's underside. Blue = far side, orange = near side.</span></button>
+        <button type="button" class="bh-feat" data-bhfeat="beam"><b>4 · One side is brighter</b><span>The disk orbits at up to half the speed of light. Gas coming toward you is blueshifted and <dfn data-g="beaming">beamed</dfn> forward (brightness ∝ g⁴); gas moving away is dimmed. Turn Doppler beaming off to compare.</span></button>
+        <button type="button" class="bh-feat" data-bhfeat="isco"><b>5 · A sharp inner edge</b><span>Inside 3 r<sub>s</sub> (the <dfn data-g="isco">innermost stable circular orbit</dfn>) no orbit is stable, so gas plunges in instead of circling. That's why the disk has a hole in the middle.</span></button>
+        <button type="button" class="bh-feat" data-bhfeat="lens"><b>6 · Lensing on its own</b><span>With the disk off, a grid painted on the sky shows how the hole bends space: squares stretch into arcs, and the whole sky behind the hole squeezes into a ring around the shadow (an Einstein ring).</span></button>
+      </div>
+
+      <div class="tr-callout bh-mistakes">
+        <div><p class="h">Common mistake</p><p><b>"Black holes suck everything in."</b> At 10 r<sub>s</sub>, a black hole pulls exactly like a star of the same mass. If the Sun became a black hole, Earth's orbit would not change. Only close in (inside ~3 r<sub>s</sub>) does gravity behave differently.</p></div>
+        <div><p class="h">Common mistake</p><p><b>"The EHT photographed the event horizon."</b> It imaged the glowing gas and photon ring around the <i>shadow</i>. The horizon itself emits nothing and is smaller than the shadow.</p></div>
+      </div>
+    </div>
+
+    <div class="bh-real">
+      <div>
+        <h3>Real black holes, same picture</h3>
+        <p class="sub">Everything scales with r<sub>s</sub> = 2GM/c², so this image fits any non-spinning black hole. Only the sizes change.</p>
+        <div class="seg" role="group" aria-label="Real black holes" id="bhHoles"></div>
+        <p id="bhHoleNote" class="note"></p>
+      </div>
+      <dl id="bhNumbers" class="facts"></dl>
+    </div>
+    <p class="formula">r<sub>s</sub> = 2GM/c² · photon sphere 1.5 r<sub>s</sub> · shadow b<sub>c</sub> = (3√3/2) r<sub>s</sub> ≈ 2.6 r<sub>s</sub> · ISCO 3 r<sub>s</sub> · disk T ∝ r<sup>−3/4</sup>(1 − √(r<sub>in</sub>/r))<sup>1/4</sup> · g = √(1 − 1.5r<sub>s</sub>/r) / (1 − ΩL)</p>
+    <p class="note">Simplifications: no spin (real holes spin, which shifts the ISCO and flattens one side of the shadow), a geometrically thin disk with no jet, and light from the disk only (no glowing atmosphere). Ray paths use the exact Schwarzschild orbit equation.</p>
   </section>
 
   <section id="clusters" role="tabpanel" aria-labelledby="tab-clusters" class="panel" hidden>
@@ -526,6 +597,7 @@
 <script src="js/render3d.js"></script>
 <script src="js/spacetime.js"></script>
 <script src="js/relativity.js"></script>
+<script src="js/blackhole.js"></script>
 <script src="js/modules.js"></script>
 <script src="js/app.js"></script>
 </body>

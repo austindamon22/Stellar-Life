@@ -550,7 +550,8 @@
         <p><b>Schwarzschild radius</b> r_s = 2GM/c². For a ~${m.toFixed(0)} M☉ black hole, r_s ≈ ${rs.toFixed(0)} km. Inside it, every path into the future leads inward. Even light cannot escape.</p>
         <p>Key distances for a non-spinning hole: photon sphere at 1.5 r_s (light can orbit), innermost stable orbit at 3 r_s (inner edge of accretion disks).</p>
         <p><b><dfn data-g="tidal">Tidal forces</dfn>.</b> Gravity pulls harder on your feet than your head if you fall in feet-first, stretching you (spaghettification). For a ~10 M☉ black hole this kills long before the horizon; for a supermassive one you could cross the horizon without noticing.</p>
-        <p>An isolated black hole is dark. We detect them by their effect on nearby matter, by gravitational lensing, and by gravitational waves.</p>`;
+        <p>An isolated black hole is dark. We detect them by their effect on nearby matter, by gravitational lensing, and by gravitational waves.</p>
+        <p><a href="#blackhole" class="tab-link">See what one looks like in the Black hole camera tab →</a></p>`;
       },
       facts: (M) => { const m = P.blackHoleMass(M); return [['Mass (rough)', '~' + m.toFixed(0) + ' M☉'], ['Schwarzschild radius', Fmt.sig(P.schwarzschildRadius(m * P.K.Msun) / 1e3, 3) + ' km']]; },
       myth: 'Black holes do not suck everything in. At a distance, a 10 M☉ black hole pulls exactly like a 10 M☉ star.',
@@ -711,6 +712,10 @@
     { q: 'GPS satellite clocks, before correction, run…', a: ['Slower by ~38 μs/day', 'Faster by ~38 μs/day', 'Exactly on time', 'Faster by ~38 s/day'], c: 1, e: '+45 μs/day from weaker gravity, −7 μs/day from speed: net ~38 μs/day fast.' },
     { q: 'A 1 M☉ white dwarf and the Sun have the same mass. Far from both, their gravity is…', a: ['Stronger for the white dwarf', 'Identical', 'Stronger for the Sun', 'Zero for the white dwarf'], c: 1, e: 'Outside, only mass matters (Birkhoff\'s theorem). The white dwarf\'s well just goes deeper because its surface is smaller.' },
     { q: 'Short gamma-ray bursts (under ~2 s) come mainly from…', a: ['Collapsing massive stars', 'Neutron star mergers', 'Novae', 'Solar flares'], c: 1, e: 'Merging neutron stars (or a neutron star and a black hole). Long bursts come from collapsars.' },
+    { q: 'The dark "shadow" in the EHT image of M87* is…', a: ['The event horizon itself', 'About 2.6 times wider than the event horizon', 'Smaller than the event horizon', 'A cloud of dust in front of the hole'], c: 1, e: 'Light aimed within b = (3√3/2) r_s ≈ 2.6 r_s falls in, so the hole blocks a patch of sky much larger than its horizon.' },
+    { q: 'Why does an accretion disk around a non-spinning black hole have a hole in the middle at ~3 r_s?', a: ['The gas there is too hot to glow', 'No stable circular orbits exist inside 3 r_s, so gas plunges in', 'Radiation pressure pushes the gas out', 'The event horizon is at 3 r_s'], c: 1, e: 'Inside the innermost stable circular orbit (ISCO, 3 r_s) orbits are unstable; gas spirals straight in.' },
+    { q: 'In a picture of a black hole with its disk seen nearly edge-on, the bright arch over the top of the hole is…', a: ['A jet', 'The near side of the disk', 'The far side of the disk, its light bent over the hole', 'The photon sphere glowing'], c: 2, e: 'Light from the part of the disk behind the hole curves up and over it on its way to you (gravitational lensing).' },
+    { q: 'One side of a black hole\'s accretion disk looks much brighter mainly because…', a: ['That side is closer to us', 'Gas on that side moves toward us, so it is Doppler-boosted', 'That side is hotter', 'Dust blocks the other side'], c: 1, e: 'Relativistic beaming: brightness scales roughly as g⁴, and g > 1 for gas moving toward you at a sizable fraction of c.' },
   ];
 
   /* ---------- Glossary ---------- */
@@ -742,6 +747,10 @@
     ttauri: ['T Tauri star', 'A young (under ~10 million years), low-mass star still contracting toward the main sequence, often variable and surrounded by a disk.'],
     brown: ['Brown dwarf', 'An object of ~13–80 Jupiter masses (below ~0.08 M☉): too light to fuse ordinary hydrogen, so it slowly cools. Between a planet and a star.'],
     tidal: ['Tidal force', 'The difference in gravity across an object. Near a stellar black hole it stretches anything falling in (spaghettification).'],
+    photonsphere: ['Photon sphere', 'The radius (1.5 r_s for a non-spinning black hole) where light can travel in a circle around the hole. Unstable: a nudge sends it in or out.'],
+    isco: ['ISCO', 'Innermost stable circular orbit: 3 r_s for a non-spinning black hole. Closer in, no orbit is stable, so it marks the inner edge of the accretion disk.'],
+    bhshadow: ['Black hole shadow', 'The dark patch a black hole casts on the light behind it. Radius ≈ 2.6 r_s, larger than the event horizon because light is bent in.'],
+    beaming: ['Doppler beaming', 'Light from a source moving toward you at high speed is blueshifted and concentrated forward, so it looks much brighter (∝ g⁴).'],
     burning: ['Burning / ash', 'Astronomer slang: "burning" means fusion, "ash" means its products (helium is hydrogen\'s ash).'],
   };
 

@@ -435,6 +435,7 @@
 
   /* ---------- Tabs ---------- */
   const tabs = $$('.tabs [role=tab]');
+  let bhView = null;
   function showTab(id, focus) {
     tabs.forEach((t) => {
       const on = t.getAttribute('aria-controls') === id;
@@ -447,7 +448,16 @@
     if (id === 'spacetime') { refreshSpaceObjects(); requestAnimationFrame(() => { st._resize(); clockRace._resize(); }); }
     if (id === 'clusters' && window.Modules) window.Modules.Clusters.draw();
     if (id === 'elements' && !renderNP.raf) renderNP();
+    if (bhView && bhView.setOpen) bhView.setOpen(id === 'blackhole');
   }
+  // In-text links like <a href="#blackhole" class="tab-link"> open a tab
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest && e.target.closest('a.tab-link');
+    if (!a) return;
+    e.preventDefault();
+    showTab(a.getAttribute('href').slice(1));
+    document.querySelector('.tabs').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  });
   tabs.forEach((t, i) => {
     t.addEventListener('click', () => showTab(t.getAttribute('aria-controls')));
     t.addEventListener('keydown', (e) => {
@@ -963,10 +973,11 @@
 
   /* ---------- Boot ---------- */
   renderBurning(); renderBinding(); renderReaction(); renderNP(); renderEquations(); renderQuiz(); renderGlossary(); renderEvidence();
+  bhView = window.BlackHole ? window.BlackHole.init() : null;
   const MOD = window.Modules; MOD.Clusters.init(); MOD.Distances.init(); MOD.Birth.init(); MOD.Binaries.init(); MOD.Extras.init();
   bindTips(document);
   setMass(state.M);
   const hashTab = (location.hash || '').slice(1);
-  const startTab = ['fusion', 'elements', 'spacetime', 'clusters', 'distances', 'birth', 'binaries', 'equations', 'quiz', 'glossary'].includes(hashTab) ? hashTab : (store.get('tab') || 'fusion');
+  const startTab = ['fusion', 'elements', 'spacetime', 'blackhole', 'clusters', 'distances', 'birth', 'binaries', 'equations', 'quiz', 'glossary'].includes(hashTab) ? hashTab : (store.get('tab') || 'fusion');
   showTab(startTab);
 })();

@@ -18,11 +18,12 @@ No build step, no dependencies. Plain HTML, CSS and JavaScript. Works offline (f
 - **Fusion:** step-through p-p chain, CNO cycle and triple-alpha animations; burning table to iron; binding-energy curve.
 - **Gold & platinum:** s-process vs r-process on a chart of nuclides with magic-number waiting points.
 - **Spacetime:** every object on one shared gravity well in units of its own r_s (log scale), so you see that outside a mass the well is identical and only the surface depth differs. "Same mass, denser and denser" morphs the Sun into a white dwarf, neutron star and black hole. A two-clock demo shows why time only *appears* to stop at the horizon. Evidence panel: Eddington's light bending, Mercury's 43″, gravitational redshift, GPS, LIGO's chirp.
+- **Black hole camera:** a real-time ray tracer (WebGL). Every pixel follows a light ray through Schwarzschild spacetime to show the shadow, photon ring, the far side of the disk lensed over the top, Doppler beaming and the ISCO. Fly around it, colour the disk by light path, switch to a lensed grid sky, or blur it to Event Horizon Telescope resolution. Numbers for Cygnus X-1, Sgr A* and M87*.
 - **Clusters:** a 4,000-star cluster ages on the H-R diagram; turnoff mass, giants, white dwarfs, blue stragglers; Pleiades, M67, Omega Centauri presets.
 - **Distances:** radar, parallax (with real stars), Cepheid / RR Lyrae / Type Ia calculator following the textbook's four steps, Leavitt law, distance ladder.
 - **Star birth:** ISM types, interactive dust extinction and reddening, pre-main-sequence tracks, the nebular hypothesis in five steps.
 - **Binaries & bursts:** feed a white dwarf (novae vs Type Ia), light curves, X-ray binaries, gamma-ray bursts.
-- **Equations:** 15 live calculators. **Quiz:** 30 questions on chapters 19–24. **Glossary** with hover definitions.
+- **Equations:** 15 live calculators. **Quiz:** 34 questions on chapters 19–24. **Glossary** with hover definitions.
 
 ## Run it
 
@@ -54,6 +55,7 @@ js/evolution.js    continuous interior model (composition and burning vs radius)
 js/render3d.js     3D cutaway ray tracer and particle scenes
 js/spacetime.js    shared gravity well and the falling-clock demo
 js/relativity.js   evidence for general relativity
+js/blackhole.js    WebGL black hole ray tracer
 js/modules.js      clusters, distances, star birth, binaries
 js/app.js          UI wiring
 ```
@@ -76,6 +78,7 @@ Constants: CODATA 2018 (G, c, σ, k_B) and IAU 2015 nominal solar values (M☉ =
 | LIGO chirp | Leading-order f(τ) = (1/π)(5/256τ)^{3/8}(GM_c/c³)^{−5/8}, M_c ≈ 30 M☉ |
 | Cepheid law | M_V = −2.43(log P − 1) − 4.05 (Benedict et al. 2007) |
 | White dwarf cooling (clusters) | Mestel law, L ∝ t^{−1.4} |
+| Black hole camera | Null geodesics from u'' + u = (3/2)u² (exact Schwarzschild); shadow b = (3√3/2) r_s; thin disk T ∝ r^(−3/4)(1 − √(r_in/r))^(1/4) (Shakura & Sunyaev 1973); g = √(1 − 1.5 r_s/r)/(1 − ΩL); I ∝ g⁴. Sgr A* 4.3 × 10⁶ M☉ at 8.18 kpc, M87* 6.5 × 10⁹ M☉ at 16.8 Mpc (EHT), Cygnus X-1 21.2 M☉ at 2.22 kpc (Miller-Jones et al. 2021) |
 | Kilonova / r-process | GW170817 / AT2017gfo |
 
 ## Simplifications
@@ -86,6 +89,7 @@ Constants: CODATA 2018 (G, c, σ, k_B) and IAU 2015 nominal solar values (M☉ =
 - **Interior time dilation** assumes uniform density.
 - **The falling-clock "far view"** uses Schwarzschild coordinate time and ignores light-travel delay.
 - **Clusters** use solar composition; real globular clusters are metal-poor and have bluer horizontal branches.
+- **The black hole camera** shows a non-spinning hole with a thin disk and maps disk temperature to visible colours. Real holes spin, and the EHT sees radio light from hot, thick gas.
 - **The white-dwarf feeding demo** is schematic; whether novae let white dwarfs grow is still debated.
 
 ## Quality review log
