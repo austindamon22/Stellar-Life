@@ -45,6 +45,8 @@
         return C({ H: 1 - y, He: y });
       },
       burn: (r) => r < rc ? Math.pow(1 - (r / rc) * (r / rc), 0.6) * clamp(1 - (0.30 + 0.76 * p * Math.pow(1 - (r / rc) * (r / rc), 0.8)), 0, 1) / 0.7 : 0,
+      conv: (r) => (r > 0.71 ? 1 : 0),
+      trueR: [[rc, { f: 0.25 }], [0.71, { f: 0.713 }]],          // standard solar model: core ~0.25 R, convection zone base 0.713 R
       layers: [
         { r: rc, name: 'Core', note: p < 0.98 ? 'Hydrogen → helium (p-p chain). Helium "ash" builds up fastest at the centre.' : 'Centre is now pure helium. Fusion has moved out into a shell.' },
         { r: 0.71, name: 'Radiative zone', note: 'Energy diffuses outward as light. Composition never mixes with the core.' },
@@ -63,6 +65,8 @@
         return ENV;
       },
       burn: (r) => r < rc ? (1 - y) / 0.7 : 0,
+      conv: (r) => (r < rc ? 1 : 0),
+      trueR: [[rc, { f: rc * 0.7 }], [r0, { f: r0 * 0.8 }]],    // convective cores span ~15-25% of R on the upper main sequence
       layers: [
         { r: rc, name: 'Convective core', note: 'CNO cycle. Convection keeps the core evenly mixed, so it turns to helium all at once.' },
         { r: r0, name: 'Gradient zone', note: 'Left behind as the convective core shrinks: helium-enriched, not mixed.' },
@@ -76,6 +80,8 @@
     return {
       comp: () => C({ H: 1 - y, He: y }),
       burn: (r) => r < 0.3 ? (1 - (r / 0.3) * (r / 0.3)) * (1 - y) / 0.7 : 0,
+      conv: () => 1,
+      trueR: [[0.3, { f: 0.3 }]],
       layers: [
         { r: 0.3, name: 'Fusing core', note: 'p-p chain.' },
         { r: 1, name: 'Convective star', note: 'Convection stirs the whole star, so all of its hydrogen eventually reaches the core.' },
@@ -89,6 +95,10 @@
     return {
       comp: (r) => r < rc ? HE : r < rc + w * 2.2 ? ramp(r, rc, rc + w * 2.2, HE, ENV) : ENV,
       burn: (r) => (r >= rc && r < rc + w) ? 1 - Math.abs((r - rc) / w - 0.4) : 0,
+      conv: (r) => (r > rc + w * 2.2 ? 1 : 0),
+      // Degenerate He core of a low-mass giant: ~0.03 R☉ (a few Earth radii); burning shell just outside it.
+      trueR: degenerate ? [[rc, { a: 0.03 }], [rc + w, { a: 0.06 }], [rc + w * 2.2, { a: 0.5 }]]
+                        : [[rc, { a: 0.12 }], [rc + w, { a: 0.25 }], [rc + w * 2.2, { a: 1.2 }]],
       layers: [
         { r: rc, name: 'Inert helium core', note: degenerate ? 'No fusion. Contracting and heating; electrons become degenerate.' : 'No fusion. Contracting and heating toward helium ignition.' },
         { r: rc + w, name: 'Hydrogen-burning shell', note: 'Hydrogen → helium. Hotter than the old core, so the star brightens and swells.' },
@@ -104,6 +114,8 @@
       comp: base.comp,
       burn: (r) => Math.max(base.burn(r), r < rc ? Math.exp(-Math.pow((r - 0.06) / 0.025, 2)) * (0.6 + 0.4 * Math.sin(p * 40)) : 0),
       flash: true,
+      conv: (r) => (r > 0.22 ? 1 : 0),
+      trueR: [[rc, { a: 0.03 }], [rc + 0.035, { a: 0.06 }], [0.22, { a: 0.5 }]],
       layers: [
         { r: rc, name: 'Degenerate helium core', note: 'Helium ignites in a runaway, first in a ring just off-centre where it is hottest.' },
         { r: rc + 0.035, name: 'Hydrogen-burning shell', note: 'Still fusing.' },
@@ -119,6 +131,12 @@
     return {
       comp: (r) => r < rb ? core : r < rl ? ramp(r, rb - 0.01, rb + 0.01, core, HE) : r < rs + 0.04 ? ramp(r, rs, rs + 0.04, HE, ENV) : ENV,
       burn: (r) => Math.max(r < rb ? (1 - p * 0.85) * (1 - Math.pow(r / rb, 2) * 0.5) : 0, (r >= rs && r < rs + 0.025) ? 0.8 : 0),
+      // Helium-burning cores are convective. Red giants and red supergiants have convective envelopes;
+      // blue-loop stars (2-8 M☉) and blue supergiants (>25 M☉) have radiative ones.
+      conv: (r) => (r < rb ? 1 : r > rs + 0.04 ? ((M < L.heliumFlash || (M >= L.supernova && M <= L.blackHole)) ? 1 : 0) : 0),
+      trueR: M < L.heliumFlash ? [[rb, { a: 0.08 }], [rs, { a: 0.2 }], [rs + 0.025, { a: 0.25 }]]
+           : M < L.supernova ? [[rb, { a: 0.25 }], [rs, { a: 0.6 }], [rs + 0.025, { a: 0.8 }]]
+           : [[rb, { a: 0.6 }], [rs, { a: 1.2 }], [rs + 0.025, { a: 1.6 }]],
       layers: [
         { r: rb, name: 'Helium-burning core', note: 'Triple-alpha: 3 ⁴He → ¹²C, then ¹²C + ⁴He → ¹⁶O. Carbon and oxygen ash accumulate.' },
         { r: rs, name: 'Helium layer', note: 'Ash from hydrogen burning.' },
@@ -134,6 +152,9 @@
     return {
       comp: (r) => r < rc ? CO : r < ri ? HE : r < rh + 0.03 ? ramp(r, rh, rh + 0.03, HE, ENV) : ENV,
       burn: (r) => Math.max((r >= rc && r < rhe) ? 0.35 + 0.65 * pulse : 0, (r >= ri && r < rh) ? 0.8 - 0.5 * pulse : 0),
+      conv: (r) => (r > rh + 0.03 ? 1 : 0),
+      // Degenerate C/O core ~0.02 R☉ (about two Earths), wrapped by thin burning shells; envelope hundreds of R☉.
+      trueR: [[rc, { a: 0.018 }], [rhe, { a: 0.021 }], [ri, { a: 0.03 }], [rh, { a: 0.035 }], [rh + 0.03, { a: 0.5 }]],
       layers: [
         { r: rc, name: 'Carbon-oxygen core', note: 'Degenerate. Never hot enough to fuse carbon. This becomes the white dwarf.' },
         { r: rhe, name: 'Helium-burning shell', note: 'Fires in thermal pulses every ~10⁴–10⁵ years (watch it flare).' },
@@ -194,6 +215,10 @@
         return b;
       },
       collapse: coll ? p : 0,
+      // Oxygen and silicon burn in convective cores; the red-supergiant envelope convects.
+      conv: (r) => (r >= R.He ? 1 : (!coll && k >= 2 && r < steps[k].rk) ? 1 : 0),
+      // Presupernova sizes (approx., ~15-25 M☉; Woosley, Heger & Weaver 2002): iron core ~3000 km.
+      trueR: [[R.Fe * squeeze, { a: 0.004 * (coll ? 1 - 0.99 * smooth(p * 1.4) : 1) }], [R.Si, { a: 0.012 }], [R.O, { a: 0.05 }], [R.Ne, { a: 0.1 }], [R.C, { a: 0.3 }], [R.He, { a: 1.2 }]],
       layers,
     };
   }
@@ -279,7 +304,7 @@
   const ELRGB = {}; ELS.forEach((e) => { ELRGB[e] = hex(D.EL[e].c); });
   function lut(profile, N) {
     N = N || 256;
-    const rgb = new Uint8ClampedArray(N * 3), glow = new Float32Array(N), edge = new Uint8Array(N);
+    const rgb = new Uint8ClampedArray(N * 3), glow = new Float32Array(N), edge = new Uint8Array(N), conv = new Uint8Array(N);
     let prev = null;
     for (let i = 0; i < N; i++) {
       const r = (i + 0.5) / N, c = profile.comp(r);
@@ -288,13 +313,49 @@
       R /= sum; G /= sum; B /= sum;
       rgb[i * 3] = R; rgb[i * 3 + 1] = G; rgb[i * 3 + 2] = B;
       glow[i] = clamp(profile.burn(r), 0, 1);
+      conv[i] = profile.conv ? (profile.conv(r) ? 1 : 0) : 0;
       if (prev && Math.abs(prev[0] - R) + Math.abs(prev[1] - G) + Math.abs(prev[2] - B) > 22) edge[i] = 1;
       prev = [R, G, B];
     }
     // also mark named layer boundaries (e.g. radiative / convective zones of the same composition)
     (profile.layers || []).slice(0, -1).forEach((l) => { const i = Math.min(N - 1, Math.round(l.r * N)); edge[i] = 1; });
-    return { rgb, glow, edge, N };
+    return { rgb, glow, edge, conv, N };
   }
 
-  global.Evo = { ELS, phases, at, lut, scrubForStage, ENV };
+  // True-scale radius map: pairs [display r, true r/R] from the centre to the surface.
+  // Layer boundaries carry real sizes ({a: R☉} absolute or {f: fraction of R}); the star's radius R is in R☉.
+  // Within each layer the mapping is linear, so a layer keeps its internal shape.
+  function trueMap(profile, R) {
+    const pts = [[0, 0]];
+    (profile.trueR || []).forEach(([r, v]) => {
+      let x = v.a != null ? v.a / R : v.f;
+      pts.push([r, x]);
+    });
+    pts.push([1, 1]);
+    pts.sort((a, b) => a[0] - b[0]);
+    // keep it strictly increasing and inside the star (a layer can't be larger than the star)
+    for (let i = 1; i < pts.length; i++) {
+      const room = pts.length - i;
+      pts[i][1] = Math.min(Math.max(pts[i][1], pts[i - 1][1] + 1e-7), 1 - room * 1e-6 + (i === pts.length - 1 ? room * 1e-6 : 0));
+    }
+    pts[pts.length - 1][1] = 1;
+    return pts;
+  }
+  // true fraction -> display radius, and back
+  function toDisplay(map, x) {
+    for (let i = 0; i < map.length - 1; i++) {
+      const [r0, x0] = map[i], [r1, x1] = map[i + 1];
+      if (x <= x1 || i === map.length - 2) return r0 + (r1 - r0) * clamp((x - x0) / (x1 - x0), 0, 1);
+    }
+    return 1;
+  }
+  function toTrue(map, r) {
+    for (let i = 0; i < map.length - 1; i++) {
+      const [r0, x0] = map[i], [r1, x1] = map[i + 1];
+      if (r <= r1 || i === map.length - 2) return x0 + (x1 - x0) * clamp((r - r0) / Math.max(1e-9, r1 - r0), 0, 1);
+    }
+    return 1;
+  }
+
+  global.Evo = { ELS, phases, at, lut, scrubForStage, ENV, trueMap, toDisplay, toTrue };
 })(window);

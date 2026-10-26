@@ -47,7 +47,13 @@
       this.spec = { mode: 'cloud' };
       this.t = 0; this.last = 0; this.running = false; this.visible = true;
       this.labels = true;
+      this.scaleMode = 'schematic'; this.zoom = 1;
       this.pts = [];
+      // GPU cutaway (falls back to the software ray tracer below if WebGL is unavailable)
+      this.glc = global.CutawayGL ? new global.CutawayGL(canvas) : null;
+      if (this.glc && !this.glc.ok) this.glc = null;
+      if (this.glc) { canvas.style.position = 'relative'; canvas.style.zIndex = '1'; }
+      this._bindProbe();
       this._initParticles(this.spec);
       this._bindDrag();
       this._resize();
@@ -89,8 +95,10 @@
       this.userRot = false;
       this.yaw = -0.785; this.pitch = spec.mode === 'disk' || spec.mode === 'binary' || spec.mode === 'merger' ? 0.42 : 0.38;
       this.layers = spec.layers ? spec.layers.map((l) => Object.assign({}, l, { rgb: hexRGB(l.color) })) : null;
+      if (this.layers && this.glc) this.glc.setLut(this._layerLut(1));
       this.surfRGB = P.blackbodyRGB(spec.surfaceT || 5772);
       this.interior = null;
+      if (this.tip) this.tip.hidden = true;
       this._initParticles(spec);
       this.start();
     }
@@ -99,6 +107,7 @@
     setInterior(lut, surfaceT, flags) {
       this.interior = lut;
       this.interiorFlags = flags || {};
+      if (this.glc && lut) this.glc.setLut(lut);
       this.surfRGB = P.blackbodyRGB(surfaceT || 5772);
       if (!this.running) this.draw();
     }
@@ -111,7 +120,7 @@
         const dt = Math.min(0.05, (now - this.last) / 1000); this.last = now;
         this.t += dt * (reduceMotion ? 0.3 : 1);
         if (!this.userRot && !reduceMotion) {
-          if (this.spec.mode === 'cutaway') this.yaw = -0.785 + 0.45 * Math.sin(this.t * 0.25);
+          if (this.spec.mode === 'cutaway') { if (this.viewScale() > 0.8) this.yaw = -0.785 + 0.45 * Math.sin(this.t * 0.25); }
           else if (this.spec.mode !== 'bh') this.yaw += dt * 0.12;
         }
         this.draw();
@@ -148,9 +157,178 @@
       this._col = this.colors();
       c.clearRect(0, 0, this.W, this.H);
       const m = this.spec.mode;
-      if (m === 'cutaway') this.drawCutaway();
+      if (this.glc) this.glc.show(m === 'cutaway');
+      if (m === 'cutaway') { if (this.glc) this.drawCutawayGL(); else this.drawCutaway(); }
       else if (m === 'bh') this.drawBH();
       else this.drawParticles();
+    }
+
+    /* ---------------- GPU cutaway ---------------- */
+    // Radial table for stages described by fixed layers (white dwarf, neutron star, …)
+    _layerLut(squeezeCore) {
+      const L = this.layers || [], N = 256, rgb = new Uint8ClampedArray(N * 3), glow = new Float32Array(N), conv = new Uint8Array(N);
+      const radii = L.map((l, i) => (i === 0 ? l.r * squeezeCore : l.r));
+      for (let i = 0; i < N; i++) {
+        const rr = (i + 0.5) / N;
+        let li = L.length - 1; for (let q = 0; q < L.length; q++) { if (rr <= radii[q]) { li = q; break; } }
+        const lay = L[li]; if (!lay) continue;
+        rgb[i * 3] = lay.rgb[0]; rgb[i * 3 + 1] = lay.rgb[1]; rgb[i * 3 + 2] = lay.rgb[2];
+        const inner = li > 0 ? radii[li - 1] : 0;
+        if (lay.glow) glow[i] = Math.max(0, 0.75 - 0.5 * (rr / radii[li]));
+        if (lay.rim && rr - inner < 0.016) glow[i] = Math.max(glow[i], 0.7 * (1 - (rr - inner) / 0.016));
+      }
+      return { rgb, glow, conv, N };
+    }
+    _bounds() {
+      if (this.interior && this.interiorFlags.prof) return this.interiorFlags.prof.layers.slice(0, -1).map((l) => l.r);
+      return (this.layers || []).slice(0, -1).map((l) => l.r);
+    }
+    _map() {
+      const f = this.interiorFlags || {};
+      return (this.scaleMode === 'true' && this.interior && f.map) ? f.map : [[0, 0], [1, 1]];
+    }
+    viewScale() { return 1.25 / (this.scaleMode === 'true' && this.interior ? this.zoom : 1); }
+
+    drawCutawayGL() {
+      const R = rotMatrix(this.yaw, this.pitch), t = this.t, spec = this.spec;
+      let ln = [-0.45, 0.55, 0.7]; const lm = Math.hypot(...ln); ln = ln.map((v) => v / lm);
+      const Lo = [0, 1, 2].map((k) => ln[0] * R[0][k] + ln[1] * R[1][k] + ln[2] * R[2][k]);
+      const IN = this.interior, flags = this.interiorFlags || {};
+      const collapseF = spec.collapse && !IN ? Math.min(1, frac(t / 4) * 1.6) : 0;
+      if (spec.collapse && !IN && this.layers) this.glc.setLut(this._layerLut(1 - 0.75 * ease(collapseF)));
+      const flashOn = IN ? !!flags.flash : !!spec.flash;
+      const flash = flashOn ? (0.5 + 0.5 * Math.sin(t * 9)) * (IN ? 1 : (frac(t / 3) < 0.4 ? 1 : 0.2)) : 0;
+      const Rstar = flags.R || 1, compact = !!spec.compact;
+      const s = this.viewScale();
+      this.glc.render({
+        W: this.W, H: this.H, R, Lo, s, t, map: this._map(), bounds: this._bounds(),
+        surf: this.surfRGB.map((v) => v / 255),
+        gran: compact ? 0 : Rstar > 40 ? 4 : Rstar > 5 ? 9 : 26,   // giants have a few huge convection cells
+        halo: compact ? 0.18 : 0.42, flash, pulse: 0.5 + 0.5 * Math.sin(t * 3), compact,
+      });
+      const c = this.ctx, W = this.W, H = this.H, cx = W / 2, cy = H / 2, rad = Math.min(W, H) / 2 / s;
+      if (spec.beams) this._drawBeams(R, cx, cy, rad);
+      if (spec.collapse && !IN) {
+        const f = ease(collapseF);
+        this.label(f < 0.98 ? 'iron core collapsing (~0.25 s)' : 'core bounce → shock', 12 * this.dpr, H - 14 * this.dpr);
+      }
+      if (this.labels) this._cutLabels(R, s);
+      if (this.scaleMode === 'true' && IN) this._scaleBar(s, Rstar);
+      else this.label('drag to rotate · not to scale', W - 12 * this.dpr, H - 14 * this.dpr, 'right');
+    }
+
+    // Name each layer on the cut face that faces the camera most, if the band is wide enough to read.
+    _cutLabels(R, s) {
+      const f = this.interiorFlags || {}, map = this._map();
+      const layers = (this.interior && f.prof) ? f.prof.layers : (this.layers || []).map((l) => ({ r: l.r, name: l.name }));
+      if (!layers.length) return;
+      const E = global.Evo, toTrue = (r) => (E && map.length > 2 ? E.toTrue(map, r) : r);
+      const c = this.ctx, d = this.dpr, W = this.W, H = this.H, cx = W / 2, cy = H / 2, ppu = Math.min(W, H) / 2 / s;
+      // face most turned toward the camera; anchor along its diagonal
+      const k = [0, 1, 2].reduce((a, b) => (R[2][b] > R[2][a] ? b : a), 0);
+      const dir = [0.7071, 0.7071, 0.7071]; dir[k] = 0;
+      const items = [];
+      let rin = 0;
+      layers.forEach((l) => {
+        const xin = toTrue(rin), xout = toTrue(Math.min(1, l.r)); rin = l.r;
+        const xhi = Math.min(xout, s * 1.1);
+        if (xhi <= xin || (xhi - xin) * ppu < 13 * d) return;
+        const xm = (xin + xhi) / 2;
+        const P = dir.map((v) => v * xm);
+        const X = cx + (P[0] * R[0][0] + P[1] * R[0][1] + P[2] * R[0][2]) * ppu;
+        const Y = cy - (P[0] * R[1][0] + P[1] * R[1][1] + P[2] * R[1][2]) * ppu;
+        if (X < 0 || X > W || Y < 0 || Y > H) return;
+        items.push({ X, Y, name: l.name.replace(/ \(.*\)$/, '') });
+      });
+      if (!items.length) return;
+      c.save();
+      c.font = `600 ${11 * d}px ${this._col.mono}`; c.textBaseline = 'middle'; c.textAlign = 'left';
+      const colX = Math.min(W - 8 * d, Math.max(...items.map((i) => i.X)) + 40 * d);
+      items.sort((a, b) => a.Y - b.Y);
+      let lastY = -1e9;
+      items.forEach((it) => {
+        let ty = Math.max(it.Y, lastY + 17 * d); lastY = ty;
+        const w = c.measureText(it.name).width;
+        const tx = Math.min(colX, W - w - 14 * d);
+        c.strokeStyle = 'rgba(255,255,255,0.55)'; c.lineWidth = d;
+        c.beginPath(); c.moveTo(it.X, it.Y); c.lineTo(tx - 4 * d, ty); c.stroke();
+        c.fillStyle = '#fff'; c.beginPath(); c.arc(it.X, it.Y, 2.2 * d, 0, TAU); c.fill();
+        c.fillStyle = 'rgba(8,10,22,0.72)'; c.fillRect(tx - 3 * d, ty - 8 * d, w + 8 * d, 16 * d);
+        c.fillStyle = '#eef0fa'; c.fillText(it.name, tx + d, ty);
+      });
+      c.restore();
+    }
+
+    // Scale bar plus Earth and Sun for size comparison (true-scale mode)
+    _scaleBar(s, Rstar) {
+      const c = this.ctx, d = this.dpr, W = this.W, H = this.H;
+      const ppu = Math.min(W, H) / 2 / s;
+      const kmPerPx = Rstar * 695700 / ppu;
+      const target = 90 * d * kmPerPx;
+      const p10 = Math.pow(10, Math.floor(Math.log10(target)));
+      const nice = [1, 2, 5, 10].map((m) => m * p10).reduce((a, b) => (Math.abs(b - target) < Math.abs(a - target) ? b : a));
+      const len = nice / kmPerPx;
+      const fmt = (km) => km >= 1.496e8 * 0.5 ? (km / 1.496e8).toPrecision(2).replace(/\.0+$/, '') + ' AU' : km >= 695700 * 0.5 ? (km / 695700).toPrecision(2).replace(/\.0+$/, '') + ' R☉' : km.toLocaleString('en-US') + ' km';
+      const x0 = 14 * d, y0 = H - 16 * d;
+      c.save();
+      c.strokeStyle = '#fff'; c.lineWidth = 2 * d;
+      c.beginPath(); c.moveTo(x0, y0 - 5 * d); c.lineTo(x0, y0); c.lineTo(x0 + len, y0); c.lineTo(x0 + len, y0 - 5 * d); c.stroke();
+      c.font = `${11 * d}px ${this._col.mono}`; c.fillStyle = '#fff'; c.textBaseline = 'bottom'; c.textAlign = 'left';
+      c.fillText(fmt(nice), x0, y0 - 7 * d);
+      // reference bodies, drawn to the same scale when they'd be visible
+      let rx = W - 14 * d;
+      [['Sun', 695700, '#ffd27a', true], ['Earth', 6371, '#6fb6ff', false]].forEach(([nm, km, col, dash]) => {
+        const r = km / kmPerPx;
+        if (r < 2 * d || r > 46 * d) return;
+        const cxr = rx - r, cyr = y0 - Math.max(r, 6 * d);
+        c.beginPath(); c.arc(cxr, cyr, r, 0, TAU);
+        if (dash) { c.setLineDash([3 * d, 3 * d]); c.strokeStyle = col; c.lineWidth = 1.5 * d; c.stroke(); c.setLineDash([]); }
+        else { c.fillStyle = col; c.fill(); }
+        c.fillStyle = col; c.textAlign = 'center'; c.fillText(nm, cxr, cyr - Math.max(r, 6 * d) - 3 * d);
+        rx = cxr - r - 14 * d - c.measureText(nm).width / 2;
+      });
+      c.restore();
+    }
+
+    // Hover / tap the cut face: which layer is here?
+    _faceHit(clientX, clientY) {
+      const b = this.cv.getBoundingClientRect();
+      const px = (clientX - b.left) * this.dpr, py = (clientY - b.top) * this.dpr;
+      const m = 0.5 * Math.min(this.W, this.H), s = this.viewScale();
+      const q = [(px - this.W / 2) / m * s, -(py - this.H / 2) / m * s];
+      const qq = q[0] * q[0] + q[1] * q[1]; if (qq > 1) return null;
+      const R = rotMatrix(this.yaw, this.pitch), mu = Math.sqrt(1 - qq);
+      const entry = [0, 1, 2].map((k) => q[0] * R[0][k] + q[1] * R[1][k] + mu * R[2][k]);
+      if (!(entry[0] > 0 && entry[1] > 0 && entry[2] > 0)) return { surface: true };
+      let best = 1e9, hit = null;
+      for (let i = 0; i < 3; i++) {
+        if (Math.abs(R[2][i]) < 1e-6) continue;
+        const sd = (q[0] * R[0][i] + q[1] * R[1][i]) / R[2][i];
+        const h = [0, 1, 2].map((k) => q[0] * R[0][k] + q[1] * R[1][k] - R[2][k] * sd); h[i] = 0;
+        if (h[0] >= 0 && h[1] >= 0 && h[2] >= 0 && h[0] * h[0] + h[1] * h[1] + h[2] * h[2] <= 1 && sd > -mu && sd < best) { best = sd; hit = h; }
+      }
+      if (!hit) return null;
+      const x = Math.hypot(...hit), map = this._map();
+      return { x, r: global.Evo && map.length > 2 ? global.Evo.toDisplay(map, x) : x };
+    }
+    _bindProbe() {
+      const box = this.cv.parentNode; if (!box) return;
+      const tip = document.createElement('div'); tip.className = 'cut-tip'; tip.hidden = true; box.appendChild(tip);
+      this.tip = tip;
+      const show = (e) => {
+        if (this.spec.mode !== 'cutaway' || !this.probeText || e.buttons) { tip.hidden = true; return; }
+        const h = this._faceHit(e.clientX, e.clientY);
+        const html = h ? this.probeText(h) : '';
+        if (!html) { tip.hidden = true; return; }
+        tip.innerHTML = html; tip.hidden = false;
+        const b = box.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top;
+        const tw = tip.offsetWidth, th = tip.offsetHeight;
+        tip.style.left = Math.max(6, Math.min(b.width - tw - 6, x + 14)) + 'px';
+        tip.style.top = Math.max(6, Math.min(b.height - th - 6, y + 14)) + 'px';
+      };
+      this.cv.addEventListener('pointermove', show);
+      this.cv.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse') show(e); });
+      this.cv.addEventListener('pointerleave', () => { tip.hidden = true; });
     }
 
     /* ---------------- Cutaway ray tracer ---------------- */

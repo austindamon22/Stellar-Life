@@ -54,6 +54,16 @@
   <section class="stage-grid">
     <div class="viewer">
       <div class="canvas-box"><canvas id="stageCanvas" aria-label="3D view of the current stage"></canvas></div>
+      <div class="cut-tools" id="cutTools" hidden>
+        <div class="seg" role="group" aria-label="Radius scale" id="cutScale">
+          <button type="button" data-scale="schematic" aria-pressed="true">Schematic</button>
+          <button type="button" data-scale="true" aria-pressed="false" title="Draw every layer at its real size">True scale</button>
+        </div>
+        <label class="cut-zoom" id="cutZoomWrap" for="cutZoom" hidden>Zoom <input id="cutZoom" type="range" min="0" max="600" value="0"><output id="cutZoomOut">×1</output></label>
+        <button type="button" class="btn btn-small" id="cutCore" hidden>Zoom to core</button>
+        <label class="toggle" for="cutLabels"><input id="cutLabels" type="checkbox" checked><span class="track" aria-hidden="true"></span>Labels</label>
+      </div>
+      <p class="note cut-note" id="cutNote"></p>
       <div class="scrub" id="scrubBox">
         <div class="scrub-head">
           <label for="scrub">Inside the star: <b id="scrubPhase"></b></label>
@@ -594,6 +604,7 @@
 <script src="js/physics.js"></script>
 <script src="js/data.js"></script>
 <script src="js/evolution.js"></script>
+<script src="js/cutaway-gl.js"></script>
 <script src="js/render3d.js"></script>
 <script src="js/spacetime.js"></script>
 <script src="js/relativity.js"></script>

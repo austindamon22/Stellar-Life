@@ -132,9 +132,67 @@
     lifeTimer = requestAnimationFrame(step);
   });
 
+  /* ---------- Cutaway tools: true scale, zoom, labels, probe ---------- */
+  const RSUN_KM = 695700, EARTH_KM = 6371;
+  const kmText = (km) => km >= 1e6 ? F.sig(km / RSUN_KM, 3) + ' R☉' : Math.round(km).toLocaleString('en-US') + ' km';
+  const earths = (km) => { const e = km / EARTH_KM; return e < 0.1 ? F.sig(e * 100, 2) + '% of Earth' : e < 1.5 ? F.sig(e, 2) + '× Earth' : e < 200 ? F.sig(e, 2) + ' Earths' : F.sig(km / RSUN_KM, 2) + ' Suns'; };
+  function layerAt(layers, r) { return layers.find((l) => r <= l.r + 1e-9) || layers[layers.length - 1]; }
+  view.probeText = (h) => {
+    if (h.surface) return state.interior && state.at ? `<b>Photosphere</b><span>The visible surface, ${Math.round(state.at.T).toLocaleString('en-US')} K. Darker toward the edge (limb darkening).</span>` : '';
+    if (!state.interior || !state.at) {
+      const L = view.layers || []; const l = L.find((x) => h.r <= x.r) || L[L.length - 1];
+      return l ? `<b>${l.name}</b><span>${l.note || ''}</span>` : '';
+    }
+    const at = state.at, prof = at.profile, r = Math.min(0.9999, h.r), map = window.Evo.trueMap(prof, at.R);
+    const l = layerAt(prof.layers, r), x = window.Evo.toTrue(map, r), km = x * at.R * RSUN_KM;
+    const c = prof.comp(r), conv = prof.conv ? prof.conv(r) : 0, burn = prof.burn(r) > 0.05;
+    return `<b>${l.name}</b>`
+      + `<span>${kmText(km)} from the centre · ${F.sig(x * 100, 2)}% of the way out</span>`
+      + `<span>${compText(c)}</span>`
+      + `<span>Energy moves by <b>${conv ? 'convection' : 'radiation'}</b>${burn ? ' · <b class="hot">fusion here</b>' : ''}</span>`;
+  };
+  function cutNote() {
+    const n = $('#cutNote'); if (!n) return;
+    if (!state.interior || !state.at) { n.textContent = ''; return; }
+    const at = state.at, prof = at.profile, map = window.Evo.trueMap(prof, at.R), core = prof.layers[0];
+    const x = window.Evo.toTrue(map, core.r), km = x * at.R * RSUN_KM;
+    const starKm = at.R * RSUN_KM;
+    const seen = x * view.zoom / 1.25 > 0.04;
+    n.innerHTML = view.scaleMode === 'true'
+      ? `<b>True scale.</b> The ${core.name.toLowerCase()} is ${kmText(km)} in radius (${earths(km)}) inside a star of ${kmText(starKm)}: <b>${F.sig(x * 100, 2)}%</b> of the radius. ${seen ? (view.zoom > 1.5 ? `You're zoomed in ${F.sig(view.zoom, 2)}×.` : '') : 'Too small to see at this zoom: press <b>Zoom to core</b>.'}`
+      : `<b>Schematic.</b> Layers are stretched so you can see them all. Real size of the ${core.name.toLowerCase()}: ${kmText(km)} (${F.sig(x * 100, 2)}% of the star's radius). Switch to true scale to see it.`;
+  }
+  const zoomOut = () => { const z = view.zoom; $('#cutZoomOut').innerHTML = '×' + (z < 10 ? z.toFixed(1) : F.sig(z, 2)); };
+  function setZoom(z) { view.zoom = Math.max(1, Math.min(1e6, z)); $('#cutZoom').value = Math.round(Math.log10(view.zoom) * 100); zoomOut(); view.draw(); cutNote(); }
+  function setScaleMode(mode) {
+    view.scaleMode = mode;
+    $$('#cutScale button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.scale === mode)));
+    $('#cutZoomWrap').hidden = mode !== 'true'; $('#cutCore').hidden = mode !== 'true';
+    if (mode !== 'true') view.zoom = 1;
+    setZoom(view.zoom); cutNote();
+    store.set('scale', mode);
+  }
+  $$('#cutScale button').forEach((b) => b.addEventListener('click', () => setScaleMode(b.dataset.scale)));
+  $('#cutZoom').addEventListener('input', (e) => { cancelAnimationFrame(zoomAnim); setZoom(Math.pow(10, +e.target.value / 100)); });
+  let zoomAnim = 0;
+  $('#cutCore').addEventListener('click', () => {
+    if (!state.at) return;
+    const prof = state.at.profile, map = window.Evo.trueMap(prof, state.at.R);
+    const x = window.Evo.toTrue(map, prof.layers[0].r);
+    const goal = Math.max(1, Math.min(1e6, 1.25 * 0.42 / Math.max(x, 1e-9)));
+    const z0 = Math.log10(view.zoom), z1 = Math.log10(goal), t0 = performance.now();
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { setZoom(goal); return; }
+    cancelAnimationFrame(zoomAnim);
+    const stepZ = (now) => { const f = Math.min(1, (now - t0) / 1600), e = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2; setZoom(Math.pow(10, z0 + (z1 - z0) * e)); if (f < 1) zoomAnim = requestAnimationFrame(stepZ); };
+    zoomAnim = requestAnimationFrame(stepZ);
+  });
+  $('#cutLabels').addEventListener('change', (e) => { view.labels = e.target.checked; view.draw(); });
+
   function applyInterior(light) {
     const M = state.M, at = window.Evo.at(M, state.scrub), prof = at.profile;
-    view.setInterior(window.Evo.lut(prof, 192), at.T, { flash: !!prof.flash });
+    state.at = at;
+    view.setInterior(window.Evo.lut(prof, 384), at.T, { flash: !!prof.flash, prof, R: at.R, map: window.Evo.trueMap(prof, at.R) });
+    cutNote();
     $('#scrubPhase').textContent = at.phase.label;
     const pct = Math.round(at.p * 100);
     $('#scrubAge').innerHTML = `Age ${F.years(at.age)} · ${pct}% through this phase (lasts ${F.years(at.phase.dur)})`;
@@ -150,7 +208,7 @@
       box.appendChild(row);
     });
     const h = document.createElement('p'); h.className = 'hint';
-    h.textContent = 'Outer layer first. Colours blend by composition: blue hydrogen, yellow helium, grey carbon, teal oxygen, pink neon, orange silicon, red iron. Not to scale.';
+    h.textContent = 'Outer layer first. Colours blend by composition: blue hydrogen, yellow helium, grey carbon, teal oxygen, pink neon, orange silicon, red iron. Hover or tap the cut face for details.';
     box.appendChild(h);
     renderInside(at);
   }
@@ -290,6 +348,10 @@
     }
     if (state.interior && !fromScrub) { state.scrub = interiorScrub; $('#scrub').value = Math.round(state.scrub / scrubN() * 1000); }
     $('#scrubBox').hidden = !state.interior;
+    $('#cutTools').hidden = spec.mode !== 'cutaway';
+    $('#cutScale [data-scale=true]').disabled = !state.interior;
+    if (!state.interior && view.scaleMode === 'true') setScaleMode('schematic');
+    if (!state.interior) cutNote();
     ['#insideGrid', '#lifeWrap', '#textbookSun'].forEach((q) => { $(q).hidden = !state.interior; });
     $('#insideEmpty').hidden = state.interior;
     if (!state.interior) {
@@ -977,6 +1039,7 @@
   const MOD = window.Modules; MOD.Clusters.init(); MOD.Distances.init(); MOD.Birth.init(); MOD.Binaries.init(); MOD.Extras.init();
   bindTips(document);
   setMass(state.M);
+  if (store.get('scale') === 'true') setScaleMode('true');
   const hashTab = (location.hash || '').slice(1);
   const startTab = ['fusion', 'elements', 'spacetime', 'blackhole', 'clusters', 'distances', 'birth', 'binaries', 'equations', 'quiz', 'glossary'].includes(hashTab) ? hashTab : (store.get('tab') || 'fusion');
   showTab(startTab);

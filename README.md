@@ -10,6 +10,7 @@ No build step, no dependencies. Plain HTML, CSS and JavaScript. Works offline (f
 - **Mass slider** (0.08–40 M☉, log scale) with presets, plus a binary-partner toggle for novae, Type Ia supernovae, X-ray binaries and mergers.
 - **Life stages** that change with mass, from the shock-triggered cloud to a white dwarf, neutron star, pulsar or black hole.
 - **Inside the star.** A scrubber runs from the zero-age main sequence to core collapse. The 3D cutaway and a composition-vs-radius chart update continuously: the hydrogen core turns to helium, burning moves into a shell, helium ignites, the AGB double shells pulse, and massive stars stack shells up to iron. Each layer is coloured by its actual mix of H, He, C, O, Ne, Si and Fe; glowing bands show where fusion is happening.
+- **GPU cutaway** (WebGL, with a software fallback). Convective zones boil, radiative zones shimmer outward, fusion zones glow, and the surface shows granulation and limb darkening. Hover or tap the cut face for the layer, its real distance from the centre, composition and how energy moves there. **True scale** redraws every layer at its real size, with a scale bar and Earth / Sun for comparison; zoom up to a million times to find a red giant's Earth-sized core or a supergiant's iron core.
 - **Life table** for the selected mass, plus your textbook's Sun table for comparison.
 - **H-R diagram** with spectral classes, main-sequence band, instability strip (RR Lyrae, Cepheids), the star's track and a live marker that follows the scrubber.
 - **Textbook vs current research** callouts wherever the course notes and recent results differ.
@@ -52,7 +53,8 @@ css/style.css      design tokens, layout, light and dark themes
 js/physics.js      constants and every equation / scaling relation
 js/data.js         element colours, stage text, reactions, quiz, glossary
 js/evolution.js    continuous interior model (composition and burning vs radius)
-js/render3d.js     3D cutaway ray tracer and particle scenes
+js/cutaway-gl.js   GPU star cutaway (true scale, convection, glow)
+js/render3d.js     stage viewer: cutaway fallback, particle scenes
 js/spacetime.js    shared gravity well and the falling-clock demo
 js/relativity.js   evidence for general relativity
 js/blackhole.js    WebGL black hole ray tracer
@@ -73,6 +75,7 @@ Constants: CODATA 2018 (G, c, σ, k_B) and IAU 2015 nominal solar values (M☉ =
 | AGB luminosity | Paczyński (1970), floored at the textbook Sun value |
 | Advanced burning timescales (25 M☉) | Woosley, Heger & Weaver (2002) |
 | Reaction Q-values, binding energies | Standard nuclear data / AME |
+| True-scale interiors | Sun: core ~0.25 R, convection zone base 0.713 R (standard solar model). Red giant degenerate He core ~0.03 R☉; AGB C/O core ~0.02 R☉; presupernova onion (Fe ~0.004 R☉ ≈ 3000 km, Si 0.012, O 0.05, Ne 0.1, C 0.3, He core ~1.2 R☉) approx. from Woosley, Heger & Weaver (2002). Order-of-magnitude values |
 | Spacetime | Schwarzschild exterior, uniform-density interior; radial free fall (cycloid in proper time) |
 | Light bending, Mercury | α = 4GM/(c²b); Δφ = 6πGM/(c²a(1−e²)) |
 | LIGO chirp | Leading-order f(τ) = (1/π)(5/256τ)^{3/8}(GM_c/c³)^{−5/8}, M_c ≈ 30 M☉ |
@@ -84,7 +87,7 @@ Constants: CODATA 2018 (G, c, σ, k_B) and IAU 2015 nominal solar values (M☉ =
 ## Simplifications
 
 - **Mass cutoffs are approximate** (~0.5, ~1.3, ~2, ~8, ~25 M☉) and depend on metallicity, rotation, mass loss and binarity.
-- **Interior structures are schematic.** Compositions and layer positions follow the textbook picture, not a stellar-evolution code. Radii in the cutaway and chart are not to scale; real giant cores are a tiny fraction of the star.
+- **Interior structures are schematic.** Compositions follow the textbook picture, not a stellar-evolution code. The default view stretches layers so all are visible; True scale uses approximate real layer sizes (order of magnitude, see table) and stretches each layer linearly inside its true boundaries.
 - **H-R tracks** come from scaling relations shaped to match published tracks.
 - **Interior time dilation** assumes uniform density.
 - **The falling-clock "far view"** uses Schwarzschild coordinate time and ignores light-travel delay.
