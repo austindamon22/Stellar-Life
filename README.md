@@ -26,6 +26,15 @@ No build step, no dependencies. Plain HTML, CSS and JavaScript. Works offline (f
 - **Binaries & bursts:** feed a white dwarf (novae vs Type Ia), light curves, X-ray binaries, gamma-ray bursts.
 - **Equations:** 15 live calculators. **Quiz:** 34 questions on chapters 19–24. **Glossary** with hover definitions.
 
+## Galaxies (companion page)
+
+`galaxies.html` covers OpenStax *Astronomy* 2e chapters 25–28. Each page links to the other in its header.
+- **25 · The Milky Way:** a WebGL model of the galaxy with toggles for the disk, arms, bulge and bar, halo, globular clusters and dark-matter halo. You can view it face-on, edge-on, or "From Earth" (which shows why the Milky Way is a band), and colour it by stellar population. A winding-problem demo explains density waves. A rotation curve lets you fit a dark-matter halo to measured speeds. The S-stars orbiting Sgr A* let you weigh the black hole with Kepler's third law.
+- **26 · Galaxy types:** a Hubble tuning fork with procedural galaxies, a classify-it game, and a mass-to-light calculator.
+- **27 · Active galaxies:** the unified model, where viewing angle and jets determine whether the object is a Seyfert 1 or 2, a quasar, a blazar or a radio galaxy, with a schematic spectrum for each. Also a quasar fuel calculator (accretion efficiency, Eddington limit) and the light-travel size limit from variability.
+- **28 · Evolution:** a Hubble diagram you fit yourself, a redshift-to-lookback-time calculator (flat ΛCDM, Planck 2018), and a galaxy-collision simulator (Toomre & Toomre 1972 restricted N-body with approximate dynamical friction).
+- **Quiz:** 16 questions.
+
 ## Run it
 
 Open `index.html` in a browser.
@@ -60,6 +69,10 @@ js/relativity.js   evidence for general relativity
 js/blackhole.js    WebGL black hole ray tracer
 js/modules.js      clusters, distances, star birth, binaries
 js/app.js          UI wiring
+galaxies.html      companion page, chapters 25-28
+js/gx-core.js      galaxy generators, WebGL point renderer
+js/gx-merger.js    galaxy-collision simulation
+js/gx-app.js       galaxies page UI
 ```
 
 ## Physics and sources
@@ -82,6 +95,13 @@ Constants: CODATA 2018 (G, c, σ, k_B) and IAU 2015 nominal solar values (M☉ =
 | Cepheid law | M_V = −2.43(log P − 1) − 4.05 (Benedict et al. 2007) |
 | White dwarf cooling (clusters) | Mestel law, L ∝ t^{−1.4} |
 | Black hole camera | Null geodesics from u'' + u = (3/2)u² (exact Schwarzschild); shadow b = (3√3/2) r_s; thin disk T ∝ r^(−3/4)(1 − √(r_in/r))^(1/4) (Shakura & Sunyaev 1973); g = √(1 − 1.5 r_s/r)/(1 − ΩL); I ∝ g⁴. Sgr A* 4.3 × 10⁶ M☉ at 8.18 kpc, M87* 6.5 × 10⁹ M☉ at 16.8 Mpc (EHT), Cygnus X-1 21.2 M☉ at 2.22 kpc (Miller-Jones et al. 2021) |
+| Milky Way | R☉ = 8.2 kpc (GRAVITY 2019–21), v = 230 km/s; disk scale length 2.6 kpc; bar ~27°; arm pitch ~13° (approximate) |
+| Rotation curve | Data approx. from Sofue (2013) and Eilers et al. (2019); visible model bulge 10¹⁰ M☉ (Hernquist) + disk 5 × 10¹⁰ M☉ (Miyamoto–Nagai) |
+| Sgr A* | S-star orbits: Gillessen et al. (2017); distance 8.18 kpc (GRAVITY 2019) → M ≈ 4.2 × 10⁶ M☉ from S2 |
+| Quasars | ε = 5.7–42% (Schwarzschild to maximal Kerr); L_Edd = 1.26 × 10³¹ W (M/M☉) |
+| Hubble diagram | Approximate distances and redshift velocities of nearby galaxies and clusters |
+| Lookback time | Flat ΛCDM: H₀ = 67.7, Ω_m = 0.31, radiation included (Planck 2018) |
+| Galaxy collision | Toomre & Toomre (1972) restricted three-body; dynamical friction approximate |
 | Kilonova / r-process | GW170817 / AT2017gfo |
 
 ## Simplifications
