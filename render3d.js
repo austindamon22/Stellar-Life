@@ -47,7 +47,7 @@
       this.spec = { mode: 'cloud' };
       this.t = 0; this.last = 0; this.running = false; this.visible = true;
       this.labels = true;
-      this.scaleMode = 'schematic'; this.zoom = 1;
+      this.scaleMode = 'schematic'; this.zoom = 1; this.glScale = 1;
       this.pts = [];
       // GPU cutaway (falls back to the software ray tracer below if WebGL is unavailable)
       this.glc = global.CutawayGL ? new global.CutawayGL(canvas) : null;
@@ -117,7 +117,13 @@
       this.running = true; this.last = performance.now();
       const loop = (now) => {
         if (!this.visible || document.hidden) { this.running = false; return; }
-        const dt = Math.min(0.05, (now - this.last) / 1000); this.last = now;
+        const raw = now - this.last, dt = Math.min(0.05, raw / 1000); this.last = now;
+        // GPU cutaway: lower its resolution if frames are slow, raise it back when there's headroom
+        if (this.glc && this.spec.mode === 'cutaway' && raw < 500) {
+          this.ftAvg = (this.ftAvg || 16) * 0.9 + raw * 0.1;
+          if (this.ftAvg > 40 && this.glScale > 0.4) { this.glScale = Math.max(0.4, this.glScale * (this.ftAvg > 100 ? 0.7 : 0.85)); this.ftAvg = 25; }
+          else if (this.ftAvg < 20 && this.glScale < 1) { this.glScale = Math.min(1, this.glScale * 1.05); this.ftAvg = 18; }
+        }
         this.t += dt * (reduceMotion ? 0.3 : 1);
         if (!this.userRot && !reduceMotion) {
           if (this.spec.mode === 'cutaway') { if (this.viewScale() > 0.8) this.yaw = -0.785 + 0.45 * Math.sin(this.t * 0.25); }
@@ -126,6 +132,7 @@
         this.draw();
         requestAnimationFrame(loop);
       };
+      if (reduceMotion) { this.draw(); this.running = false; return; }   // reduced motion: draw once, redraw only on change
       requestAnimationFrame(loop);
     }
 
@@ -201,7 +208,7 @@
       const Rstar = flags.R || 1, compact = !!spec.compact;
       const s = this.viewScale();
       this.glc.render({
-        W: this.W, H: this.H, R, Lo, s, t, map: this._map(), bounds: this._bounds(),
+        W: Math.max(64, Math.round(this.W * this.glScale)), H: Math.max(64, Math.round(this.H * this.glScale)), R, Lo, s, t, map: this._map(), bounds: this._bounds(),
         surf: this.surfRGB.map((v) => v / 255),
         gran: compact ? 0 : Rstar > 40 ? 4 : Rstar > 5 ? 9 : 26,   // giants have a few huge convection cells
         halo: compact ? 0.18 : 0.42, flash, pulse: 0.5 + 0.5 * Math.sin(t * 3), compact,
@@ -271,6 +278,12 @@
       const fmt = (km) => km >= 1.496e8 * 0.5 ? (km / 1.496e8).toPrecision(2).replace(/\.0+$/, '') + ' AU' : km >= 695700 * 0.5 ? (km / 695700).toPrecision(2).replace(/\.0+$/, '') + ' R☉' : km.toLocaleString('en-US') + ' km';
       const x0 = 14 * d, y0 = H - 16 * d;
       c.save();
+      // Dark backing pill so the white bar and label read on the light-theme canvas too
+      c.font = `${11 * d}px ${this._col.mono}`;
+      const pw = Math.max(len, c.measureText(fmt(nice)).width) + 12 * d, ph = 30 * d, px = x0 - 6 * d, py = y0 - 24 * d, pr = 7 * d;
+      c.fillStyle = 'rgba(6,8,18,0.72)'; c.beginPath();
+      if (c.roundRect) c.roundRect(px, py, pw, ph, pr); else c.rect(px, py, pw, ph);
+      c.fill();
       c.strokeStyle = '#fff'; c.lineWidth = 2 * d;
       c.beginPath(); c.moveTo(x0, y0 - 5 * d); c.lineTo(x0, y0); c.lineTo(x0 + len, y0); c.lineTo(x0 + len, y0 - 5 * d); c.stroke();
       c.font = `${11 * d}px ${this._col.mono}`; c.fillStyle = '#fff'; c.textBaseline = 'bottom'; c.textAlign = 'left';
@@ -284,7 +297,8 @@
         c.beginPath(); c.arc(cxr, cyr, r, 0, TAU);
         if (dash) { c.setLineDash([3 * d, 3 * d]); c.strokeStyle = col; c.lineWidth = 1.5 * d; c.stroke(); c.setLineDash([]); }
         else { c.fillStyle = col; c.fill(); }
-        c.fillStyle = col; c.textAlign = 'center'; c.fillText(nm, cxr, cyr - Math.max(r, 6 * d) - 3 * d);
+        c.textAlign = 'center'; c.lineWidth = 3 * d; c.strokeStyle = 'rgba(6,8,18,0.85)'; c.strokeText(nm, cxr, cyr - Math.max(r, 6 * d) - 3 * d);
+        c.fillStyle = col; c.fillText(nm, cxr, cyr - Math.max(r, 6 * d) - 3 * d);
         rx = cxr - r - 14 * d - c.measureText(nm).width / 2;
       });
       c.restore();
@@ -500,9 +514,12 @@
           pts.push({ dir, k: 0.85 + 0.3 * r(), outer: r() < 0.55, ph: r() });
         }
       } else if (m === 'supernova') {
-        const shells = [['Fe', 0.25], ['Ni', 0.28], ['Si', 0.4], ['O', 0.55], ['C', 0.65], ['He', 0.8], ['H', 1.0]];
+        // [element, speed, share of particles]: shares loosely follow the ejecta of a ~15 M☉ star (hydrogen most),
+        // with the small inner shells boosted so every legend colour is visible
+        const shells = [['Fe', 0.25, 0.06], ['Ni', 0.28, 0.06], ['Si', 0.4, 0.09], ['O', 0.55, 0.16], ['C', 0.65, 0.1], ['He', 0.8, 0.2], ['H', 1.0, 0.33]];
+        const pick = () => { let u = r(); for (const s of shells) { if ((u -= s[2]) <= 0) return s; } return shells[shells.length - 1]; };
         for (let i = 0; i < 2000; i++) {
-          const sh = shells[Math.min(shells.length - 1, Math.floor(Math.pow(r(), 0.8) * shells.length))];
+          const sh = pick();
           const th = Math.acos(2 * r() - 1), ph = r() * TAU;
           const dir = [Math.sin(th) * Math.cos(ph), Math.cos(th), Math.sin(th) * Math.sin(ph)];
           pts.push({ dir, el: sh[0], v: sh[1] * (0.85 + 0.3 * r()), s: 0.7 + r() });
@@ -796,7 +813,7 @@
         if (Math.abs(tm) > rs * 2.6) { c.fillStyle = `rgba(230,236,255,${a2 * 0.7})`; c.beginPath(); c.arc(cx + ux * tm, cy + uy * tm, s[2] * dpr * 0.8, 0, TAU); c.fill(); }
       }
       c.restore();
-      // shadow (2.6 r_s), photon ring, horizon, ISCO
+      // shadow (2.6 rₛ), photon ring, horizon, ISCO
       const shadow = rs * Math.sqrt(27) / 2;
       const g = c.createRadialGradient(cx, cy, shadow * 0.98, cx, cy, shadow * 1.18);
       g.addColorStop(0, 'rgba(255,214,150,0.95)'); g.addColorStop(0.25, 'rgba(255,170,90,0.45)'); g.addColorStop(1, 'rgba(255,170,90,0)');
@@ -804,12 +821,18 @@
       c.fillStyle = '#000000'; c.beginPath(); c.arc(cx, cy, shadow, 0, TAU); c.fill();
       c.save(); c.setLineDash([3 * dpr, 4 * dpr]); c.lineWidth = dpr;
       c.strokeStyle = 'rgba(255,255,255,0.55)'; c.beginPath(); c.arc(cx, cy, rs, 0, TAU); c.stroke();
-      c.strokeStyle = 'rgba(143,182,255,0.75)'; c.beginPath(); c.ellipse(cx, cy, rs * 3, rs * 3 * 0.35, 0, 0, TAU); c.stroke();
+      // ISCO ring, tilted: the near half (lower) passes in front; the far half is hidden where the shadow covers it
+      c.strokeStyle = 'rgba(143,182,255,0.8)'; c.beginPath(); c.ellipse(cx, cy, rs * 3, rs * 3 * 0.35, 0, 0, Math.PI); c.stroke();
+      c.save(); c.beginPath(); c.rect(0, 0, W, H); c.arc(cx, cy, shadow, 0, TAU, true); c.clip('evenodd');
+      c.strokeStyle = 'rgba(143,182,255,0.45)'; c.beginPath(); c.ellipse(cx, cy, rs * 3, rs * 3 * 0.35, 0, Math.PI, TAU); c.stroke();
       c.restore();
+      c.restore();
+      c.save(); c.fillStyle = 'rgba(255,255,255,0.75)'; c.font = `${10 * dpr}px ${this._col.mono}`; c.textAlign = 'center';
+      c.fillText('horizon 1 rₛ', cx, cy + rs + 12 * dpr); c.restore();
       const lx = cx + shadow * 1.25;
-      this.label('event horizon r_s (dashed, inside shadow)', 12 * dpr, 18 * dpr);
-      this.label('shadow ≈ 2.6 r_s · photon ring at its edge', 12 * dpr, 34 * dpr);
-      this.label('innermost stable orbit: 3 r_s (blue)', 12 * dpr, H - 30 * dpr);
+      this.label('event horizon rₛ (dashed, inside shadow)', 12 * dpr, 18 * dpr);
+      this.label('shadow ≈ 2.6 rₛ · photon ring at its edge', 12 * dpr, 34 * dpr);
+      this.label('innermost stable orbit: 3 rₛ (blue)', 12 * dpr, H - 30 * dpr);
       this.label('background stars lensed: θ = ½(β ± √(β² + 4θ_E²))', 12 * dpr, H - 14 * dpr);
     }
   }

@@ -1,5 +1,5 @@
 /* Stellar Life — relativity.js
- * Evidence for general relativity (OpenStax ch. 24): light bending,
+ * Evidence for general relativity: light bending,
  * Mercury's perihelion, gravitational redshift, GPS and LIGO's chirp.
  */
 (function (global) {
@@ -7,7 +7,7 @@
   const P = global.Phys, F = global.Data.Fmt;
   const NS = 'http://www.w3.org/2000/svg';
   const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
-  const css = () => { const s = getComputedStyle(document.documentElement); const g = (k) => s.getPropertyValue(k).trim(); return { fg: g('--fg'), muted: g('--muted'), line: g('--line'), accent: g('--accent') }; };
+  const css = () => { const s = getComputedStyle(document.documentElement); const g = (k) => s.getPropertyValue(k).trim(); return { fg: g('--fg'), muted: g('--muted'), line: g('--line'), accent: g('--accent'), surface: g('--surface') }; };
   const reduce = () => global.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Deflection of light grazing a mass: α = 4GM / (c² b)  (radians)
@@ -31,12 +31,13 @@
     el('path', { d: `M ${ex} ${ey} L ${14} ${yApp}`, stroke: C.fg, 'stroke-dasharray': '2 5', fill: 'none', opacity: 0.6 }, svg);
     el('path', { d: `M 14 ${yTrue} Q ${sx - 30} ${yb - 2} ${sx} ${yb} T ${ex} ${ey}`, stroke: C.accent, 'stroke-width': 2.2, fill: 'none' }, svg);
     el('circle', { cx: 14, cy: yTrue, r: 4.5, fill: '#ffffff', stroke: '#333' }, svg);
-    el('text', { x: 24, y: yTrue + 15, 'font-size': 11, fill: C.muted }, svg).textContent = 'true position';
+    el('text', { x: 24, y: yTrue + 20, 'font-size': 11, fill: C.muted, stroke: C.surface || '#141a31', 'stroke-width': 4, 'paint-order': 'stroke' }, svg).textContent = 'true position';
     el('circle', { cx: 14, cy: yApp, r: 4.5, fill: 'none', stroke: C.fg }, svg);
     el('text', { x: 24, y: yApp - 6, 'font-size': 11, fill: C.fg }, svg).textContent = 'apparent position (pushed away from the Sun)';
     el('circle', { cx: ex, cy: ey, r: 5, fill: '#5aa9ff' }, svg);
     el('text', { x: ex - 8, y: ey + 18, 'text-anchor': 'end', 'font-size': 11, fill: C.muted }, svg).textContent = 'Earth';
     el('text', { x: 14, y: H - 8, 'font-size': 11, fill: C.muted }, svg).textContent = 'bend hugely exaggerated';
+    if (global.Data) global.Data.Fmt.minFont(svg);
     return alpha;
   }
 
@@ -46,12 +47,12 @@
       const dpr = Math.min(global.devicePixelRatio || 1, 2);
       const W = canvas.width, H = canvas.height, C = css();
       c.clearRect(0, 0, W, H);
-      const a = Math.min(W, H) * 0.32, e = 0.45, cx = W / 2, cy = H / 2;
-      const prec = 0.18; // radians per orbit, exaggerated ~10^5 x
+      const a = Math.min(W * 0.38, H * 0.33), e = 0.45, cx = W / 2 + a * e * 0.8, cy = H / 2 - 4 * dpr; // Sun at a focus; true ellipse (no squash)
+      const prec = 0.18; // radians per orbit; the real 43″/century is 5.0e-7 rad per orbit, so ~360,000× exaggerated
       const orbits = 5;
       for (let k = 0; k < orbits; k++) {
         c.strokeStyle = C.muted; c.globalAlpha = 0.18 + 0.15 * k; c.lineWidth = dpr; c.beginPath();
-        for (let i = 0; i <= 120; i++) { const th = i / 120 * Math.PI * 2; const rr = a * (1 - e * e) / (1 + e * Math.cos(th)); const ph = th + k * prec; const x = cx + rr * Math.cos(ph) - a * e * 0; const y = cy + rr * Math.sin(ph) * 0.92; if (i) c.lineTo(x, y); else c.moveTo(x, y); }
+        for (let i = 0; i <= 120; i++) { const th = i / 120 * Math.PI * 2; const rr = a * (1 - e * e) / (1 + e * Math.cos(th)); const ph = th + k * prec; const x = cx + rr * Math.cos(ph); const y = cy + rr * Math.sin(ph); if (i) c.lineTo(x, y); else c.moveTo(x, y); }
         c.stroke();
       }
       c.globalAlpha = 1;
@@ -59,9 +60,9 @@
       const rr = a * (1 - e * e) / (1 + e * Math.cos(th));
       const ph = th + k * prec;
       c.fillStyle = '#ffcf6b'; c.beginPath(); c.arc(cx, cy, 8 * dpr, 0, Math.PI * 2); c.fill();
-      c.fillStyle = '#c9c4bd'; c.beginPath(); c.arc(cx + rr * Math.cos(ph), cy + rr * Math.sin(ph) * 0.92, 4.5 * dpr, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#c9c4bd'; c.beginPath(); c.arc(cx + rr * Math.cos(ph), cy + rr * Math.sin(ph), 4.5 * dpr, 0, Math.PI * 2); c.fill();
       c.font = `${11 * dpr}px ${getComputedStyle(document.documentElement).getPropertyValue('--font-mono')}`; c.fillStyle = C.muted;
-      c.fillText('perihelion advance exaggerated ~100,000×', 10 * dpr, H - 10 * dpr);
+      c.fillText(`perihelion advance exaggerated ~${Math.round(prec / (43 / 415.2 / 206265) / 1e4) * 1e4 > 0 ? (Math.round(prec / (43 / 415.2 / 206265) / 1e4) * 10).toLocaleString('en-US') + ',000' : ''}×`, 10 * dpr, H - 10 * dpr);
     };
     const loop = (now) => { if (!vis) { run = false; return; } t += reduce() ? 0.004 : 0.016; draw(); requestAnimationFrame(loop); };
     const size = () => { const dpr = Math.min(global.devicePixelRatio || 1, 2), r = canvas.getBoundingClientRect(); canvas.width = Math.max(1, r.width * dpr); canvas.height = Math.max(1, r.height * dpr); draw(); };
@@ -78,7 +79,7 @@
     return { perOrbit: dphi * ARCSEC, perCentury };
   }
 
-  // Gravitational redshift from a surface: 1 + z = 1 / √(1 − r_s/R)
+  // Gravitational redshift from a surface: 1 + z = 1 / √(1 − rₛ/R)
   function redshiftRows() {
     const rows = [
       ['Earth', P.K.Mearth, P.K.Rearth],
@@ -92,7 +93,7 @@
   // LIGO chirp, GW150914-like (detector-frame chirp mass ~30 Msun)
   function chirp(svg, playhead) {
     const C = css(); svg.innerHTML = '';
-    const W = 560, H = 200, ml = 36, mr = 12, mt = 16, mb = 34;
+    const W = 560, H = 200, ml = 36, mr = 12, mt = 18, mb = 46;
     const Mc = 30 * 4.925491e-6; // G Mc / c^3 in seconds
     const fOf = (tau) => (1 / Math.PI) * Math.pow(5 / (256 * tau), 3 / 8) * Math.pow(Mc, -5 / 8);
     const t0 = -0.20, tMerge = 0, tEnd = 0.03;
@@ -111,12 +112,13 @@
     el('line', { x1: ml, x2: W - mr, y1: Y(0), y2: Y(0), stroke: C.line }, svg);
     d = pts.map((p, i) => `${i ? 'L' : 'M'}${X(p[0]).toFixed(1)},${Y(p[1] * 0.9).toFixed(1)}`).join(' ');
     el('path', { d, stroke: C.accent, 'stroke-width': 1.3, fill: 'none' }, svg);
-    [-0.2, -0.15, -0.1, -0.05, 0].forEach((t) => { el('text', { x: X(t), y: H - 16, 'text-anchor': 'middle', 'font-size': 10, fill: C.muted }, svg).textContent = t.toFixed(2) + ' s'; });
+    [-0.2, -0.15, -0.1, -0.05, 0].forEach((t) => { el('text', { x: X(t), y: H - 26, 'text-anchor': 'middle', 'font-size': 10, fill: C.muted }, svg).textContent = t.toFixed(2) + ' s'; });
     el('text', { x: X(-0.19), y: mt + 10, 'font-size': 10, fill: C.muted }, svg).textContent = `inspiral: ${Math.round(fOf(0.19))} Hz`;
-    el('text', { x: X(-0.006), y: mt + 10, 'text-anchor': 'end', 'font-size': 10, fill: C.muted }, svg).textContent = 'merger ~250 Hz';
+    el('text', { x: X(-0.006), y: mt + 24, 'text-anchor': 'end', 'font-size': 10, fill: C.muted }, svg).textContent = 'merger ~250 Hz';
     el('text', { x: X(0.029), y: mt + 10, 'text-anchor': 'end', 'font-size': 10, fill: C.muted }, svg).textContent = 'ringdown';
     el('text', { x: ml, y: H - 3, 'font-size': 10, fill: C.muted }, svg).textContent = 'strain (peak ~10⁻²¹) vs time before merger';
     if (playhead != null) el('line', { x1: X(playhead), x2: X(playhead), y1: mt, y2: H - mb, stroke: '#ffffff', opacity: 0.7 }, svg);
+    if (global.Data) global.Data.Fmt.minFont(svg);
     return { fOf, t0, tEnd };
   }
 

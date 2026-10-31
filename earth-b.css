@@ -1,0 +1,47 @@
+/* Stellar Life — Earth (builder B): water, air, Moon tabs */
+.eb-ctlrow { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.eb-out { font-size: 0.9rem; color: var(--muted); max-width: 80ch; flex: 1 1 320px; min-height: 3em; }
+.eb-out b { color: var(--fg); }
+.eb-chart svg { max-width: 540px; margin: 0 auto; }
+.eb-mini svg { max-width: 540px; margin: 0 auto; }
+.eb-wide svg { max-width: 1000px; margin: 0 auto; }
+.eb-chart svg, .eb-wide svg, .eb-mini svg { user-select: none; -webkit-user-select: none; }
+
+/* reservoirs */
+.eb-res { display: grid; gap: 4px; }
+.eb-res-row { display: grid; grid-template-columns: minmax(0, 11.5em) minmax(0, 1fr) 5.2em; gap: 10px; align-items: center; width: 100%; text-align: left; padding: 6px 8px; border: 1px solid var(--line-soft); border-radius: 8px; background: var(--surface); cursor: pointer; font-size: 0.86rem; }
+.eb-res-row:hover { border-color: var(--line); }
+.eb-res-row[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); background: var(--surface-2); }
+.eb-res-n { line-height: 1.3; }
+.eb-res-bar { height: 12px; border-radius: 3px; background: var(--line-soft); overflow: hidden; }
+.eb-res-bar i { display: block; height: 100%; border-radius: 3px; transition: width .35s ease; }
+.eb-res-v { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; font-size: 0.82rem; }
+@media (max-width: 520px) {
+  .eb-res-row { grid-template-columns: minmax(0, 1fr) 5em; row-gap: 4px; }
+  .eb-res-bar { grid-column: 1 / -1; grid-row: 2; }
+}
+
+/* svg interaction */
+.eb-fx, .eb-chip, .eb-node { outline: none; }
+.eb-fx:focus-visible .eb-fx-line, .eb-fx.eb-on .eb-fx-line { opacity: 1 !important; filter: drop-shadow(0 0 4px rgba(255, 255, 255, .5)); }
+.eb-fx:hover .eb-fx-line { opacity: 1 !important; }
+.eb-chip:hover rect, .eb-node:hover rect { stroke: var(--accent); }
+.eb-chip.eb-on rect, .eb-node.eb-on rect, .eb-chip:focus-visible rect, .eb-node:focus-visible rect { stroke: var(--accent); stroke-width: 3; }
+@media (prefers-reduced-motion: no-preference) {
+  .eb-run .eb-dash { animation: eb-flow 0.9s linear infinite; }
+}
+@keyframes eb-flow { to { stroke-dashoffset: -18; } }
+.eb-drag { cursor: grab; }
+#ebPh, #ebHj, #ebAtm { cursor: crosshair; }
+
+/* air composition */
+.eb-comp { display: grid; gap: 8px; }
+.eb-comp-bar { display: flex; height: 16px; border-radius: 4px; overflow: hidden; }
+.eb-comp-bar i { display: block; height: 100%; min-width: 0; }
+.eb-comp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 0.86rem; }
+.eb-comp-list li { display: flex; align-items: center; gap: 6px; }
+.eb-comp-list b { margin-left: auto; font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.eb-feats2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 560px) { .eb-feats2 { grid-template-columns: minmax(0, 1fr); } }
+#ebGapDist[hidden], #ebGapW[hidden] { display: none; }

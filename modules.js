@@ -1,5 +1,5 @@
 /* Stellar Life — modules.js
- * Course modules for OpenStax Astronomy ch. 19–23:
+ * Topic modules:
  *   clusters (cluster H-R diagram aging), distances (radar → parallax →
  *   standard candles), star birth (ISM, extinction, pre-main-sequence
  *   tracks, nebular hypothesis), binaries & bursts (novae, Type Ia,
@@ -33,6 +33,8 @@
       $('#clBS').addEventListener('change', () => this.draw());
       new ResizeObserver(() => this.draw()).observe(this.cv);
       this.setAge(1e8); this.syncPresets();
+      const g = this.turnoffStar(1.3e10), gn = $('#clGlobModel');
+      if (gn) gn.textContent = `${F.sig(g.to, 2)} M☉, ${g.sp}-type, ~${(Math.round(g.T / 100) * 100).toLocaleString('en-US')} K`;
     },
     syncPresets() { document.querySelectorAll('[data-cl]').forEach((b) => b.setAttribute('aria-pressed', Math.abs(Math.log10(parseFloat(b.dataset.cl)) - Math.log10(this.age)) < 0.02 ? 'true' : 'false')); },
     turnoff(age) { let lo = 0.1, hi = 25; for (let i = 0; i < 60; i++) { const m = Math.sqrt(lo * hi); if (P.msLifetime(m) + P.preMSTime(m) > age) lo = m; else hi = m; } return Math.sqrt(lo * hi); },
@@ -51,14 +53,20 @@
       if (M >= L.supernova) return null; // neutron star or black hole: not on the diagram
       // white dwarf cooling (Mestel: L ∝ t^-1.4 at roughly fixed radius)
       const m = P.whiteDwarfMass(M), R = P.whiteDwarfRadius(m);
-      const Lw = Math.min(5, 1e-3 * Math.pow(Math.max(t, 1e5) / 1e9, -1.4)); // Mestel cooling: ~10⁻³ L☉ at 1 Gyr
+      // Mestel cooling: L ∝ M t^-1.4, ~10⁻³ L☉ for a 0.6 M☉ white dwarf after 1 Gyr. Heavier ones stay brighter
+      // longer, so the white dwarfs spread into a sloped cooling sequence instead of piling up at one luminosity.
+      const Lw = Math.min(5, 1e-3 * (m / 0.6) * Math.pow(Math.max(t, 1e5) / 1e9, -1.4));
       const T = P.K.Tsun * Math.pow(Lw / (R * R), 0.25);
       return { logT: Math.log10(T), logL: Math.log10(Lw), kind: 'wd' };
     },
+    turnoffStar(age) {
+      const to = this.turnoff(age), zm = P.hrPosition('ms', to), T = zm ? Math.pow(10, zm.logT) : P.zams(to).T;   // turnoff star = end of its main sequence
+      const sp = [['O', 30000], ['B', 10000], ['A', 7500], ['F', 6000], ['G', 5200], ['K', 3700], ['M', 0]].find(([, t]) => T >= t)[0];
+      return { to, T, sp };
+    },
     setAge(age) {
       this.age = age;
-      const to = this.turnoff(age), z = P.zams(to);
-      const sp = [['O', 30000], ['B', 10000], ['A', 7500], ['F', 6000], ['G', 5200], ['K', 3700], ['M', 0]].find(([, T]) => z.T >= T)[0];
+      const { to, T: zT, sp } = this.turnoffStar(age), z = { T: zT };
       $('#clAgeOut').textContent = F.years(age).replace(/<[^>]+>/g, '');
       const counts = { ms: 0, giant: 0, wd: 0, gone: 0 };
       this.pts = this.stars.map((s) => { const p = this.position(s.M, age); if (!p) counts.gone++; else counts[p.kind === 'pre' ? 'ms' : p.kind]++; return p; });
@@ -84,6 +92,7 @@
       const bgc = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
       const light = (() => { const n = parseInt(bgc.replace('#', ''), 16); return ((n >> 16) & 255) + ((n >> 8) & 255) + (n & 255) > 450; })();
       c.textAlign = 'center'; c.fillText('Surface temperature (K)', (ml + W) / 2, H - 6 * dpr);
+      c.save(); c.translate(11 * dpr, (mt + H - mb) / 2); c.rotate(-Math.PI / 2); c.fillText('Luminosity (L☉)', 0, 0); c.restore();
       // ZAMS reference line
       c.strokeStyle = C.accent; c.globalAlpha = 0.35; c.setLineDash([4 * dpr, 4 * dpr]); c.beginPath();
       for (let lm = Math.log10(0.1); lm <= Math.log10(25); lm += 0.05) { const z = P.zams(Math.pow(10, lm)); const x = X(Math.log10(z.T)), y = Y(Math.log10(z.L)); if (lm === Math.log10(0.1)) c.moveTo(x, y); else c.lineTo(x, y); }
@@ -169,9 +178,9 @@
       const out = $('#candleOut');
       if (type === 'cep' && !(Pd > 0)) { out.innerHTML = '<span class="err">Enter the period in days.</span>'; return; }
       if (!isFinite(m)) { out.innerHTML = '<span class="err">Enter the apparent magnitude.</span>'; return; }
-      const M = this.candleM(type, Pd), Lsun = Math.pow(10, -0.4 * (M - 4.83));
+      const M = this.candleM(type, Pd), bc = type === 'cep' ? -0.2 : 0;   // Cepheids are F–G supergiants (BC ≈ −0.2); RR Lyrae (~6500 K) and SN Ia peak ≈ 0
       const dpc = Math.pow(10, (m - M + 5) / 5);
-      const steps = type === 'cep' ? [`(a) period P = ${Pd} days`, `(b) Leavitt law → M<sub>V</sub> = ${M.toFixed(2)} (≈ ${F.sig(Lsun, 2)} L☉)`] : [`(a) ${type === 'rr' ? 'RR Lyrae: no period needed' : 'Type Ia: peak brightness is nearly uniform'}`, `(b) M = ${M.toFixed(1)} (≈ ${F.sig(Lsun, 2)} L☉)`];
+      const steps = type === 'cep' ? [`(a) period P = ${Pd} days`, `(b) Leavitt law → M<sub>V</sub> = ${M.toFixed(2)}: ${lumLine(M, bc)}`] : [`(a) ${type === 'rr' ? 'RR Lyrae: no period needed' : 'Type Ia: peak brightness is nearly uniform'}`, `(b) M<sub>V</sub> = ${M.toFixed(1)}: ${lumLine(M, bc)}`];
       steps.push(`(c) measured apparent magnitude m = ${m}`);
       steps.push(`(d) m − M = 5 log₁₀ d − 5 → d = <b>${dpc > 1e6 ? F.sig(dpc / 1e6, 3) + ' Mpc' : dpc > 1e3 ? F.sig(dpc / 1e3, 3) + ' kpc' : F.sig(dpc, 3) + ' pc'}</b> (${F.sig(dpc * 3.2616, 3)} ly)`);
       out.innerHTML = steps.map((s) => `<span>${s}</span>`).join('') + '<span class="muted">Ignores dust. Extinction makes stars look fainter, so uncorrected distances come out too large.</span>';
@@ -188,6 +197,7 @@
       txt(svg, 'Cepheids (high mass)', { x: X(2.05), y: Y(4.75), fill: '#a98bff', 'text-anchor': 'end' });
       const yR = Y(Math.log10(49)); el('line', { x1: X(-0.5), x2: X(0), y1: yR, y2: yR, stroke: '#ffc93c', 'stroke-width': 2.5 }, svg);
       txt(svg, 'RR Lyrae: all ~50 L☉', { x: X(-0.5), y: yR - 8, fill: '#ffc93c' });
+      global.Data.Fmt.minFont(svg);
     },
     ladder() {
       const svg = $('#ladderSvg'), C = css(); svg.innerHTML = '';
@@ -201,12 +211,36 @@
         el('rect', { x: X(a), y: y - 6, width: X(b) - X(a), height: 12, rx: 6, fill: col, opacity: 0.85 }, svg);
       });
       const marks = W < 480
-        ? [[-7.9, 'Moon', 182, 'start'], [-5.31, 'Sun', 196, 'middle'], [0.11, 'Proxima', 182, 'middle'], [5.9, 'Andromeda', 196, 'middle'], [9.3, 'far galaxies', 210, 'end']]
-        : [[-7.9, 'Moon', 182, 'start'], [-5.31, 'Sun (1 AU)', 182, 'middle'], [0.11, 'Proxima', 182, 'middle'], [3.9, 'Galactic centre', 196, 'middle'], [5.9, 'Andromeda', 182, 'middle'], [7.2, 'Virgo cluster', 210, 'middle'], [9.3, 'distant galaxies', 196, 'end']];
-      marks.forEach(([lpc, n, y, anchor]) => {
-        el('line', { x1: X(lpc), x2: X(lpc), y1: 166, y2: y - 10, stroke: C.muted }, svg);
-        txt(svg, n, { x: X(lpc), y, 'text-anchor': anchor, fill: C.muted, 'font-size': 10 });
+        ? [[-7.9, 'Moon', 182, 'end'], [-5.31, 'Sun', 196, 'middle'], [0.11, 'Proxima', 182, 'middle'], [5.9, 'Andromeda', 196, 'middle'], [9.3, 'far galaxies', 210, 'end']]
+        : [[-7.9, 'Moon', 182, 'end'], [-5.31, 'Sun (1 AU)', 182, 'middle'], [0.11, 'Proxima', 182, 'middle'], [3.9, 'Galactic centre', 196, 'middle'], [5.9, 'Andromeda', 182, 'middle'], [7.2, 'Virgo cluster', 210, 'middle'], [9.3, 'distant galaxies', 196, 'end']];
+      // Place labels on as few rows as possible (small backtracking search): no label overlaps another,
+      // and no tick line crosses a label on a row above it
+      const ROW = (r) => 182 + 14 * r;
+      const hits = (q, a0, a1) => q > a0 - 6 && q < a1 + 6;
+      const cands = marks.map(([lpc, n, , pref]) => {
+        const x = X(lpc), w = n.length * 6.4 + 4;
+        return [...new Set([pref, 'middle', 'end', 'start'])].map((anchor) => {
+          const x0 = anchor === 'start' ? x : anchor === 'end' ? x - w : x - w / 2;
+          return { x, x0, x1: x0 + w, anchor };
+        }).filter((c) => c.x0 >= 2 && c.x1 <= W - 2);
       });
+      const fits = (c, p) => (p.r === c.r ? (c.x1 < p.x0 - 6 || c.x0 > p.x1 + 6) : p.r < c.r ? !hits(c.x, p.x0, p.x1) : !hits(p.x, c.x0, c.x1));
+      const solve = (k, nr, acc) => {
+        if (k === cands.length) return acc;
+        for (let r = 0; r < nr; r++) for (const c0 of cands[k]) {
+          const c = Object.assign({ r }, c0);
+          if (acc.every((p) => fits(c, p))) { const res = solve(k + 1, nr, acc.concat([c])); if (res) return res; }
+        }
+        return null;
+      };
+      let placed = null;
+      for (let nr = 1; nr <= 6 && !placed; nr++) placed = solve(0, nr, []);
+      placed = placed || cands.map((c, i) => Object.assign({ r: i % 4 }, c[0]));
+      placed.forEach((pk, i) => {
+        el('line', { x1: pk.x, x2: pk.x, y1: 166, y2: ROW(pk.r) - 10, stroke: C.muted }, svg);
+        txt(svg, marks[i][1], { x: pk.x, y: ROW(pk.r), 'text-anchor': pk.anchor, fill: C.muted, 'font-size': 10 });
+      });
+      svg.setAttribute('viewBox', `0 0 ${W} ${ROW(Math.max(...placed.map((p) => p.r))) + 8}`);
       txt(svg, W < 480 ? 'parsecs, log scale' : 'distance in parsecs (log scale) · each rung calibrates the next', { x: ml, y: 160, fill: C.faint, 'font-size': 10 });
     },
   };
@@ -256,6 +290,7 @@
         el('circle', { cx: X(lT), cy: Y(lL), r: 4, fill: `rgb(${P.blackbodyRGB(z.T)})` }, svg);
         txt(svg, `${M} M☉ · ${F.years(P.preMSTime(M)).replace(/<sup>(.*?)<\/sup>/g, '^$1')}`, { x: X(pts[0][0]) + 2, y: Y(pts[0][1]) - 9, 'text-anchor': 'end', fill: C.muted, 'font-size': 10 });
       });
+      F.minFont(svg);
     },
     nebular(k) {
       const steps = [
@@ -356,16 +391,24 @@
       curve((d) => rise(d, 18, -19.3) ?? (d < 50 ? -19.3 + (d - 18) * 0.09 : -16.4 + (d - 50) * 0.014), '#ff8a3c', 'Type Ia: peak −19.3, no hydrogen', 30, -19.6);
       curve((d) => rise(d, 12, -17) ?? (d < 100 ? -17 + (d - 12) * 0.006 : -16.5 + Math.min(3, (d - 100) * 0.12) + (d - 100) * 0.008), '#5aa9ff', 'Type II-P: ~100-day plateau', 198, -11.8, 'end');
       curve((d) => rise(d, 2, -8) ?? (-8 + (d - 2) * 0.05), '#a98bff', 'Nova: ~−8, white dwarf survives', 20, -8.6);
+      F.minFont(svg);
     },
   };
 
 
-  /* ======================= Extras: ch. 19.4, 20, 21.4–5, 24.1, 24.5–6 ======================= */
+  /* ======================= Extras: spectroscopic parallax, light curves, exoplanets, equivalence, waves ======================= */
   const SPEC = { // absolute visual magnitude by class and type (approximate, standard tables)
     V: [['O5', -5.7], ['B0', -4.0], ['B5', -1.2], ['A0', 0.65], ['F0', 2.7], ['G2 (Sun)', 4.83], ['K0', 5.9], ['K5', 7.4], ['M0', 8.8], ['M5', 12.3]],
     III: [['G0', 0.9], ['G5', 0.9], ['K0', 0.7], ['K5', -0.2], ['M0', -0.4]],
     I: [['B0', -6.2], ['A0', -6.3], ['F0', -6.6], ['G0', -6.4], ['K0', -6.0], ['M0', -5.6]],
   };
+  // Bolometric corrections BC_V by the same rows (Flower 1996 / Pecaut & Mamajek 2013, from each type's T_eff; approximate)
+  const BC = {
+    V: [-3.9, -3.1, -1.2, -0.25, 0.0, -0.07, -0.2, -0.65, -1.2, -2.6],
+    III: [-0.1, -0.2, -0.4, -1.2, -1.4],
+    I: [-2.6, -0.2, 0.0, -0.15, -0.5, -1.4],
+  };
+  const lumLine = (M, bc) => `L<sub>V</sub> ≈ ${F.sig(Math.pow(10, -0.4 * (M - 4.83)), 2)} L☉ (visual band) · L<sub>bol</sub> = 10<sup>−0.4(M<sub>V</sub> + BC − 4.74)</sup> ≈ <b>${F.sig(Math.pow(10, -0.4 * (M + bc - 4.74)), 2)} L☉</b> (BC ≈ ${bc === 0 ? '0' : bc.toFixed(2).replace('-', '−')})`;
   const Extras = {
     init() {
       const fill = () => { const cl = $('#spClass').value; $('#spType').innerHTML = SPEC[cl].map(([t, m], i) => `<option value="${i}">${t}</option>`).join(''); this.spec(); };
@@ -380,7 +423,7 @@
       const cl = $('#spClass').value, row = SPEC[cl][+$('#spType').value || 0], m = parseFloat($('#spM').value), out = $('#spOut');
       if (!isFinite(m)) { out.innerHTML = '<span class="err">Enter the apparent magnitude.</span>'; return; }
       const M = row[1], d = Math.pow(10, (m - M + 5) / 5);
-      out.innerHTML = `<span>${row[0]} ${cl} → M<sub>V</sub> ≈ ${M} (≈ ${F.sig(Math.pow(10, -0.4 * (M - 4.83)), 2)} L☉)</span><span>d = 10<sup>(m − M + 5)/5</sup> = <b>${d > 1e3 ? F.sig(d / 1e3, 3) + ' kpc' : F.sig(d, 3) + ' pc'}</b> (${F.sig(d * 3.2616, 3)} ly)</span><span class="muted">Stars of one type scatter by ~±0.5 mag, so these distances carry ~±25% error.</span>`;
+      out.innerHTML = `<span>${row[0]} ${cl} → M<sub>V</sub> ≈ ${M}</span><span>${lumLine(M, BC[cl][+$('#spType').value || 0])}</span><span>d = 10<sup>(m − M + 5)/5</sup> = <b>${d > 1e3 ? F.sig(d / 1e3, 3) + ' kpc' : F.sig(d, 3) + ' pc'}</b> (${F.sig(d * 3.2616, 3)} ly)</span><span class="muted">Stars of one type scatter by ~±0.5 mag, so these distances carry ~±25% error.</span>`;
     },
     transit() {
       const rp = +$('#exRp').value / 10, rs = +$('#exRs').value / 100;
@@ -443,7 +486,8 @@
       box(30, 'Rocket, deep space', 'floor pushes up | at 9.8 m/s²');
       box(240, 'Room on Earth', 'gravity pulls down | at 9.8 m/s²');
       txt(svg, '=', { x: 210, y: 95, 'text-anchor': 'middle', fill: C.fg, 'font-size': 22 });
-      txt(svg, 'beam bends (exaggerated)', { x: 210, y: 140, 'text-anchor': 'middle', fill: C.accent, 'font-size': 10 });
+      txt(svg, 'light bends the same way in both (exaggerated)', { x: 210, y: 197, 'text-anchor': 'middle', fill: C.accent, 'font-size': 10 });
+      global.Data.Fmt.minFont(svg);
     },
   };
 

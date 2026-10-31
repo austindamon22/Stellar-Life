@@ -5,7 +5,7 @@
  *
  * Radii are DISPLAY radii (0 = centre, 1 = surface) and are not to scale:
  * real giant cores are a tiny fraction of the star. Compositions follow the
- * standard textbook picture (OpenStax Astronomy ch. 22–23; Woosley, Heger &
+ * standard picture of stellar interiors (Woosley, Heger &
  * Weaver 2002) and are schematic, not the output of a stellar-evolution code.
  */
 (function (global) {
@@ -18,7 +18,7 @@
   // composition helpers -------------------------------------------------
   const C = (o) => { const c = {}; ELS.forEach((e) => { c[e] = o[e] || 0; }); return c; };
   const mixC = (a, b, t) => { const c = {}; ELS.forEach((e) => { c[e] = lerp(a[e], b[e], t); }); return c; };
-  const ENV = C({ H: 0.70, He: 0.30 });               // textbook: 70% H, 30% He at birth
+  const ENV = C({ H: 0.70, He: 0.30 });               // 70% H, 30% He by mass at birth (round values)
   const HE = C({ He: 1 });
   const CO = C({ C: 0.35, O: 0.60, He: 0.05 });       // helium ash
   const ONE = C({ O: 0.55, Ne: 0.45 });               // carbon ash (Ne + Mg lumped as Ne)
@@ -66,7 +66,8 @@
       },
       burn: (r) => r < rc ? (1 - y) / 0.7 : 0,
       conv: (r) => (r < rc ? 1 : 0),
-      trueR: [[rc, { f: rc * 0.7 }], [r0, { f: r0 * 0.8 }]],    // convective cores span ~15-25% of R on the upper main sequence
+      // convective core radius ≈ 0.12 R at 2 M☉ rising to ≈ 0.25 R at 20 M☉ (log interpolation), shrinking with age
+      trueR: [[rc, { f: clamp(0.12 + 0.13 * Math.log10(M / 2), 0.1, 0.27) * (1 - 0.35 * p) }], [r0, { f: clamp(0.12 + 0.13 * Math.log10(M / 2), 0.1, 0.27) * 1.25 }]],
       layers: [
         { r: rc, name: 'Convective core', note: 'CNO cycle. Convection keeps the core evenly mixed, so it turns to helium all at once.' },
         { r: r0, name: 'Gradient zone', note: 'Left behind as the convective core shrinks: helium-enriched, not mixed.' },
@@ -170,10 +171,10 @@
     const R = ONION_R;
     // core region converting this phase, and what it is made of before/after
     const steps = [
-      { rk: R.Ne, from: CO, to: ONE, name: 'Carbon-burning core', note: '¹²C + ¹²C → ²⁰Ne, ²³Na, ²⁴Mg. ~500 years in a 25 M☉ star.' },
-      { rk: R.O, from: ONE, to: OMG, name: 'Neon-burning core', note: 'Photodisintegration: ²⁰Ne + γ → ¹⁶O + α, then α + ²⁰Ne → ²⁴Mg. ~1 year.' },
-      { rk: R.Si, from: OMG, to: SIS, name: 'Oxygen-burning core', note: '¹⁶O + ¹⁶O → ²⁸Si, ³²S. ~5 months.' },
-      { rk: R.Fe, from: SIS, to: FE, name: 'Silicon-burning core', note: 'Silicon rearranges into ⁵⁶Ni → ⁵⁶Fe (iron peak). About one day.' },
+      { rk: R.Ne, from: CO, to: ONE, name: 'Carbon-burning core', note: '¹²C + ¹²C → ²⁰Ne, ²³Na, ²⁴Mg. Centuries to a few thousand years (shorter for heavier stars).' },
+      { rk: R.O, from: ONE, to: OMG, name: 'Neon-burning core', note: 'Photodisintegration: ²⁰Ne + γ → ¹⁶O + α, then α + ²⁰Ne → ²⁴Mg. About a year.' },
+      { rk: R.Si, from: OMG, to: SIS, name: 'Oxygen-burning core', note: '¹⁶O + ¹⁶O → ²⁸Si, ³²S. Months to a few years.' },
+      { rk: R.Fe, from: SIS, to: FE, name: 'Silicon-burning core', note: 'Silicon rearranges into ⁵⁶Ni → ⁵⁶Fe (iron peak). A day to a few weeks.' },
     ];
     const coll = k === 4;
     const squeeze = coll ? 1 - 0.75 * smooth(p * 1.4) : 1;
@@ -207,7 +208,7 @@
     layers.push({ r: R.He, name: 'Helium layer', note: 'Hydrogen ash. Helium burns at its base.' });
     layers.push({ r: 1, name: 'Hydrogen envelope', note: 'Hydrogen burns at its base. The surface cannot react this fast.' });
     return {
-      comp: (r) => layerComp(coll && r < R.Si ? Math.min(R.Si, r / squeeze) : r),
+      comp: (r) => layerComp(coll && r < R.Si ? Math.min(R.Si - 1e-6, r / squeeze) : r),
       burn: (r) => {
         let b = 0;
         if (!coll && r < steps[k].rk) b = (1 - 0.6 * p) * (1 - 0.4 * Math.pow(r / steps[k].rk, 2));
@@ -217,7 +218,8 @@
       collapse: coll ? p : 0,
       // Oxygen and silicon burn in convective cores; the red-supergiant envelope convects.
       conv: (r) => (r >= R.He ? 1 : (!coll && k >= 2 && r < steps[k].rk) ? 1 : 0),
-      // Presupernova sizes (approx., ~15-25 M☉; Woosley, Heger & Weaver 2002): iron core ~3000 km.
+      // Presupernova sizes, factor-of-two estimates from 15-25 M☉ models (Woosley, Heger & Weaver 2002;
+      // Sukhbold et al. 2016): iron core ~3000 km; Si, O, Ne, C and He shell edges are rough.
       trueR: [[R.Fe * squeeze, { a: 0.004 * (coll ? 1 - 0.99 * smooth(p * 1.4) : 1) }], [R.Si, { a: 0.012 }], [R.O, { a: 0.05 }], [R.Ne, { a: 0.1 }], [R.C, { a: 0.3 }], [R.He, { a: 1.2 }]],
       layers,
     };
@@ -225,6 +227,14 @@
 
   // ---- Phase lists by mass -------------------------------------------
   const msT = (M) => P.msLifetime(M);
+  // Advanced burning durations (years) from Woosley, Heger & Weaver (2002), Table 1, for 15, 20 and 25 M☉;
+  // interpolated in log M and log t, and held at the end values outside 15-25 M☉.
+  const WHW = { M: [15, 20, 25], C: [2030, 970, 522], Ne: [0.732, 0.6, 0.891], O: [2.58, 1.25, 0.402], Si: [0.0496, 0.0115, 0.002] };
+  function burnTime(el, M) {
+    const m = clamp(M, 15, 25), xs = WHW.M, ys = WHW[el];
+    const j = m <= 20 ? 0 : 1, f = (Math.log(m) - Math.log(xs[j])) / (Math.log(xs[j + 1]) - Math.log(xs[j]));
+    return Math.exp(Math.log(ys[j]) + f * (Math.log(ys[j + 1]) - Math.log(ys[j])));
+  }
   function phases(M) {
     if (M < L.redDwarfFate) {
       const fully = M < L.fullyConvective;
@@ -253,10 +263,10 @@
     return [
       { id: 'ms', label: 'Main sequence', short: 'MS', dur: msT(M), path: ['zams', 'ms'], stages: [[0, 'zams'], [0.03, 'ms']], profile: (p) => msConvective(p, M, 0.34) },
       { id: 'hecore', label: 'Core helium burning', short: 'He core', dur: msT(M) * 0.12, path: ['ms', 'rsg'], stages: [[0, 'rsg']], profile: (p) => heCore(p, M, 1.25) },
-      { id: 'c', label: 'Carbon burning', short: 'C', dur: 522, path: ['onion'], stages: [[0, 'onion']], profile: (p) => onion(0, p) },
-      { id: 'ne', label: 'Neon burning', short: 'Ne', dur: 0.89, path: ['onion'], stages: [[0, 'onion']], profile: (p) => onion(1, p) },
-      { id: 'o', label: 'Oxygen burning', short: 'O', dur: 0.40, path: ['onion'], stages: [[0, 'onion']], profile: (p) => onion(2, p) },
-      { id: 'si', label: 'Silicon burning', short: 'Si', dur: 0.002, path: ['onion'], stages: [[0, 'onion']], profile: (p) => onion(3, p) },
+      { id: 'c', label: 'Carbon burning', short: 'C', dur: burnTime('C', M), path: ['onion'], stages: [[0, 'onion']], profile: (p) => onion(0, p) },
+      { id: 'ne', label: 'Neon burning', short: 'Ne', dur: burnTime('Ne', M), path: ['onion'], stages: [[0, 'onion']], profile: (p) => onion(1, p) },
+      { id: 'o', label: 'Oxygen burning', short: 'O', dur: burnTime('O', M), path: ['onion'], stages: [[0, 'onion']], profile: (p) => onion(2, p) },
+      { id: 'si', label: 'Silicon burning', short: 'Si', dur: burnTime('Si', M), path: ['onion'], stages: [[0, 'onion']], profile: (p) => onion(3, p) },
       { id: 'collapse', label: 'Core collapse', short: 'Collapse', dur: 0.25 / P.K.yr, path: ['corecollapse'], stages: [[0, 'corecollapse']], profile: (p) => onion(4, p) },
     ];
   }
@@ -357,5 +367,5 @@
     return 1;
   }
 
-  global.Evo = { ELS, phases, at, lut, scrubForStage, ENV, trueMap, toDisplay, toTrue };
+  global.Evo = { ELS, phases, at, lut, scrubForStage, ENV, trueMap, toDisplay, toTrue, burnTime };
 })(window);

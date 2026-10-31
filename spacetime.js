@@ -1,9 +1,9 @@
 /* Stellar Life — spacetime.js
  * A shared gravity well for every object, drawn in units of the object's own
- * Schwarzschild radius r_s on a log radial scale.
+ * Schwarzschild radius rₛ on a log radial scale.
  *
  * Outside any spherical mass the geometry depends only on the mass
- * (Birkhoff's theorem), so measured in r_s every object has the SAME well.
+ * (Birkhoff's theorem), so measured in rₛ every object has the SAME well.
  * What differs is where the surface cuts it off: a denser object lets the
  * well go deeper before you hit matter. A black hole has no surface at all.
  *
@@ -22,12 +22,12 @@
     const i = Math.min(RAMP.length - 2, Math.floor(f));
     return D.mix(RAMP[i], RAMP[i + 1], f - i);
   }
-  const X_HI = 9.9;          // log10(r / r_s) at the rim of the sheet
+  const X_HI = 9.9;          // log10(r / rₛ) at the rim of the sheet
   const W_RIM = 3.0;         // world radius of the rim
-  const W_HOR = 0.22;        // world radius of r = r_s
+  const W_HOR = 0.22;        // world radius of r = rₛ
   const K_H = 0.21;          // world height per decade of D
 
-  // rate of proper time at radius r (units of r_s) for an object of radius R (units of r_s; 0 = black hole)
+  // rate of proper time at radius r (units of rₛ) for an object of radius R (units of rₛ; 0 = black hole)
   function rate(r, R) {
     if (!R || r >= R) return r <= 1 ? 0 : Math.sqrt(1 - 1 / r);
     return Math.max(0, P.dilationInside(r, Math.max(R, 9 / 8), 1)); // interior valid only above the Buchdahl bound
@@ -61,7 +61,7 @@
     setObject(obj, markers) {
       this.obj = obj;
       this.rs = P.schwarzschildRadius(obj.M);
-      this.Rrs = obj.R ? obj.R / this.rs : 0; // radius in units of r_s
+      this.Rrs = obj.R ? obj.R / this.rs : 0; // radius in units of rₛ
       this.markers = markers || [];
       const xS = this.Rrs ? Math.log10(this.Rrs) : 0;
       if (obj.name !== this._lastName && !obj.morph) this.xProbe = Math.min(X_HI, Math.max(xS, 0.004) + 0.5);
@@ -84,7 +84,7 @@
       requestAnimationFrame(loop);
     }
 
-    // world radius for r (units of r_s)
+    // world radius for r (units of rₛ)
     wOf(r) {
       const R = this.Rrs;
       const outside = (x) => W_HOR + (x / X_HI) * (W_RIM - W_HOR);
@@ -224,10 +224,10 @@
   }
 
   /* ---------- Two clocks falling into a black hole ----------
-   * Free fall from rest at r0 = 10 r_s. Units: r_s and r_s/c.
+   * Free fall from rest at r0 = 10 rₛ. Units: rₛ and rₛ/c.
    * Far view: Schwarzschild coordinate time t (ignores light-travel delay).
    * Own view: proper time τ along the cycloid r = (r0/2)(1+cos η),
-   *           τ = (r0/2)√(r0/r_s)(η + sin η).
+   *           τ = (r0/2)√(r0/rₛ)(η + sin η).
    */
   class ClockRace {
     constructor(canvas) {
@@ -287,7 +287,7 @@
       if (!this._tok) { const cs = getComputedStyle(document.documentElement), g = (k) => cs.getPropertyValue(k).trim(); this._tok = { muted: g('--muted'), fg: g('--fg'), mono: g('--font-mono'), line: g('--line') }; }
       const { muted, fg, mono, line } = this._tok;
       const loop = 14, tt = this.t % loop;
-      const unit = P.schwarzschildRadius(this.Msun * P.K.Msun) / P.K.c; // seconds per r_s/c
+      const unit = P.schwarzschildRadius(this.Msun * P.K.Msun) / P.K.c; // seconds per rₛ/c
       const fmtS = (x) => { const s = x * unit; return s < 1e-3 ? (s * 1e6).toFixed(0) + ' μs' : (s * 1e3).toFixed(2) + ' ms'; };
       const stacked = W / dpr < 620;
       const pw = stacked ? W : W / 2, ph = stacked ? H / 2 : H, pad = 12 * dpr;
@@ -303,7 +303,7 @@
         c.strokeStyle = 'rgba(255,210,150,0.9)'; c.lineWidth = 1.4 * dpr; c.stroke();
         c.strokeStyle = line; c.lineWidth = dpr; c.beginPath(); c.moveTo(xh, yA); c.lineTo(axis(this.r0), yA); c.stroke();
         c.fillStyle = muted; c.textAlign = 'center'; c.fillText('horizon', xh, yA + rad + 13 * dpr);
-        c.fillText('10 r_s', axis(this.r0), yA + 13 * dpr);
+        c.fillText('10 rₛ', axis(this.r0), yA + 13 * dpr);
         draw(axis, yA, x0 + pad, y0 + ph - pad);
       };
       const clock = (x, y, ang, col) => {
@@ -312,7 +312,7 @@
         c.strokeStyle = '#111'; c.lineWidth = 1.6 * dpr; c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.sin(ang) * 7 * dpr, y - Math.cos(ang) * 7 * dpr); c.stroke();
       };
       const lines = (x, yb, arr) => { c.textAlign = 'left'; arr.slice().reverse().forEach(([t, col], i) => { c.fillStyle = col; c.fillText(t, x, yb - i * 15 * dpr); }); };
-      // far observer: coordinate time runs 0..~140 r_s/c over the loop
+      // far observer: coordinate time runs 0..~140 rₛ/c over the loop
       const tFar = Math.pow(tt / loop, 1.6) * 140;
       const far = this.farAt(tFar);
       panel(0, 0, 'Seen from far away', (axis, yA, xL, yB) => {
@@ -320,13 +320,13 @@
         c.globalAlpha = 0.2 + 0.8 * red;
         clock(axis(far.r), yA - 24 * dpr, far.tau * 0.6, `rgb(255,${Math.round(255 * red)},${Math.round(255 * red * red)})`);
         c.globalAlpha = 1;
-        lines(xL, yB, [[`far-away time t = ${tFar.toFixed(1)} r_s/c`, fg], [`falling clock shows τ = ${far.tau.toFixed(2)}`, fg], [far.r < 1.01 ? 'appears frozen at the horizon, fading red' : 'ticks slower, light reddens', muted]]);
+        lines(xL, yB, [[`far-away time t = ${tFar.toFixed(1)} rₛ/c`, fg], [`falling clock shows τ = ${far.tau.toFixed(2)}`, fg], [far.r < 1.01 ? 'appears frozen at the horizon, fading red' : 'ticks slower, light reddens', muted]]);
       });
       const tauNow = Math.min(this.tauS, (tt / loop) * this.tauS * 1.12);
       const rOwn = this.ownAt(tauNow);
       panel(stacked ? 0 : pw, stacked ? ph : 0, 'The clock\'s own time', (axis, yA, xL, yB) => {
         if (tauNow < this.tauS) clock(axis(rOwn), yA - 24 * dpr, tauNow * 0.6, '#ffffff');
-        lines(xL, yB, [[`own time τ = ${tauNow.toFixed(2)} r_s/c (${fmtS(tauNow)})`, fg], [`crosses horizon at τ = ${this.tauH.toFixed(2)}`, fg],
+        lines(xL, yB, [[`own time τ = ${tauNow.toFixed(2)} rₛ/c (${fmtS(tauNow)})`, fg], [`crosses horizon at τ = ${this.tauH.toFixed(2)}`, fg],
           [tauNow >= this.tauS - 1e-6 ? `reaches r = 0 at τ = ${this.tauS.toFixed(2)} (${fmtS(this.tauS)})` : (rOwn < 1 ? 'inside: every path leads to r = 0' : 'nothing special happens at the horizon'), muted]]);
       });
     }

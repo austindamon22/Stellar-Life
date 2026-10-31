@@ -47,6 +47,19 @@
     }
     return x.toLocaleString('en-US', { maximumSignificantDigits: n });
   }
+  // Keep SVG text legible when a fixed-viewBox chart is shrunk on a phone: at least `px` CSS pixels.
+  function minFont(svg, px) {
+    if (!svg || !svg.viewBox || !svg.viewBox.baseVal) return;
+    const vw = svg.viewBox.baseVal.width, cw = svg.clientWidth;
+    if (!vw || !cw || cw >= vw) return;
+    const need = (px || 9.5) * vw / cw;
+    // Read the size actually used (a stylesheet rule can override the attribute) and raise it inline.
+    svg.querySelectorAll('text, tspan').forEach((t) => {
+      const f = parseFloat(getComputedStyle(t).fontSize) || parseFloat(t.getAttribute('font-size') || '12');
+      const n = t.tagName === 'tspan' ? need * 0.95 : need;
+      if (f < n) { t.setAttribute('font-size', n.toFixed(1)); t.style.fontSize = n.toFixed(1) + 'px'; }
+    });
+  }
   function years(y) {
     if (typeof y === 'string') return y;
     if (y <= 0) return '0 years';
@@ -60,7 +73,7 @@
     if (y < 1e12) return sig(y / 1e9, 2) + ' billion years';
     return sig(y / 1e12, 2) + ' trillion years';
   }
-  const Fmt = { sig, years };
+  const Fmt = { minFont, sig, years };
 
   /* ---------- Cutaway layer sets ----------
    * r = outer radius as a fraction of the drawn star (NOT to scale; real
@@ -172,12 +185,13 @@
       view: () => ({ mode: 'cloud' }),
       fusion: () => 'None',
       support: { kind: 'thermal', label: 'Gas pressure and turbulence balance gravity' },
-      duration: () => 'millions of years, until triggered',
+      duration: () => 'millions of years, until parts collapse',
       temp: () => '~10–20 K',
       body: () => `
         <p>Stars form inside cold, dense clouds of molecular hydrogen (H₂) and dust, at about 10 K. Cold gas has low pressure, so gravity has an easier job.</p>
-        <p><b>What tips it over.</b> The main trigger is a <dfn data-g="shock">shock wave</dfn>: the expanding blast from a nearby supernova, a collision between clouds, or a spiral-arm density wave. The shock compresses part of the cloud until its own gravity wins.</p>
-        <p><b>Radiation is secondary.</b> X-rays, UV and gamma rays from hot stars and supernovae mostly heat and ionize gas, which <i>resists</i> collapse. They can squeeze the edge of a cloud (radiation-driven implosion), but the shock does most of the work.</p>`,
+        <p><b>What tips it over.</b> Collapse can be triggered by a <dfn data-g="shock">shock wave</dfn>: the expanding blast from a nearby supernova, a collision between clouds, or a spiral-arm density wave. The shock compresses part of the cloud until its own gravity wins.</p>
+        <p class="muted"><b>Current research:</b> most star formation is thought to come from supersonic turbulence plus the cloud's own self-gravity. Turbulence makes dense filaments and clumps that collapse on their own; triggering by outside shocks accounts for only a minority of stars.</p>
+        <p><b>Radiation is secondary.</b> X-rays, UV and gamma rays from hot stars and supernovae mostly heat and ionize gas, which <i>resists</i> collapse. They can squeeze the edge of a cloud (radiation-driven implosion), but compression (from shocks or turbulence) does most of the work.</p>`,
       facts: (M) => [['Typical density', '10²–10⁶ molecules/cm³'], ['Composition', '~74% H, ~25% He, ~1–2% heavier (by mass)']],
       myth: 'Gamma rays from a supernova do not "ignite" a cloud. Radiation heats gas, and hot gas pushes back against gravity.',
     },
@@ -309,7 +323,7 @@
       view: () => ({ mode: 'cutaway', flash: true }),
       fusion: () => 'Runaway triple-alpha in the core',
       support: { kind: 'edeg', label: 'Electron degeneracy, then thermal pressure' },
-      duration: () => 'minutes to hours',
+      duration: () => 'peak runaway lasts hours',
       temp: () => 'core ~10⁸ K',
       body: () => `
         <p>The degenerate core reaches ~10⁸ K and helium ignites. In normal gas, heating raises pressure, the core expands and cools, and fusion slows down. <b>Degenerate gas does not expand when heated</b>, so fusion speeds up, which heats it further: a runaway.</p>
@@ -403,7 +417,7 @@
       myth: 'A nova is not a small supernova. Only a surface layer explodes.',
     },
     sn1a: {
-      tr: ['Hydrogen accumulates on the white dwarf until it passes 1.4 M☉, then carbon detonates (single-degenerate model).', 'Still debated. Many Type Ia supernovae may come from two white dwarfs merging (double-degenerate model). Both explain the missing hydrogen lines.'],
+      tr: ['Hydrogen accumulates on the white dwarf until it nears ~1.38 M☉, just short of the Chandrasekhar limit; carbon then ignites in a runaway and the star explodes (single-degenerate model).', 'Still debated. Many Type Ia supernovae may come from two white dwarfs merging (double-degenerate model). Both explain the missing hydrogen lines.'],
       title: 'Type Ia supernova (binary)', phase: 'Binary outcomes',
       view: () => ({ mode: 'binary', kind: 'sn1a' }),
       fusion: () => 'Runaway carbon fusion through the whole white dwarf',
@@ -436,7 +450,7 @@
       view: () => ({ mode: 'cutaway' }),
       fusion: () => 'C, Ne, O, Si burning in nested shells',
       support: { kind: 'fusion', label: 'Fusion, ever faster' },
-      duration: () => 'C ~500 yr → Si ~1 day',
+      duration: (M) => { const t = (e) => window.Evo ? window.Evo.burnTime(e, M) : null, c = t('C'), si = t('Si'); return c ? `C ~${Fmt.sig(c, 2)} yr → Si ~${si * 365.25 < 2 ? Fmt.sig(si * 365.25 * 24, 2) + ' hours' : Fmt.sig(si * 365.25, 2) + ' days'}` : 'C centuries → Si days'; },
       temp: () => 'core 10⁹ K and rising',
       body: () => `
         <p>Each time a fuel runs out, the core contracts, heats, and ignites the next one. The result is an onion of shells, each <dfn data-g="burning">burning</dfn> at its base.</p>
@@ -471,7 +485,7 @@
       temp: () => '',
       body: (M) => `
         <p>The rebound shock stalls, then is re-energized by neutrinos from the hot core. It blows off the outer layers at ~10,000 km/s.</p>
-        <p><b>Energy budget.</b> ~99% of the energy leaves as neutrinos. Only ~1% becomes motion and ~0.01% light, and that light still outshines a galaxy. Neutrinos from SN 1987A were detected on Earth hours before the light arrived.</p>
+        <p><b>Energy budget.</b> ~99% of the energy leaves as neutrinos. Only ~1% becomes motion and ~0.01% light, and that light can rival a whole galaxy. Neutrinos from SN 1987A were detected on Earth hours before the light arrived.</p>
         <p>The shock fuses fresh elements as it passes through the shells, and scatters everything the star made over its life.</p>
         <p><b>Spectrum test:</b> hydrogen lines present (the envelope survived).</p>
         ${M > L.blackHole ? '<p>Above ~25 M☉, some stars may collapse straight to a black hole with a weak explosion or none (a "failed supernova").</p>' : ''}`,
@@ -490,7 +504,7 @@
         <p>About 1.4 M☉ packed into a sphere ~12 km in radius (~24 km across), about the size of a city. Density is around that of an atomic nucleus: a teaspoon would weigh ~10⁹ tonnes.</p>
         <p><b>What holds it up.</b> Neutron degeneracy pressure plus the repulsive core of the strong force. Above ~2–2.3 M☉ (the <dfn data-g="tov">TOV limit</dfn>, not precisely known) nothing can stop collapse to a black hole.</p>
         <p><b>Spin and field.</b> The collapse conserves angular momentum and magnetic flux, so the star spins many times a second with a field ~10⁸–10¹¹ T (10¹²–10¹⁵ gauss).</p>`,
-      facts: () => { const M = P.NS_MASS * P.K.Msun, R = P.NS_RADIUS_KM * 1e3, rs = P.schwarzschildRadius(M); return [['Escape velocity', Fmt.sig(P.escapeVelocity(M, R) / P.K.c, 2) + ' c'], ['r_s / R (compactness)', Fmt.sig(rs / R, 2)], ['Surface gravity', Fmt.sig(P.surfaceGravity(M, R) / 9.81, 2) + ' g']]; },
+      facts: () => { const M = P.NS_MASS * P.K.Msun, R = P.NS_RADIUS_KM * 1e3, rs = P.schwarzschildRadius(M); return [['Escape velocity', Fmt.sig(P.escapeVelocity(M, R) / P.K.c, 2) + ' c'], ['rₛ / R (compactness)', Fmt.sig(rs / R, 2)], ['Surface gravity', Fmt.sig(P.surfaceGravity(M, R) / 9.81, 2) + ' g']]; },
       myth: 'A neutron star is not "a pulsar later." Pulsar describes how we see some neutron stars.',
     },
     pulsar: {
@@ -541,14 +555,14 @@
       view: (M) => ({ mode: 'bh' }),
       fusion: () => 'None',
       support: { kind: 'none', label: 'Nothing can resist gravity' },
-      duration: () => 'effectively forever (~10⁶⁷ yr to evaporate)',
+      duration: (M) => { const m = P.blackHoleMass(M), e = Math.floor(Math.log10(2e67 * m ** 3)), sup = String(e).replace(/\d/g, (d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]); return `effectively forever (~10${sup} yr to evaporate a ${Fmt.sig(m, 2)} M☉ hole; Hawking time ≈ 2×10⁶⁷ yr × (M/M☉)³)`; },
       temp: () => '',
       body: (M) => {
         const m = P.blackHoleMass(M), rs = P.schwarzschildRadius(m * P.K.Msun) / 1e3;
         return `
         <p>If the remnant core is above the TOV limit, nothing known can stop it. It collapses to a <dfn data-g="singularity">singularity</dfn> (where general relativity breaks down) surrounded by an <dfn data-g="horizon">event horizon</dfn>.</p>
-        <p><b>Schwarzschild radius</b> r_s = 2GM/c². For a ~${m.toFixed(0)} M☉ black hole, r_s ≈ ${rs.toFixed(0)} km. Inside it, every path into the future leads inward. Even light cannot escape.</p>
-        <p>Key distances for a non-spinning hole: photon sphere at 1.5 r_s (light can orbit), innermost stable orbit at 3 r_s (inner edge of accretion disks).</p>
+        <p><b>Schwarzschild radius</b> rₛ = 2GM/c². For a ~${m.toFixed(0)} M☉ black hole, rₛ ≈ ${rs.toFixed(0)} km. Inside it, every path into the future leads inward. Even light cannot escape.</p>
+        <p>Key distances for a non-spinning hole: photon sphere at 1.5 rₛ (light can orbit), innermost stable orbit at 3 rₛ (inner edge of accretion disks).</p>
         <p><b><dfn data-g="tidal">Tidal forces</dfn>.</b> Gravity pulls harder on your feet than your head if you fall in feet-first, stretching you (spaghettification). For a ~10 M☉ black hole this kills long before the horizon; for a supermassive one you could cross the horizon without noticing.</p>
         <p>An isolated black hole is dark. We detect them by their effect on nearby matter, by gravitational lensing, and by gravitational waves.</p>
         <p><a href="#blackhole" class="tab-link">See what one looks like in the Black hole camera tab →</a></p>`;
@@ -682,7 +696,7 @@
 
   /* ---------- Quiz ---------- */
   const QUIZ = [
-    { q: 'What starts most episodes of star formation in a molecular cloud?', a: ['Gamma rays from a supernova', 'A shock wave compressing the gas', 'The cloud heating up', 'Magnetic fields'], c: 1, e: 'Shocks compress gas past the Jeans mass. Radiation mostly heats gas, which resists collapse.' },
+    { q: 'What can trigger collapse in a molecular cloud?', a: ['Gamma rays from a supernova', 'A shock wave compressing the gas', 'The cloud heating up', 'Magnetic fields'], c: 1, e: 'Shocks compress gas past the Jeans mass. Radiation mostly heats gas, which resists collapse. (Most star formation is thought to come from turbulence plus self-gravity; outside triggers are a minority.)' },
     { q: 'A protostar shines because of…', a: ['Hydrogen fusion', 'Helium fusion', 'Gravitational contraction', 'Radioactive decay'], c: 2, e: 'Kelvin–Helmholtz contraction. Fusion starts at the zero-age main sequence.' },
     { q: 'Why do planets orbit in nearly one plane?', a: ['Gravity from the galaxy', 'They formed in a flattened, spinning disk', 'The Sun pulled them into line', 'Collisions'], c: 1, e: 'Conservation of angular momentum flattens the collapsing cloud into a disk (nebular hypothesis).' },
     { q: 'Which process dominates core fusion in a 10 M☉ star?', a: ['p-p chain', 'CNO cycle', 'Triple-alpha', 'r-process'], c: 1, e: 'Above ~1.3 M☉ the core is hot enough for the steeply temperature-dependent CNO cycle.' },
@@ -694,8 +708,8 @@
     { q: 'A pulsar is…', a: ['A stage after a neutron star', 'A neutron star whose beam sweeps across Earth', 'A pulsating red giant', 'A black hole'], c: 1, e: 'Same object; it depends on our viewing angle.' },
     { q: 'Which supernova leaves no remnant?', a: ['Type II', 'Type Ia', 'Both', 'Neither'], c: 1, e: 'Type Ia destroys the white dwarf completely.' },
     { q: 'Spectrum test: hydrogen lines are present in…', a: ['Type Ia', 'Type II', 'Both', 'Neither'], c: 1, e: 'Type II stars keep their hydrogen envelope. White dwarfs have none.' },
-    { q: 'Schwarzschild radius of a 10 M☉ black hole?', a: ['~3 km', '~30 km', '~300 km', '~3,000 km'], c: 1, e: 'r_s ≈ 2.95 km per solar mass, so ~29.5 km.' },
-    { q: 'A clock near a neutron star, compared with a distant clock, runs…', a: ['Faster', 'Slower', 'The same', 'Backward'], c: 1, e: 'dτ/dt = √(1 − r_s/r) < 1. At a neutron star surface it is ~0.8.' },
+    { q: 'Schwarzschild radius of a 10 M☉ black hole?', a: ['~3 km', '~30 km', '~300 km', '~3,000 km'], c: 1, e: 'rₛ ≈ 2.95 km per solar mass, so ~29.5 km.' },
+    { q: 'A clock near a neutron star, compared with a distant clock, runs…', a: ['Faster', 'Slower', 'The same', 'Backward'], c: 1, e: 'dτ/dt = √(1 − rₛ/r) < 1. At a neutron star surface it is ~0.8.' },
     { q: 'Where does most gold come from?', a: ['Main-sequence fusion', 'AGB stars', 'Neutron star mergers (r-process)', 'Type Ia supernovae'], c: 2, e: 'Rapid neutron capture in neutron-rich merger debris, confirmed by the GW170817 kilonova.' },
     { q: 'One parsec is the distance at which a star shows a parallax of…', a: ['1 degree', '1 arcminute', '1 arcsecond', '1 milliarcsecond'], c: 2, e: 'Parallax of one arcsecond. 1 pc = 3.26 light-years. d (pc) = 1 / p (arcsec).' },
     { q: 'A radar pulse returns from the Moon after 2.5 s. The distance is about…', a: ['750,000 km', '375,000 km', '190,000 km', '3 million km'], c: 1, e: 'd = c t / 2 = 3 × 10⁵ km/s × 2.5 s / 2 ≈ 375,000 km.' },
@@ -706,14 +720,14 @@
     { q: 'Herbig-Haro objects are…', a: ['Dead stars', 'Glowing gas hit by jets from protostars', 'Planetary nebulae', 'Galaxies'], c: 1, e: 'Polar jets from young stars slam into surrounding gas.' },
     { q: 'A cluster with many red giants and no hot blue main-sequence stars is…', a: ['Young', 'Old', 'Still forming', 'Impossible'], c: 1, e: 'Massive stars have already died; the turnoff has moved down the main sequence.' },
     { q: 'Blue stragglers are explained by…', a: ['Late star formation', 'Mass transfer or mergers between stars', 'Dust', 'Errors in measurement'], c: 1, e: 'In crowded globular clusters, stars gain mass from partners or collide, looking younger than the cluster.' },
-    { q: 'How long does a Sun-like star spend fusing helium in its core (textbook)?', a: ['11 billion years', '1.3 billion years', '100 million years', '20 million years'], c: 2, e: 'About 100 million years at ~50 L☉ and ~10× its original size.' },
+    { q: 'How long does a Sun-like star spend fusing helium in its core (the usual round number)?', a: ['11 billion years', '1.3 billion years', '100 million years', '20 million years'], c: 2, e: 'About 100 million years at ~50 L☉ and ~10× its original size.' },
     { q: 'Why does a Type Ia supernova leave no hydrogen lines?', a: ['Hydrogen is destroyed by the blast', 'White dwarfs are made of carbon and oxygen, not hydrogen', 'It is too far away', 'Hydrogen lines are blocked by dust'], c: 1, e: 'The exploding star is a C/O white dwarf. Type II stars keep their hydrogen envelope.' },
     { q: 'Mercury\'s orbit advances 43″ per century more than Newton predicts. This is explained by…', a: ['An unseen planet', 'General relativity', 'Solar wind', 'Measurement error'], c: 1, e: 'Spacetime curvature near the Sun. GR predicts exactly the missing 43″.' },
     { q: 'GPS satellite clocks, before correction, run…', a: ['Slower by ~38 μs/day', 'Faster by ~38 μs/day', 'Exactly on time', 'Faster by ~38 s/day'], c: 1, e: '+45 μs/day from weaker gravity, −7 μs/day from speed: net ~38 μs/day fast.' },
     { q: 'A 1 M☉ white dwarf and the Sun have the same mass. Far from both, their gravity is…', a: ['Stronger for the white dwarf', 'Identical', 'Stronger for the Sun', 'Zero for the white dwarf'], c: 1, e: 'Outside, only mass matters (Birkhoff\'s theorem). The white dwarf\'s well just goes deeper because its surface is smaller.' },
     { q: 'Short gamma-ray bursts (under ~2 s) come mainly from…', a: ['Collapsing massive stars', 'Neutron star mergers', 'Novae', 'Solar flares'], c: 1, e: 'Merging neutron stars (or a neutron star and a black hole). Long bursts come from collapsars.' },
-    { q: 'The dark "shadow" in the EHT image of M87* is…', a: ['The event horizon itself', 'About 2.6 times wider than the event horizon', 'Smaller than the event horizon', 'A cloud of dust in front of the hole'], c: 1, e: 'Light aimed within b = (3√3/2) r_s ≈ 2.6 r_s falls in, so the hole blocks a patch of sky much larger than its horizon.' },
-    { q: 'Why does an accretion disk around a non-spinning black hole have a hole in the middle at ~3 r_s?', a: ['The gas there is too hot to glow', 'No stable circular orbits exist inside 3 r_s, so gas plunges in', 'Radiation pressure pushes the gas out', 'The event horizon is at 3 r_s'], c: 1, e: 'Inside the innermost stable circular orbit (ISCO, 3 r_s) orbits are unstable; gas spirals straight in.' },
+    { q: 'The dark "shadow" in the EHT image of M87* is…', a: ['The event horizon itself', 'About 2.6 times wider than the event horizon', 'Smaller than the event horizon', 'A cloud of dust in front of the hole'], c: 1, e: 'Light aimed within b = (3√3/2) rₛ ≈ 2.6 rₛ falls in, so the hole blocks a patch of sky much larger than its horizon.' },
+    { q: 'Why does an accretion disk around a non-spinning black hole have a hole in the middle at ~3 rₛ?', a: ['The gas there is too hot to glow', 'No stable circular orbits exist inside 3 rₛ, so gas plunges in', 'Radiation pressure pushes the gas out', 'The event horizon is at 3 rₛ'], c: 1, e: 'Inside the innermost stable circular orbit (ISCO, 3 rₛ) orbits are unstable; gas spirals straight in.' },
     { q: 'In a picture of a black hole with its disk seen nearly edge-on, the bright arch over the top of the hole is…', a: ['A jet', 'The near side of the disk', 'The far side of the disk, its light bent over the hole', 'The photon sphere glowing'], c: 2, e: 'Light from the part of the disk behind the hole curves up and over it on its way to you (gravitational lensing).' },
     { q: 'One side of a black hole\'s accretion disk looks much brighter mainly because…', a: ['That side is closer to us', 'Gas on that side moves toward us, so it is Doppler-boosted', 'That side is hotter', 'Dust blocks the other side'], c: 1, e: 'Relativistic beaming: brightness scales roughly as g⁴, and g > 1 for gas moving toward you at a sizable fraction of c.' },
   ];
@@ -727,7 +741,7 @@
     hydro: ['Hydrostatic equilibrium', 'Outward pressure gradient exactly balancing inward gravity at every depth.'],
     shell: ['Shell burning', 'Fusion in a thin layer around an inert core.'],
     metalpoor: ['Metal-poor / metal-rich', 'In astronomy any element heavier than helium is a "metal". Old stars formed before many supernovae, so they are metal-poor.'],
-    globular: ['Globular cluster', 'Dense, spherical, very old cluster of ~10⁵–10⁶ stars in a galaxy\'s halo.'],
+    globular: ['Globular cluster', 'Dense, spherical, very old cluster of ~10⁴–10⁶ stars in a galaxy\'s halo.'],
     open: ['Open cluster', 'Loose group of young stars in a galaxy\'s disk, born from the same cloud.'],
     strip: ['Instability strip', 'Narrow region of the H-R diagram where stars pulsate: RR Lyrae, Cepheids.'],
     sprocess: ['s-process', 'Slow neutron capture (slower than beta decay). Happens in AGB stars. Makes Sr, Ba, Pb.'],
@@ -736,7 +750,7 @@
     tov: ['TOV limit', 'Tolman–Oppenheimer–Volkoff limit, ~2–2.3 M☉. Maximum neutron-star mass.'],
     binding: ['Binding energy per nucleon', 'Energy needed to pull a nucleus apart, divided by its nucleon count. Peaks near iron and nickel.'],
     singularity: ['Singularity', 'Where general relativity predicts infinite density. Signals the theory breaking down, not necessarily a physical point.'],
-    horizon: ['Event horizon', 'Boundary at r_s from which nothing, not even light, can escape.'],
+    horizon: ['Event horizon', 'Boundary at rₛ from which nothing, not even light, can escape.'],
     proper: ['Proper time', 'The time measured by a clock carried along at a location. Differs from a distant observer\'s time in strong gravity.'],
     degeneracy: ['Degeneracy pressure', 'Quantum pressure from the Pauli exclusion principle: identical fermions cannot share a state. Does not depend on temperature.'],
     zams: ['ZAMS', 'Zero-age main sequence: the moment core hydrogen fusion becomes the star\'s energy source.'],
@@ -747,9 +761,9 @@
     ttauri: ['T Tauri star', 'A young (under ~10 million years), low-mass star still contracting toward the main sequence, often variable and surrounded by a disk.'],
     brown: ['Brown dwarf', 'An object of ~13–80 Jupiter masses (below ~0.08 M☉): too light to fuse ordinary hydrogen, so it slowly cools. Between a planet and a star.'],
     tidal: ['Tidal force', 'The difference in gravity across an object. Near a stellar black hole it stretches anything falling in (spaghettification).'],
-    photonsphere: ['Photon sphere', 'The radius (1.5 r_s for a non-spinning black hole) where light can travel in a circle around the hole. Unstable: a nudge sends it in or out.'],
-    isco: ['ISCO', 'Innermost stable circular orbit: 3 r_s for a non-spinning black hole. Closer in, no orbit is stable, so it marks the inner edge of the accretion disk.'],
-    bhshadow: ['Black hole shadow', 'The dark patch a black hole casts on the light behind it. Radius ≈ 2.6 r_s, larger than the event horizon because light is bent in.'],
+    photonsphere: ['Photon sphere', 'The radius (1.5 rₛ for a non-spinning black hole) where light can travel in a circle around the hole. Unstable: a nudge sends it in or out.'],
+    isco: ['ISCO', 'Innermost stable circular orbit: 3 rₛ for a non-spinning black hole. Closer in, no orbit is stable, so it marks the inner edge of the accretion disk.'],
+    bhshadow: ['Black hole shadow', 'The dark patch a black hole casts on the light behind it. Radius ≈ 2.6 rₛ, larger than the event horizon because light is bent in.'],
     beaming: ['Doppler beaming', 'Light from a source moving toward you at high speed is blueshifted and concentrated forward, so it looks much brighter (∝ g⁴).'],
     burning: ['Burning / ash', 'Astronomer slang: "burning" means fusion, "ash" means its products (helium is hydrogen\'s ash).'],
   };

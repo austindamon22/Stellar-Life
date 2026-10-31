@@ -2,7 +2,7 @@
  * "Black hole camera": a real-time ray tracer for a non-spinning
  * (Schwarzschild) black hole with a thin accretion disk.
  *
- * Physics (units: r_s = 1, c = 1, so M = 1/2):
+ * Physics (units: rₛ = 1, c = 1, so M = 1/2):
  *  - Photons are traced backwards from the camera. Each null geodesic
  *    stays in a plane, and its shape obeys u'' + u = (3/2) u^2 (u = 1/r).
  *    In Cartesian form that is x'' = -(3/2) h^2 x / r^5 with h = |x × x'|,
@@ -11,7 +11,7 @@
  *    the radial direction maps to impact parameter b = r0 sin α / √(1 − 1/r0).
  *    The integrator's starting direction is chosen to give exactly that b,
  *    so the shadow edge lands at sin α = (3√3/2) √(1 − 1/r0) / r0.
- *  - Disk: thin, Keplerian, inner edge at the ISCO (3 r_s) by default.
+ *  - Disk: thin, Keplerian, inner edge at the ISCO (3 rₛ) by default.
  *    Temperature follows Shakura–Sunyaev with a zero-torque inner edge,
  *    T ∝ r^(−3/4) (1 − √(r_in/r))^(1/4).
  *  - Frequency shift g = ν_obs/ν_emit = √(1 − 1.5/r) / [(1 − Ω L_y) √(1 − 1/r0)],
@@ -203,15 +203,15 @@ void main(){
     return { p, u };
   }
 
-  /* Exact angular radius of the shadow for a static observer at r0 (units r_s) */
-  const B_CRIT = 1.5 * Math.sqrt(3);                       // 2.598 r_s
+  /* Exact angular radius of the shadow for a static observer at r0 (units rₛ) */
+  const B_CRIT = 1.5 * Math.sqrt(3);                       // 2.598 rₛ
   const shadowAngle = (r0) => Math.asin(Math.min(1, B_CRIT * Math.sqrt(1 - 1 / r0) / r0));
 
   class BlackHoleView {
     constructor(canvas, overlay) {
       this.c = canvas; this.ov = overlay;
       this.s = { incl: 80, az: -90, dist: 26, rin: 3, rout: 12, dopp: true, grav: true, sky: false, disk: true, eht: false, labels: false, spin: true, hl: 0 };
-      this.scale = 0.75; this.t = 0; this.running = false; this.dirty = true; this.dragging = false;
+      this.scale = (matchMedia('(pointer: coarse)').matches || innerWidth < 700) ? 0.35 : 0.5; this.t = 0; this.running = false; this.dirty = true; this.dragging = false;
       const gl = canvas.getContext('webgl', { antialias: false, preserveDrawingBuffer: false, alpha: false });
       if (!gl) { this.ok = false; return; }
       this.gl = gl;
@@ -330,7 +330,7 @@ void main(){
       if (this.last && !once && this.prevDrew && !this.dragging) {
         const dt = now - this.last;
         this.avg = this.avg ? this.avg * 0.9 + dt * 0.1 : dt;
-        if (this.avg > 45 && this.scale > 0.3) { this.scale = Math.max(0.3, this.scale * 0.9); this.avg = 30; }
+        if (this.avg > 45 && this.scale > 0.25) { this.scale = Math.max(0.25, this.scale * (this.avg > 100 ? 0.5 : 0.6)); this.avg = 30; }
         else if (this.avg < 20 && this.scale < 1) { this.scale = Math.min(1, this.scale * 1.05); this.avg = 24; }
       }
       this.last = now;
@@ -367,9 +367,9 @@ void main(){
   /* ---------- Numbers for real black holes ---------- */
   const PC = 3.0857e16, MUAS = Math.PI / 180 / 3600 / 1e6;
   const HOLES = {
-    cyg: { name: 'Cygnus X-1', M: 21.2, d: 2.22e3 * PC, note: 'A stellar-mass black hole eating a blue supergiant companion, 2.2 kpc away (Miller-Jones et al. 2021).' },
-    sgr: { name: 'Sagittarius A*', M: 4.3e6, d: 8.18e3 * PC, note: 'The black hole at the centre of the Milky Way. Imaged by the EHT in 2022.' },
-    m87: { name: 'M87*', M: 6.5e9, d: 16.8e6 * PC, note: 'The giant black hole in galaxy M87. The first black hole ever imaged (EHT, 2019).' },
+    cyg: { name: 'Cygnus X-1', M: 21.2, d: 2.22e3 * PC, note: 'A stellar-mass black hole eating a blue supergiant companion, 2.2 kpc away (Miller-Jones et al. 2021).', spinNote: ' (if non-spinning; Cyg X-1 spins near maximum, so its real inner edge is much smaller)' },
+    sgr: { name: 'Sagittarius A*', M: 4.3e6, d: 8.28e3 * PC, ring: 51.8, note: 'The black hole at the centre of the Milky Way: 4.3 million M☉ at 8.28 kpc (GRAVITY 2022). Imaged by the EHT in 2022.' },
+    m87: { name: 'M87*', M: 6.5e9, d: 16.8e6 * PC, ring: 42, note: 'The giant black hole in galaxy M87. The first black hole ever imaged (EHT, 2019).', spinNote: ' (if non-spinning; M87*’s spin is uncertain but likely high, which would shrink the inner edge)' },
   };
   function numbers(key) {
     const P = global.Phys.K, h = HOLES[key], F = global.Data.Fmt;
@@ -386,7 +386,8 @@ void main(){
         ['Event horizon radius rₛ', len(rs)],
         ['Shadow diameter (2 × 2.6 rₛ)', len(shadowD)],
         ['Shadow size seen from Earth', theta >= 1 ? F.sig(theta, 2) + ' μas' : F.sig(theta * 1e3, 2) + ' nano-arcsec'],
-        ['Orbit at inner edge (3 rₛ)', time(Tisco)],
+        ...(h.ring ? [['EHT ring measured', h.ring + ' μas (bright ring just outside the shadow)']] : []),
+        ['Orbit at inner edge (3 rₛ)', time(Tisco) + (h.spinNote || '')],
         ['Tidal stretch on you at the horizon', F.sig(tidal / 9.81, 2) + ' g' + (tidal / 9.81 > 100 ? ' (spaghettified)' : ' (you’d barely notice)')],
       ],
     };
@@ -438,7 +439,7 @@ void main(){
     const hlBox = $('#bhHl');
     HIGHLIGHTS.forEach(([v, t]) => {
       const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.dataset.hl = v;
-      b.addEventListener('click', () => { view.feat = null; view.set({ hl: +v, eht: false }); sync(); });
+      b.addEventListener('click', () => { view.feat = null; view.set({ hl: +v, eht: false, disk: true, sky: false }); sync(); });
       hlBox.appendChild(b);
     });
     const slider = (id, key, fn) => $(id).addEventListener('input', (e) => { view.set({ [key]: fn(+e.target.value) }); sync(); });
