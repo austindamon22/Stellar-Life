@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sources &amp; simplifications · Stellar Life</title>
+<meta name="description" content="Where every number in Stellar Life comes from, and what the models simplify.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="shared/style.css">
+</head>
+<body>
+<header class="masthead">
+<nav class="site-nav wrap" aria-label="Site">
+  <a class="site-brand" href="index.html">Stellar Life</a>
+  <div class="site-links">
+    <a href="stars/index.html">Stars</a>
+    <a href="galaxies/index.html">Galaxies &amp; cosmology</a>
+    <a href="solar-system/earth/index.html">Earth</a>
+    <a href="tools/index.html">Tools</a>
+    <a href="missions/index.html">Missions</a>
+    <a href="sources.html" aria-current="page">Sources</a>
+  </div>
+</nav>
+  <div class="wrap masthead-inner">
+    <h1>Sources &amp; simplifications</h1>
+    <p class="tagline">Where the numbers come from, and what the models leave out.</p>
+  </div>
+</header>
+
+<main class="wrap src">
+  <section>
+    <h2>Constants</h2>
+    <p>CODATA 2018 (G, c, σ, k<sub>B</sub>) and IAU 2015 nominal solar values: M☉ = 1.98847 × 10<sup>30</sup> kg, R☉ = 6.957 × 10<sup>8</sup> m, L☉ = 3.828 × 10<sup>26</sup> W, T☉ = 5,772 K.</p>
+  </section>
+
+  <section>
+    <h2>Stars</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Topic</th><th>Source or relation</th></tr></thead>
+      <tbody>
+        <tr><td>Main-sequence lifetimes above 1 M☉</td><td>Interpolated from Schaller et al. (1992) model grids; red dwarfs from Laughlin, Bodenheimer &amp; Adams (1997)</td></tr>
+        <tr><td>White dwarf initial–final mass</td><td>Kalirai et al. (2008)</td></tr>
+        <tr><td>White dwarf radius</td><td>Nauenberg (1972)</td></tr>
+        <tr><td>AGB luminosity</td><td>Paczyński (1970) core-mass–luminosity relation</td></tr>
+        <tr><td>Advanced burning times</td><td>Woosley, Heger &amp; Weaver (2002), 15–25 M☉ models, interpolated in mass</td></tr>
+        <tr><td>True-scale interiors</td><td>Sun: core ~0.25 R, convection-zone base 0.713 R (standard solar model). Red-giant helium core ~0.03 R☉; AGB carbon-oxygen core ~0.02 R☉; pre-supernova shells after Woosley, Heger &amp; Weaver (2002). Order-of-magnitude sizes</td></tr>
+        <tr><td>Reaction energies, binding energies</td><td>Atomic Mass Evaluation (AME) nuclear data</td></tr>
+        <tr><td>Cepheid law</td><td>M<sub>V</sub> = −2.43 (log P − 1) − 4.05 (Benedict et al. 2007)</td></tr>
+        <tr><td>Bolometric corrections</td><td>BC<sub>V</sub> by spectral type from T<sub>eff</sub> (Flower 1996; Pecaut &amp; Mamajek 2013); L<sub>bol</sub> = 10<sup>−0.4(M<sub>V</sub> + BC − 4.74)</sup> L☉</td></tr>
+        <tr><td>Black hole evaporation</td><td>Hawking lifetime ≈ 2 × 10<sup>67</sup> yr × (M/M☉)<sup>3</sup> (Page 1976)</td></tr>
+        <tr><td>White dwarf cooling</td><td>Mestel law, L ∝ M t<sup>−1.4</sup></td></tr>
+        <tr><td>Spacetime</td><td>Schwarzschild exterior; uniform-density interior; radial free fall</td></tr>
+        <tr><td>Light bending, Mercury</td><td>α = 4GM/(c²b); Δφ = 6πGM / (c²a(1 − e²))</td></tr>
+        <tr><td>Gravitational-wave chirp</td><td>Leading-order f(τ) = (1/π)(5/256τ)<sup>3/8</sup>(GM<sub>c</sub>/c³)<sup>−5/8</sup></td></tr>
+        <tr><td>Black hole camera</td><td>Exact Schwarzschild light paths (u″ + u = 3u²/2); thin disk T ∝ r<sup>−3/4</sup>(1 − √(r<sub>in</sub>/r))<sup>1/4</sup> (Shakura &amp; Sunyaev 1973); brightness ∝ g⁴. Sgr A* 4.3 × 10<sup>6</sup> M☉ at 8.28 kpc (GRAVITY 2022); M87* 6.5 × 10<sup>9</sup> M☉ (EHT 2019); Cygnus X-1 21.2 M☉ at 2.22 kpc (Miller-Jones et al. 2021)</td></tr>
+        <tr><td>Kilonova</td><td>GW170817 / AT2017gfo</td></tr>
+      </tbody></table></div>
+  </section>
+
+  <section>
+    <h2>Galaxies &amp; cosmology</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Topic</th><th>Source or relation</th></tr></thead>
+      <tbody>
+        <tr><td>Milky Way geometry</td><td>Sun at 8.2 kpc (GRAVITY 2019–2021), 230 km/s; disk scale length 2.6 kpc; bar ~27° from the Sun–centre line; arm pitch ~13° (approximate)</td></tr>
+        <tr><td>Rotation curve</td><td>Data approximated from Sofue (2013) and Eilers et al. (2019); bulge + bar 1.8 × 10<sup>10</sup> M☉ (Bland-Hawthorn &amp; Gerhard 2016); disk 6.5 × 10<sup>10</sup> M☉ (Bovy 2015)</td></tr>
+        <tr><td>Stars around Sgr A*</td><td>Gillessen et al. (2017) orbits; GRAVITY Collaboration (2019–2020) distance and S2 pericentre</td></tr>
+        <tr><td>Quasars</td><td>Accretion efficiency 5.7–42% (non-spinning to maximally spinning hole); L<sub>Edd</sub> = 1.26 × 10<sup>31</sup> W × (M/M☉)</td></tr>
+        <tr><td>Hubble diagram</td><td>Approximate distances and redshift velocities of nearby galaxies and clusters</td></tr>
+        <tr><td>Cosmology</td><td>Flat ΛCDM with radiation: H<sub>0</sub> = 67.7 km/s/Mpc, Ω<sub>m</sub> = 0.31 (Planck 2018)</td></tr>
+        <tr><td>Galaxy collision</td><td>Toomre &amp; Toomre (1972) restricted N-body; approximate dynamical friction</td></tr>
+        <tr><td>Habitable zone</td><td>Kopparapu et al. (2013) conservative limits (0.99–1.67 AU for the Sun), scaled with √L</td></tr>
+        <tr><td>Milky Way assembly</td><td>Gaia–Enceladus merger: Helmi et al. (2018), Belokurov et al. (2018); Sagittarius dwarf: Ibata et al. (1994)</td></tr>
+        <tr><td>CMB ripples</td><td>Map on the Big Bang tab is an illustrative random pattern, not real data; amplitude ~10<sup>−5</sup> (COBE 1992, Planck 2018)</td></tr>
+        <tr><td>Milky Way–Andromeda</td><td>Sawala et al. (2025)</td></tr>
+      </tbody></table></div>
+  </section>
+
+  <section>
+    <h2>Tools of astronomy</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Topic</th><th>Source or relation</th></tr></thead>
+      <tbody>
+        <tr><td>Spectral lines</td><td>NIST Atomic Spectra Database, air wavelengths, rounded; strengths are illustrative, and absorption depths are scaled by simple temperature curves (H peaking near 9,500 K, He I above ~15,000 K, metals fading above ~7,000 K)</td></tr>
+        <tr><td>Star colour</td><td>Planck spectrum × CIE 1931 colour-matching functions (multi-lobe fit of Wyman, Sloan &amp; Shirley 2013) → sRGB</td></tr>
+        <tr><td>Doppler shift</td><td>Relativistic: λ<sub>obs</sub> / λ = √((1 + v/c) / (1 − v/c))</td></tr>
+        <tr><td>Prism dispersion</td><td>Cauchy fit for BK7-like glass, n = 1.5046 + 4200 nm² / λ²</td></tr>
+        <tr><td>Lens glass</td><td>Schott BK7 crown n = 1.5143 (656 nm), 1.5187 (546 nm), 1.5224 (486 nm); F2 flint n = 1.6150, 1.6241, 1.6321. Achromat traced surface by surface (R = 175, −175 mm crown; flint back radius solved to join red and blue foci)</td></tr>
+        <tr><td>Telescope limits</td><td>Dawes limit 116″/D(mm); diffraction 1.22λ/D; visual limiting magnitude ≈ 7.7 + 5 log<sub>10</sub>(D in cm) (rule of thumb); space and adaptive-optics presets use the diffraction limit (Webb at 2 μm). Telescope construction statuses as of October 2026 (ESO, GMTO, Rubin Observatory news; TMT and the La Palma offer from Physics World, 23 September 2026). Spectrograph resolving power from ESO's ESPRESSO instrument pages (R ≈ 140,000)</td></tr>
+      </tbody></table></div>
+  </section>
+
+  <section>
+    <h2>Missions &amp; telescopes</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Topic</th><th>Source or relation</th></tr></thead>
+      <tbody>
+        <tr><td>Mission facts</td><td>Each agency's public mission pages (NASA Science, ESA, JAXA, JPL, STScI, Chandra X-ray Center, NASA HEASARC, LIGO Lab, ALMA Observatory, ESO, EHT Collaboration, Rubin Observatory, SKAO), rounded. Statuses as of 31 October 2026: Roman launched 30 August 2026 and is in checkout on its way to L2; Juno is operating with future funding uncertain; Swift's science ended 20 October 2026; Rubin's survey began late June 2026. Cosmological composition from Planck 2018 results VI. Hubble's altitude (below 500 km in 2026) from reported tracking data</td></tr>
+        <tr><td>Mirror sizes</td><td>Primary aperture diameters from mission pages; Webb collecting area 25.4 m²; Hubble ~4.0 m² after its secondary mirror's shadow; others full mirror area. Wavelength ranges from instrument pages</td></tr>
+        <tr><td>Atmospheric absorption</td><td>Smoothed half-absorption altitude by wavelength, after standard atmospheric-opacity charts (e.g. Giacconi's X-ray astronomy figures; NASA "atmospheric windows")</td></tr>
+        <tr><td>Resolution</td><td>Diffraction limit 1.22 λ/D; EHT at 1.3 mm over an Earth diameter (~25 μas; M87* ring 42 μas, EHT 2019)</td></tr>
+        <tr><td>Distances</td><td>Typical distances from Earth; planets and probes change through the year</td></tr>
+      </tbody></table></div>
+  </section>
+
+  <section>
+    <h2>Earth</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Topic</th><th>Source or relation</th></tr></thead>
+      <tbody>
+        <tr><td>Earth's interior</td><td>PREM, Dziewonski &amp; Anderson (1981), isotropic version; ocean layer replaced by crust. Pressure and gravity integrated from PREM densities</td></tr>
+        <tr><td>Interior temperatures</td><td>Estimates: iron melting at the inner-core boundary 6,230 ± 500 K (Anzellini et al. 2013); core–mantle boundary ~4,000 K (Lay, Hernlund &amp; Buffett 2008); mantle adiabat ~1,830 K at 410 km, ~2,000 K at 660 km (Katsura et al. 2010)</td></tr>
+        <tr><td>Seismic rays</td><td>Spherical Snell's law, p = r sin i / v, integrated through PREM in 2 km shells; shadow zones also from USGS. History: Oldham (1906), Gutenberg (1914), Jeffreys (1926), Lehmann (1936). Earthquake depths and magnitudes from the USGS catalogue</td></tr>
+        <tr><td>Plate speeds</td><td>USGS "This Dynamic Earth"; Nazca–South America 65–80 mm/yr (USGS); San Andreas ~21 mm/yr near San Francisco (Prescott et al. 2001); Tonga Trench up to 24 cm/yr (Bevis et al. 1995)</td></tr>
+        <tr><td>Magnetic stripes</td><td>Polarity timescale from the Geologic Time Scale 2012 (Hilgen et al. 2012), back to 6.03 Ma; Vine &amp; Matthews (1963). Anomaly: vertically magnetized 2D blocks, vertical field (simplified)</td></tr>
+        <tr><td>Hawaiian hotspot</td><td>Oldest shield-lava K–Ar ages and distances from Kīlauea, Clague &amp; Dalrymple (1987); Emperor bend ~47 Ma (Sharp &amp; Clague 2006)</td></tr>
+        <tr><td>Magma and eruptions</td><td>Viscosity trend after Giordano, Russell &amp; Dingwell (2008), rough; eruption temperatures, Mount St. Helens, Pinatubo and Yellowstone facts from the USGS Volcano Hazards Program; VEI from Newhall &amp; Self (1982); causes of volcano deaths from Auker et al. (2013)</td></tr>
+        <tr><td>Volcanoes elsewhere</td><td>NASA mission pages: Io (Galileo, Juno), Olympus Mons (Mars Global Surveyor MOLA), Enceladus (Cassini), Triton (Voyager 2)</td></tr>
+        <tr><td>Water reservoirs</td><td>USGS Water Science School, "Where is Earth's water?" (after Gleick 1996, <i>Water Resources</i>); residence times after Pidwirny, <i>Fundamentals of Physical Geography</i>, and van der Ent &amp; Tuinenburg (2017) for atmospheric water (~9 days)</td></tr>
+        <tr><td>Water cycle fluxes</td><td>Trenberth et al. (2007), <i>J. Hydrometeorology</i> 8, 758; latent heat ~80 W/m²: Trenberth, Fasullo &amp; Kiehl (2009); river sediment load: Milliman &amp; Syvitski (1992), Syvitski et al. (2005)</td></tr>
+        <tr><td>Hjulström–Sundborg diagram</td><td>Hjulström (1935), Sundborg (1956), as redrawn in Earle, <i>Physical Geology</i> 2e (BCcampus, 2019); curves approximate</td></tr>
+        <tr><td>Grand Canyon, Jezero</td><td>NPS Grand Canyon geology (Vishnu basement rocks ~1.7–1.8 Gyr; canyon carved in ~5–6 Myr); NASA Mars 2020 / Jezero delta</td></tr>
+        <tr><td>Atmosphere profile</td><td>U.S. Standard Atmosphere 1976 (NOAA/NASA/USAF): temperature formulas and pressure table; dry-air composition; CO₂ 426 ppm: NOAA GML global monthly mean, July 2026</td></tr>
+        <tr><td>Greenhouse model</td><td>One-layer radiative balance, T<sub>s</sub> = T<sub>e</sub>(2/(2−ε))<sup>1/4</sup>; S, albedos and surface temperatures from NASA planetary fact sheets (Venus 737 K, Mars ~210 K)</td></tr>
+        <tr><td>Magnetosphere</td><td>Chapman &amp; Ferraro (1931) pressure balance r ∝ P<sup>−1/6</sup>, normalised to ~10 R<sub>E</sub> at 2 nPa (Shue et al. 1998); bow shock ~1.3 × standoff; Van Allen belt ranges from NASA</td></tr>
+        <tr><td>Tides</td><td>Equilibrium tide semi-amplitudes M2 24.2 cm, S2 11.3 cm at the equator (Pugh &amp; Woodworth, <i>Sea-Level Science</i>); Bay of Fundy range from NOAA</td></tr>
+        <tr><td>Moon data</td><td>NASA Moon fact sheet; recession 3.8 cm/yr from lunar laser ranging (Dickey et al. 1994; Williams &amp; Boggs 2016); day lengthening 1.8 ms/century observed, 2.3 tidal (Stephenson, Morrison &amp; Hohenkerk 2016); 21.9 h day at 620 Ma (Williams 2000, <i>Rev. Geophys.</i>)</td></tr>
+        <tr><td>Planets in the gap</td><td>Equatorial and polar diameters from NASA planetary fact sheets</td></tr>
+        <tr><td>Moon origin</td><td>Canup &amp; Asphaug (2001); Ćuk &amp; Stewart (2012); Young et al. (2016); Lock et al. (2018)</td></tr>
+      </tbody></table></div>
+  </section>
+
+  <section>
+    <h2>What the models simplify</h2>
+    <ul class="src-list">
+      <li><b>Mass cutoffs</b> (~0.5, ~2, ~8, ~25 M☉) are approximate and shift with metallicity, rotation, mass loss and binary partners.</li>
+      <li><b>Star interiors</b> follow the standard picture, not a full stellar-evolution code. The schematic view stretches layers so all are visible; true scale uses order-of-magnitude real sizes. In the massive-star onion, the shell radii (silicon, oxygen, neon, carbon, helium) are factor-of-two estimates from 15–25 M☉ presupernova models (Woosley, Heger &amp; Weaver 2002; Sukhbold et al. 2016).</li>
+      <li><b>H-R tracks</b> come from scaling relations shaped to match published tracks.</li>
+      <li><b>Interior time dilation</b> assumes uniform density; the falling clock's far view ignores light-travel delay.</li>
+      <li><b>Star clusters</b> use solar composition; real globular clusters such as M92 are metal-poor, so their turnoff stars are hotter and a little less massive than the model's.</li>
+      <li><b>The black hole camera</b> shows a non-spinning hole with a thin disk and maps disk temperature to visible colours.</li>
+      <li><b>The Milky Way model</b> has no dust lanes, and its arm positions are approximate.</li>
+      <li><b>The galaxy collision</b> uses test-particle stars and no gas.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Further reading</h2>
+    <p>For a free, complete introduction to everything here, see <a href="https://openstax.org/details/books/astronomy-2e">OpenStax <i>Astronomy</i> 2e</a> (CC BY 4.0). Agency and mission names are used only to identify them; no logos or official imagery appear on this site. All visuals are generated by the site's own code.</p>
+  </section>
+</main>
+
+<footer class="wrap foot"><p class="site-foot-links"><a href="index.html">Home</a><a href="stars/index.html">Stars</a><a href="galaxies/index.html">Galaxies &amp; cosmology</a></p></footer>
+</body>
+</html>

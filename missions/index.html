@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Missions &amp; Telescopes · Stellar Life</title>
+<meta name="description" content="The great observatories and space probes: what light each one sees, what detectors they carry, where they fly, and what they discovered. Interactive spectrum filter, mirrors to scale, orbit map and timeline.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../shared/style.css">
+<link rel="stylesheet" href="missions.css">
+</head>
+<body class="ms-page">
+<header class="masthead">
+<nav class="site-nav wrap" aria-label="Site">
+  <a class="site-brand" href="../index.html">Stellar Life</a>
+  <div class="site-links">
+    <a href="../stars/index.html">Stars</a>
+    <a href="../galaxies/index.html">Galaxies &amp; cosmology</a>
+    <a href="../solar-system/earth/index.html">Earth</a>
+    <a href="../tools/index.html">Tools</a>
+    <a href="index.html" aria-current="page">Missions</a>
+    <a href="../sources.html">Sources</a>
+  </div>
+</nav>
+  <div class="wrap masthead-inner">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="currentColor" stroke-width="1.2" transform="rotate(-25 16 16)"/><circle cx="27" cy="11" r="2" fill="currentColor"/></svg>
+      <div>
+        <h1>Missions &amp; Telescopes</h1>
+        <p class="tagline">The machines that showed us the universe: what light each one sees, what its detectors are, where it flies, and what it found.</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="tabs" role="tablist" aria-label="Topics">
+    <button role="tab" id="tab-fleet" aria-controls="fleet" aria-selected="true">The fleet</button>
+    <button role="tab" id="tab-why" aria-controls="why" aria-selected="false">Why go to space</button>
+    <button role="tab" id="tab-compare" aria-controls="compare" aria-selected="false">Compare</button>
+    <button role="tab" id="tab-detect" aria-controls="detect" aria-selected="false">Detectors</button>
+  </nav>
+
+  <!-- ================= Fleet ================= -->
+  <section id="fleet" role="tabpanel" aria-labelledby="tab-fleet" class="panel">
+    <div class="panel-intro">
+      <h2>Filter by the light they see</h2>
+      <p>Every kind of light carries different news. Pick a band of the spectrum to see which missions observe it, then open any mission for its instruments and discoveries.</p>
+    </div>
+    <div class="ms-spec"><svg id="msBand" viewBox="0 0 900 96" role="group" aria-label="Electromagnetic spectrum: choose a band"></svg></div>
+    <div class="ms-filters">
+      <div class="seg" role="group" aria-label="Band" id="msBandSeg"></div>
+      <div class="seg" role="group" aria-label="Type" id="msKind"></div>
+    </div>
+    <p class="note ms-edge">Band edges are conventions, and fields draw them in slightly different places: millimetre waves are “microwave” to some astronomers and “radio” to others.</p>
+    <p class="note" id="msCount" aria-live="polite"></p>
+    <div class="ms-layout">
+      <ul class="ms-grid" id="msGrid"></ul>
+      <article class="ms-detail" id="msDetail" aria-live="polite"></article>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Now and next</h3><p class="sub">Status as of late October 2026.</p></div>
+      <div class="bh-feats ms-next">
+        <div class="bh-feat gx-card"><b><span class="ms-when">Now</span>Roman</b><span>Launched 30 August 2026 and being checked out on its way to L2, about three months out. First images are expected in early 2027.</span></div>
+        <div class="bh-feat gx-card"><b><span class="ms-when">Now</span>Rubin’s sky survey</b><span>The ten-year Legacy Survey of Space and Time began on 29 June 2026, photographing the whole southern sky every few nights.</span></div>
+        <div class="bh-feat gx-card"><b><span class="ms-when">Ended</span>Swift</b><span>Its orbit decayed after strong solar activity; a commercial rescue failed, and science ended on 20 October 2026.</span></div>
+        <div class="bh-feat gx-card"><b><span class="ms-when">2029</span>Extremely Large Telescope</b><span>ESO’s 39 m telescope in Chile, built from 798 mirror segments. First light is planned for March 2029, science from December 2030.</span></div>
+        <div class="bh-feat gx-card"><b><span class="ms-when">Building</span>Square Kilometre Array</b><span>Two radio arrays, SKA-Low in Western Australia and SKA-Mid in South Africa. Early stations made their first image in 2025; construction runs to about 2029.</span></div>
+        <div class="bh-feat gx-card"><b><span class="ms-when">~2035</span>LISA</b><span>ESA’s gravitational-wave observatory in space: three spacecraft in a triangle 2.5 million km on a side, linked by lasers. Launch planned for 2035.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Why space ================= -->
+  <section id="why" role="tabpanel" aria-labelledby="tab-why" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>The atmosphere is a filter</h2>
+      <p>Air lets through visible light, some infrared and radio, and almost nothing else. To see X-rays, gamma rays, most ultraviolet and far-infrared light, you must get above it.</p>
+    </div>
+    <div class="gx-svgbox ms-wide"><svg id="msAtmo" viewBox="0 0 900 330" role="img" aria-label="How high light of each wavelength reaches before the atmosphere absorbs it"></svg></div>
+    <p class="note">Curve: approximate altitude where incoming light is cut to half, by wavelength. It is drawn from standard atmospheric absorption charts and smoothed; real absorption has many narrow bands. Hover or tap for details.</p>
+    <p class="note" id="msAtmoOut" aria-live="polite"></p>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Where they fly</h3><p class="sub">Distances on a logarithmic scale: each grid step is ten times farther. Tap a place to list its missions.</p></div>
+      <div class="gx-svgbox ms-wide"><svg id="msOrbit" viewBox="0 0 900 260" role="group" aria-label="Where missions operate, from low Earth orbit to interstellar space"></svg></div>
+      <p class="ms-olist" id="msOrbitOut"></p>
+    </div>
+
+    <div class="gx-block">
+      <h3>Why those places</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Low Earth orbit (~500 km)</b><span>Cheap to reach and, for Hubble, reachable by astronauts for repairs. But Earth blocks half the sky and the telescope swings from sunlight to shadow every 95 minutes.</span></div>
+        <div class="bh-feat gx-card"><b>Sun–Earth L2 (1.5 million km)</b><span>A balance point beyond Earth, opposite the Sun. Sun, Earth and Moon all stay on one side, so one shield keeps an infrared telescope cold and dark.</span></div>
+        <div class="bh-feat gx-card"><b>Sun–Earth L1</b><span>The balance point between Earth and the Sun: a non-stop view of the Sun and a station for measuring the solar wind before it hits us.</span></div>
+        <div class="bh-feat gx-card"><b>Earth-trailing orbit</b><span>Circling the Sun while drifting slowly away from Earth. Far from Earth's heat and glare; the cost is a radio link that gets weaker every year.</span></div>
+        <div class="bh-feat gx-card"><b>Elongated Earth orbits</b><span>Chandra, XMM-Newton and TESS spend most of each orbit far out, above the radiation belts, with long stretches of uninterrupted viewing.</span></div>
+        <div class="bh-feat gx-card"><b>Going there</b><span>Some things can't be seen from far away: the inside of a Martian rock, the gas in a plume, the magnetic field of interstellar space. Probes measure them on the spot.</span></div>
+      </div>
+    </div>
+    <div class="tr-callout ms-callout"><div><p class="h">Common mistake</p><p><b>“L2 is a fixed parking spot.”</b> L2 is a balance point, not a place to sit still, and it is unstable: anything there slowly drifts off. Webb, Gaia and the others loop around it in wide halo orbits hundreds of thousands of km across, firing thrusters every few weeks to stay on track.</p></div><div><p class="h">Why not exactly at L2</p><p>Seen from the point itself, Earth would cover most of the Sun’s disk and cut the solar power. A halo orbit keeps the Sun in view and Earth in radio contact.</p></div></div>
+  </section>
+
+  <!-- ================= Compare ================= -->
+  <section id="compare" role="tabpanel" aria-labelledby="tab-compare" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Mirrors to scale</h2>
+      <p>The main mirror sets how much light a telescope collects (it grows with the area) and how sharp it can see (finer detail with a larger diameter, at a given wavelength).</p>
+    </div>
+    <div class="gx-svgbox ms-wide"><svg id="msMirror" viewBox="0 0 900 300" role="img" aria-label="Primary mirror sizes of space telescopes drawn to scale beside a person"></svg></div>
+    <div class="gx-two">
+      <div class="gx-ctrl">
+        <label for="msLam" class="probe-label">Wavelength for resolution <output id="msLamOut"></output></label>
+        <input id="msLam" type="range" min="0" max="1000" step="1" value="380">
+        <p class="note">Resolution = 1.22 λ / D (the diffraction limit), before any blurring by air or imperfect optics. Resolution only matters where a telescope detects light, so rows fade outside each one’s band. A longer wavelength needs a bigger mirror for the same sharpness: why Webb, working in infrared, needed 6.5 m. Chandra (grazing mirrors) and Gaia, Planck and WMAP (non-round mirrors) are left out.</p>
+      </div>
+      <div><div class="table-wrap"><table class="ms-table" id="msMirTable"><thead><tr><th>Telescope</th><th>Mirror</th><th>Light vs Hubble</th><th>Sharpest detail</th></tr></thead><tbody></tbody></table></div>
+      <p class="note ms-foot">Light collected compares areas like for like: Hubble ~4.0 m² once the shadow of its secondary mirror is removed (Roman, with the same 2.4 m mirror, is close), Webb 25.4 m². Other rows use the full mirror area, so they are slightly high.</p></div>
+    </div>
+    <div class="tr-callout ms-callout"><div><p class="h">Common mistake</p><p><b>“Telescopes are about magnification.”</b> Any telescope can magnify; an eyepiece or software does that. What a bigger mirror buys is more light (fainter objects) and finer resolution (real detail). Magnifying past the resolution limit just enlarges the blur.</p></div><div><p class="h">Common mistake</p><p><b>“Webb replaced Hubble.”</b> They see different light: Hubble works from the ultraviolet to the near-infrared, Webb from red light out to the mid-infrared. They often observe the same targets to cover both, and both are still working.</p></div></div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Timeline</h3><p class="sub">Bars run from launch to the end of the mission. Open ends are still flying. Colour shows the main band.</p></div>
+      <div class="gx-svgbox ms-tl"><svg id="msTime" role="group" aria-label="Mission timeline from 1977 to today"></svg></div>
+    </div>
+  </section>
+
+  <!-- ================= Detectors ================= -->
+  <section id="detect" role="tabpanel" aria-labelledby="tab-detect" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>How light becomes data</h2>
+      <p>A telescope only gathers light. The detector at its focus turns photons into numbers, and each band of the spectrum needs a different trick.</p>
+    </div>
+    <div class="gx-two">
+      <div class="gx-svgbox"><svg id="msCCD" viewBox="0 0 440 300" role="img" aria-label="How a CCD collects and reads out charge"></svg></div>
+      <div class="gx-ctrl">
+        <p class="probe-label">A charge-coupled device (CCD), step by step</p>
+        <div class="seg" role="group" aria-label="CCD step" id="msCCDStep"></div>
+        <p id="msCCDOut" class="note" aria-live="polite"></p>
+        <div class="gx-btns"><button type="button" class="btn btn-primary" id="msCCDPlay">Play</button></div>
+      </div>
+    </div>
+    <div class="gx-block">
+      <h3>One detector per band</h3>
+      <div class="bh-feats" id="msDet"></div>
+    </div>
+    <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"Space photos show the true colours."</b> Most detectors record brightness only. Colour images are built from several exposures through filters, and infrared or X-ray images are mapped to visible colours chosen by scientists.</p></div><div><p class="h">Why cold matters</p><p>Warm objects glow in infrared. An infrared detector at room temperature would be blinded by its own heat, so Webb's mid-infrared camera is cooled to about 7 K and Planck's bolometers to 0.1 K.</p></div></div>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>Mission facts from the operating agencies' public mission pages (NASA, ESA and partners), rounded. Mission names are used only to identify them; all graphics are drawn by this site.</p>
+  <p class="site-foot-links"><a href="../sources.html">Sources &amp; simplifications</a><a href="../tools/index.html">← Tools of astronomy</a></p>
+</footer>
+<script src="js/data.js"></script>
+<script src="js/missions.js"></script>
+</body>
+</html>

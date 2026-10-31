@@ -1,0 +1,14 @@
+/* Stellar Life — Missions page additions (loaded after shared/style.css; scoped to this page). */
+.ms-page .ms-edge { margin-top: 2px; }
+.ms-page .ms-callout { margin-top: 18px; }
+.ms-page .ms-foot { margin-top: 8px; }
+.ms-page .ms-table tr.ms-out td { color: var(--faint); opacity: 0.6; }
+.ms-page .ms-table .ms-outtxt { font-family: var(--font-sans, inherit); font-style: italic; }
+.ms-page .ms-when { display: inline-block; margin-right: 8px; padding: 0 7px; border: 1px solid var(--line); border-radius: 999px; font: 500 0.68rem var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); vertical-align: 1px; }
+.ms-page #msAtmo .ms-hit { outline: none; }
+.ms-page #msAtmo .ms-hit:focus-visible { stroke: var(--accent); stroke-width: 2; }
+/* Phones: the four tabs wrap onto two lines instead of hiding "Detectors" off-screen. */
+@media (max-width: 420px) {
+  .ms-page main .tabs { flex-wrap: wrap; overflow-x: visible; -webkit-mask-image: none; mask-image: none; padding-right: 0; }
+  .ms-page main .tabs button { padding: 8px 10px; }
+}

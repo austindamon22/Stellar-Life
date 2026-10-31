@@ -1,0 +1,15 @@
+/* Tools of astronomy — page-specific additions (loaded after shared/style.css) */
+.sp-sw { display: inline-block; width: 1.05em; height: 1.05em; border-radius: 50%; vertical-align: -0.18em; margin-right: 6px; box-shadow: 0 0 0 3px var(--surface), 0 0 0 4px var(--line); }
+.sp-els.is-off { opacity: 0.45; }
+.sp-els.is-off .gx-check { cursor: not-allowed; }
+#spQuizT { margin: 0 0 6px; }
+/* Phone: keep the spectrograph diagram legible (labels ≥ 11 px) by letting it scroll sideways */
+@media (max-width: 760px) {
+  .sp-diagram { overflow-x: auto; overscroll-behavior-x: contain; -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+  .sp-diagram svg { min-width: 780px; }
+}
+@media (max-width: 640px) { .op-box canvas { aspect-ratio: 4 / 3; } }
+/* Spectrum facts: some values are whole sentences, so give labels a fixed minimum column and use the body font */
+#spOut div, #tcOut div { display: grid; grid-template-columns: minmax(9rem, auto) 1fr; align-items: baseline; }
+#spOut dd, #tcOut dd { font-family: inherit; font-variant-numeric: tabular-nums; }
+#spOut dd small, #tcOut dd small { display: block; font-size: 0.85em; color: var(--muted); margin-top: 2px; line-height: 1.4; }

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tools of Astronomy · Stellar Life</title>
+<meta name="description" content="How a spectrograph reads the light of stars, and how refracting and reflecting telescopes work: interactive ray tracing, element fingerprints, Doppler shifts and a telescope calculator.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../shared/style.css">
+<link rel="stylesheet" href="tools.css">
+</head>
+<body>
+<header class="masthead">
+<nav class="site-nav wrap" aria-label="Site">
+  <a class="site-brand" href="../index.html">Stellar Life</a>
+  <div class="site-links">
+    <a href="../stars/index.html">Stars</a>
+    <a href="../galaxies/index.html">Galaxies &amp; cosmology</a>
+    <a href="../solar-system/earth/index.html">Earth</a>
+    <a href="index.html" aria-current="page">Tools</a>
+    <a href="../missions/index.html">Missions</a>
+    <a href="../sources.html">Sources</a>
+  </div>
+</nav>
+  <div class="wrap masthead-inner">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 24 L16 6 L28 24" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="6" r="2.4" fill="currentColor"/><path d="M4 27 H28" stroke="currentColor" stroke-width="2.4" opacity=".6"/></svg>
+      <div>
+        <h1>Tools of Astronomy</h1>
+        <p class="tagline">Almost everything we know about the stars comes from their light. Here is how we split it and how we collect it.</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="tabs" role="tablist" aria-label="Topics">
+    <button role="tab" id="tab-spec" aria-controls="spec" aria-selected="true">Spectroscopy</button>
+    <button role="tab" id="tab-scope" aria-controls="scope" aria-selected="false">Telescopes</button>
+  </nav>
+
+  <!-- ================= Spectroscopy ================= -->
+  <section id="spec" role="tabpanel" aria-labelledby="tab-spec" class="panel">
+    <div class="panel-intro">
+      <h2>The spectrograph: a barcode reader for light</h2>
+      <p>A spectrograph spreads light out by wavelength. Every element absorbs and emits at its own exact wavelengths, so the pattern of lines tells you what a star is made of, how hot it is, and how fast it is moving.</p>
+    </div>
+
+    <div class="sp-diagram"><svg id="spLayout" viewBox="0 0 900 180" role="img" aria-label="Light path through a spectrograph: source, slit, collimator, disperser, camera, detector"></svg></div>
+
+    <div class="gx-two">
+      <div class="gx-ctrl">
+        <p class="probe-label">Light source</p>
+        <div class="seg" role="group" aria-label="Source" id="spSource"></div>
+        <p class="probe-label">Elements in the gas</p>
+        <div class="sp-els" id="spEls"></div>
+        <p class="note">Mercury and neon are lab-lamp elements, used to calibrate spectrographs. Mercury is not seen in normal stars (only as ionised Hg II in rare hot "HgMn" stars), and neon shows only weak lines in hot B stars.</p>
+        <p class="note" id="spElsHint" hidden>A hot solid glows at every wavelength whatever it is made of, so there are no element lines to add. Pick another source to use the elements.</p>
+        <label for="spT" class="probe-label">Temperature of the hot source <output id="spTOut"></output></label>
+        <input id="spT" type="range" min="3000" max="30000" step="100" value="5800">
+        <label for="spV" class="probe-label">Speed along the line of sight <output id="spVOut"></output></label>
+        <input id="spV" type="range" min="-1000" max="1000" step="1" value="0">
+        <p class="probe-label">Disperser</p>
+        <div class="seg" role="group" aria-label="Disperser" id="spDisp"></div>
+      </div>
+      <div class="gx-ctrl">
+        <div class="sp-strip"><canvas id="spCanvas" role="img" aria-label="The resulting spectrum"></canvas></div>
+        <div class="sp-strip sp-lab"><canvas id="spLabCanvas" role="img" aria-label="Laboratory reference spectrum of the chosen elements, at rest"></canvas></div>
+        <p class="note">Top: what the spectrograph records. Bottom: the same elements in a lab lamp, at rest. Line positions are real wavelengths (nm).</p>
+        <p class="note">In a star, line depths depend on temperature: hydrogen is strongest near 9,500 K, helium shows only above ~15,000 K, and calcium, sodium, magnesium and iron fade in hot stars. A lab lamp is thin gas lit up by an electric current, not heated like a star's atmosphere, so all its lines show whatever the temperature.</p>
+        <dl class="facts" id="spOut"></dl>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>Kirchhoff's three rules</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Hot, dense object → continuous spectrum</b><span>A hot solid, liquid or dense gas glows at every wavelength. Its colour, and the wavelength of its peak (Wien's law, λ<sub>peak</sub> = 2.9 mm·K / T), give its temperature.</span></div>
+        <div class="bh-feat gx-card"><b>Hot, thin gas → bright emission lines</b><span>Electrons dropping between energy levels give off photons of exact energies. Each element has its own set of lines, like a fingerprint. Nebulae and neon signs look like this.</span></div>
+        <div class="bh-feat gx-card"><b>Cool gas in front of a hot source → dark absorption lines</b><span>The cooler gas absorbs exactly the wavelengths it would emit. A star's outer layers do this to the light from below, which is why stellar spectra are covered in dark lines.</span></div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"Red-shifted stars look red."</b> A redshift moves every line by the same fraction; it doesn't recolour the star. You measure it from where known lines land, not from the colour.</p><p><b>"The Doppler shift gives a star's full speed."</b> It measures only motion along the line of sight. A star moving straight across the sky shows no shift at all; its sideways motion has to come from watching its position change over years.</p></div><div><p class="h">Why gratings won</p><p>A prism spreads blue light more than red and absorbs some ultraviolet. A diffraction grating spreads wavelengths almost evenly, so wavelengths can be read off a straight ruler. Most research spectrographs use gratings.</p></div></div>
+    </div>
+
+    <div class="gx-block">
+      <h3>Resolving power: how fine a spectrograph splits light</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>R = λ / Δλ</b><span>Δλ is the smallest wavelength gap the instrument can still show as two lines. Sodium's pair at 589.0 and 589.6 nm is 0.6 nm apart, so splitting it needs R ≳ 589 / 0.6 ≈ 1,000. A school spectroscope manages a few hundred and shows one yellow line.</span></div>
+        <div class="bh-feat gx-card"><b>What sets R</b><span>A narrower slit gives sharper lines (but lets in less light), and a grating with more lines lit, or used at a higher order, spreads the colours further. Research instruments trade light for resolution to suit the job.</span></div>
+        <div class="bh-feat gx-card"><b>Why it matters for speed</b><span>The smallest Doppler shift you can see directly is about c / R. ESPRESSO on the Very Large Telescope reaches R ≈ 140,000 (Δλ ≈ 0.004 nm at 550 nm, about 2 km/s per resolution step); fitting thousands of lines at once then pins a star's speed far below that.</span></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Name the elements</h3><p class="sub">A star's absorption spectrum with a few elements in its atmosphere. Which ones? Compare with the lab lines above, and use the star's temperature as a clue.</p></div>
+      <div class="gx-two">
+        <div class="gx-ctrl">
+          <p class="note" id="spQuizT"></p>
+          <div class="sp-strip"><canvas id="spQuiz" role="img" aria-label="Mystery stellar spectrum"></canvas></div>
+          <div class="sp-els" id="spQuizEls"></div>
+          <div class="gx-btns"><button type="button" class="btn btn-primary" id="spCheck">Check</button><button type="button" class="btn" id="spNext">New star</button></div>
+          <p id="spQuizOut" class="cls-out" aria-live="polite"></p>
+        </div>
+        <div class="tr-callout"><div><p class="h">How it was done</p><p>In the 1920s Cecilia Payne used spectra like these to show that stars are mostly hydrogen and helium. Strong lines don't simply mean "lots of that element": temperature decides which lines can form.</p></div><div><p class="h">Tip</p><p>Hydrogen's Balmer lines (656, 486, 434, 410 nm) are widely spaced and get closer toward blue. Sodium is a tight pair at 589 nm. Magnesium is a triplet near 517 nm. Calcium's H &amp; K pair (393, 397 nm) comes from ionised calcium (Ca II) and stays strong into A stars; the 423 nm line is neutral Ca I and only shows in cool stars. Temperature also gives the spectral type (hot to cool: O B A F G K M): ~20,000 K is a B star, ~9,500 K an A star, ~6,000 K the G/F border, ~4,500 K a K star.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Telescopes ================= -->
+  <section id="scope" role="tabpanel" aria-labelledby="tab-scope" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Refractors and reflectors</h2>
+      <p>A telescope's main job is to collect light, and its second job is to resolve detail. A refractor bends light with a lens; a reflector focuses it with a curved mirror. Trace the rays.</p>
+    </div>
+    <div class="seg" role="group" aria-label="Optics" id="opMode"></div>
+    <div class="gx-two">
+      <div class="gx-svgbox op-box"><canvas id="opCanvas" role="img" aria-label="Ray tracing through the chosen optics"></canvas></div>
+      <div class="gx-ctrl">
+        <label for="opH" class="probe-label">How far the rays are from the centre <output id="opHOut"></output></label>
+        <input id="opH" type="range" min="0.2" max="1" step="0.01" value="1">
+        <label class="toggle" for="opColor"><input id="opColor" type="checkbox" checked><span class="track" aria-hidden="true"></span>Red, green and blue rays</label>
+        <div class="agn-class" id="opOut"></div>
+        <p class="note">Lens: BK7 crown glass, n = 1.5143 red (656 nm), 1.5187 green (546 nm), 1.5224 blue (486 nm). Achromat: BK7 crown cemented to F2 flint (n = 1.6150, 1.6241, 1.6321), traced surface by surface with Snell's law. Mirror rays reflect off the exact curve (parabola or sphere). The inset magnifies the region around the focus: filled markers show where central rays focus, hollow ones where edge rays focus.</p>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>What can a telescope see?</h3><p class="sub">Pick a telescope, or set your own. Aperture (the diameter of the main lens or mirror) is what matters most.</p></div>
+      <div class="gx-two">
+        <div class="gx-ctrl">
+          <div class="seg" role="group" aria-label="Telescopes" id="tcPre"></div>
+          <label for="tcD" class="probe-label">Aperture D <output id="tcDOut"></output></label>
+          <input id="tcD" type="range" min="0" max="1000" step="1">
+          <label for="tcF" class="probe-label">Focal length <output id="tcFOut"></output></label>
+          <input id="tcF" type="range" min="0" max="1000" step="1">
+          <label for="tcE" class="probe-label">Eyepiece focal length <output id="tcEOut"></output></label>
+          <input id="tcE" type="range" min="3" max="40" step="1" value="25">
+          <p class="note" id="tcEHint" hidden>Binoculars have built-in eyepieces, so the magnification is fixed (8× here).</p>
+          <label for="tcPx" class="probe-label">Camera pixel size <output id="tcPxOut"></output></label>
+          <input id="tcPx" type="range" min="2" max="9" step="0.01" value="3.72">
+          <dl class="facts" id="tcOut"></dl>
+        </div>
+        <div>
+          <p class="probe-label">Targets (green = within reach, faded = too faint or too fine)</p>
+          <ul class="tc-targets" id="tcTargets"></ul>
+          <p class="note">Rules of thumb: faintest star ≈ 7.7 + 5 log<sub>10</sub>(D in cm) magnitudes; resolution ≈ 116″ / D(mm) (Dawes limit, for equal double stars); highest useful magnification ≈ 2 × D(mm). Seeing (air turbulence) usually limits ground telescopes to ~1–2″. Space telescopes and adaptive optics escape that limit. Plate scale = 206.265 × pixel(μm) / focal length(mm) arcseconds per pixel.</p>
+        </div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"More magnification means a better telescope."</b> Magnification is just focal length ÷ eyepiece, so any telescope reaches 500× with a short enough eyepiece. Above about 2× the aperture in mm you only enlarge the blur: try the 80 mm refractor with a 3 mm eyepiece (200×, over its useful 160×).</p></div><div><p class="h">Also wrong: "longer focal length = bigger telescope"</p><p>A 102 mm Maksutov-Cassegrain has a 1,300 mm focal length, longer than the 8″ Dobsonian's 1,200 mm, yet the Dobsonian collects about 4 times more light and resolves twice as fine. Focal length sets the image scale; aperture sets how much light and detail you get. (Keck's primary alone is f/1.75, 17.5 m; its instruments work at f/15, about 150 m.)</p></div></div>
+    </div>
+
+    <div class="gx-block">
+      <h3>Why every big telescope is a reflector</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>No colour fringes</b><span>A mirror reflects every wavelength the same way. A lens bends blue more than red (chromatic aberration), so the colours focus at different points.</span></div>
+        <div class="bh-feat gx-card"><b>Support from behind</b><span>A lens can only be held at its edge, so a big one sags under its own weight. A mirror can be supported across its whole back, or built from segments.</span></div>
+        <div class="bh-feat gx-card"><b>One surface, any glass</b><span>Light never passes through a mirror, so the glass needn't be flawless inside, and only one surface must be polished. The largest refractor ever used for research, Yerkes (1897), has a 1.02 m lens; segmented mirrors now reach 10.4 m (Gran Telescopio Canarias), and 25–39 m telescopes are being built.</span></div>
+        <div class="bh-feat gx-card"><b>Light-gathering grows as D²</b><span>Double the aperture and you collect four times the light. A 200 mm telescope gathers ~800 times more than your 7 mm pupil.</span></div>
+        <div class="bh-feat gx-card"><b>Resolution grows as D</b><span>Diffraction blurs every point into a small disk of angular size ≈ 1.22 λ / D. Bigger apertures, or interferometers linking dishes across the Earth, see finer detail.</span></div>
+        <div class="bh-feat gx-card"><b>Magnification matters least</b><span>Any telescope can magnify a lot; above about 2× the aperture in mm you only enlarge the blur. Light-gathering and resolution set what you can actually see.</span></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Beyond visible light</h3><p class="sub">Each kind of light needs its own kind of telescope.</p></div>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Radio: dishes and interferometers</b><span>Radio waves are long, so a dish only has to be smooth to a small fraction of the wavelength; some are wire mesh. Linking dishes far apart gives the sharpness of one dish as wide as their separation. The Earth-sized Event Horizon Telescope resolves about 20 millionths of an arcsecond.</span></div>
+        <div class="bh-feat gx-card"><b>Infrared: keep it cold</b><span>Anything warm glows in infrared, including the telescope itself. Webb shades its mirror to below about 50 K (−223 °C) and cools its mid-infrared camera to about 7 K. Water vapour in the air blocks much infrared, so these telescopes go high or into space.</span></div>
+        <div class="bh-feat gx-card"><b>X-rays: grazing mirrors</b><span>X-rays go straight into an ordinary mirror. They only bounce at grazing angles of about a degree, so X-ray telescopes such as Chandra nest long, barrel-shaped mirrors one inside another. The air blocks X-rays, so they must fly in space.</span></div>
+        <div class="bh-feat gx-card"><b>Gamma rays: no mirrors at all</b><span>Gamma rays can't be focused. Fermi's Large Area Telescope lets each one turn into an electron–positron pair in thin tungsten sheets, then tracks the pair through silicon detectors to work out where the gamma ray came from.</span></div>
+        <div class="bh-feat gx-card"><b>Electronic cameras</b><span>Modern CCD and CMOS sensors record around 90% or more of the photons that reach them, against a few per cent for photographic film, and give a measured number for every pixel. That is the same gain as making the mirror 4–6 times wider.</span></div>
+        <div class="bh-feat gx-card"><b>Adaptive optics</b><span>A guide star, real or a laser spot in the upper air, shows how turbulence is distorting the light. A thin deformable mirror reshapes itself up to about a thousand times a second to undo it, giving large ground telescopes like Keck nearly diffraction-limited infrared images.</span></div>
+      </div>
+      <p class="note">More on these telescopes and what they found: <a href="../missions/index.html">Missions &amp; telescopes</a>.</p>
+      <div class="tr-callout"><div><p class="h">Current research</p><p>ESO's Extremely Large Telescope in Chile (39 m, 798 mirror segments) aims for first light in 2029. The Giant Magellan Telescope (25.4 m, seven 8.4 m mirrors, also in Chile) is being built but is not yet fully funded. The Thirty Meter Telescope's future is unclear: the US National Science Foundation backed only the Giant Magellan in 2025, and in September 2026 TMT's partners turned down Spain's offer (€400 million, later a €1 billion package with loans) to build it on La Palma, leaving contested Mauna Kea as its only site. Rubin Observatory began its 10-year Legacy Survey of Space and Time in late June 2026, imaging the whole southern sky every few nights.</p></div><div><p class="h">Measuring tiny wobbles</p><p>Spectrographs such as ESPRESSO on ESO's Very Large Telescope aim to measure a star's speed to 10 cm/s, close to the 9 cm/s wobble the Earth gives the Sun. That takes an instrument held at extremely steady temperature and pressure, calibrated against ultra-stable light sources such as laser frequency combs.</p></div></div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>Line wavelengths from the NIST Atomic Spectra Database (rounded). Optics are drawn in two dimensions with exact refraction and reflection at each surface.</p>
+  <p class="site-foot-links"><a href="../sources.html">Sources &amp; simplifications</a><a href="../galaxies/index.html">← Galaxies &amp; cosmology</a></p>
+</footer>
+<script src="js/tools.js"></script>
+</body>
+</html>
