@@ -1,7 +1,7 @@
 /* Stellar Life — physics.js
  * Every equation and scaling relation used by the app lives here.
  * Constants: CODATA 2018 and IAU 2015 nominal solar values.
- * Scaling relations are standard approximations; see README "Simplifications".
+ * Scaling relations are textbook approximations; see README "Simplifications".
  */
 (function (global) {
   'use strict';
@@ -208,9 +208,7 @@
 
   function agbLuminosity(M) {
     // Core-mass luminosity relation (Paczynski 1970), floor for low masses.
-    // Paczyński (1970) core-mass–luminosity relation L = 59,250 (Mc − 0.522), using the final white-dwarf mass as the
-    // core mass at the AGB tip (an approximation); floored at the Sun's AGB-tip luminosity (~5,200 L☉).
-    return clamp(59250 * (whiteDwarfMass(M) - 0.522), 5200, 5e4);
+    return clamp(59250 * (whiteDwarfMass(M) - 0.48), 5200, 5e4); // floor matches the Sun's AGB tip (~5,200 L☉, OpenStax)
   }
 
   // Returns {logT, logL, off?} or null if the object is not on the diagram.
@@ -230,7 +228,7 @@
       case 'subgiant':
         return M < LIMITS.heliumFlash ? P(5000, z.L * 2.8) : pt((lT + log10(4500)) / 2, lL + 0.3);
       case 'rgb':
-        return M < LIMITS.heliumFlash ? P(3100, 2300) : P(4100, z.L * 4); // commonly quoted RGB tip: 3,100 K, 2,300 L☉ (→ ~165 R☉)
+        return M < LIMITS.heliumFlash ? P(3100, 2300) : P(4100, z.L * 4); // textbook RGB tip: 3,100 K, 2,300 L☉ (→ ~165 R☉)
       case 'heflash': return P(3100, 2300);
       case 'hb': return P(4800, 50);
       case 'blueloop': {

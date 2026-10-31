@@ -21,9 +21,8 @@
     reset() {
       const o = this.opts, m1 = 1, m2 = o.q, M = m1 + m2;
       this.m = [m1, m2];
-      // parabolic relative orbit in the x-y plane, starting at separation D0 = 50 kpc,
-      // about 200 million years before closest approach for equal masses
-      const D0 = 5, qp = o.peri;
+      // parabolic relative orbit in the x-y plane, starting at separation D0
+      const D0 = 7, qp = o.peri;
       const cf = Math.min(1, 2 * qp / D0 - 1), f = -Math.acos(cf);
       const h = Math.sqrt(2 * M * qp);
       const rel = [D0 * Math.cos(f), D0 * Math.sin(f), 0];
@@ -98,7 +97,6 @@
       if (!on) { cancelAnimationFrame(this.raf); return; }
       const loop = () => {
         if (!this.running) return;
-        // faster playback = more fixed-size substeps per frame, so the integration stays stable
         for (let i = 0; i < 3 * this.speed; i++) this.step(0.012);
         this.draw();
         if (this.onTick) this.onTick();

@@ -36,22 +36,6 @@
     return `<b>${M.toFixed(M < 1 ? 2 : 1)} M☉</b> · main sequence ${t} · ${route} → <b>${name}</b> (~${r.mass.toFixed(r.type === 'bh' ? 0 : 2)} M☉)`;
   }
 
-  // When the mass changes, stay at the same point in life: same stage if it exists, otherwise the
-  // stage at the same relative place within the same era (e.g. AGB → onion, white dwarf → black hole).
-  const ERA = { cloud: 0, collapse: 0, protostar: 0, zams: 1, ms: 1, subgiant: 2, rgb: 2, heflash: 2, hb: 2, blueloop: 2, agb: 2, rsg: 2, onion: 2, rd_far: 2, pn: 3, corecollapse: 3, sn2: 3, wd: 4, hewd: 4, ns: 4, pulsar: 4, bh: 4, nova: 5, sn1a: 5, xrb: 5, kilonova: 5, bhmerger: 5 };
-  function equivalentStage(cur, oldPath, newPath) {
-    const i = newPath.indexOf(cur); if (i >= 0) return i;
-    let era = ERA[cur]; if (era == null) return Math.min(state.idx, newPath.length - 1);
-    const oldEra = (oldPath || []).filter((id) => ERA[id] === era);
-    const rel = oldEra.length > 1 ? oldEra.indexOf(cur) / (oldEra.length - 1) : 1;
-    for (let tries = 0; tries < 6; tries++) {
-      const cand = newPath.map((id, k) => [id, k]).filter(([id]) => ERA[id] === era);
-      if (cand.length) return cand[Math.round(rel * (cand.length - 1))][1];
-      era = era === 5 ? 4 : era === 3 ? 4 : era - 1;            // binary outcome → remnant; death → remnant
-    }
-    return Math.min(state.idx, newPath.length - 1);
-  }
-
   function setMass(M, keepStage) {
     state.M = M;
     store.set('mass', String(M));
@@ -59,9 +43,11 @@
     $('#massOut').textContent = (M < 1 ? M.toFixed(2) : M < 10 ? M.toFixed(2) : M.toFixed(1)) + ' M☉';
     $$('.presets button').forEach((b) => b.setAttribute('aria-pressed', Math.abs(parseFloat(b.dataset.m) - M) < 0.005 ? 'true' : 'false'));
     $('#fateLine').innerHTML = fateText(M);
-    const cur = state.path[state.idx], oldPath = state.path;
+    const cur = state.path[state.idx];
     state.path = D.stagePath(M, state.binary);
-    state.idx = equivalentStage(cur, oldPath, state.path);
+    let i = state.path.indexOf(cur);
+    if (i < 0) i = Math.min(state.idx, state.path.length - 1);
+    state.idx = i;
     buildScrub(); renderChips(); renderStage(); renderHR(); centerHR(); refreshEquations(); refreshSpaceObjects();
   }
 
@@ -71,7 +57,6 @@
 
   /* ---------- Stage chips ---------- */
   function renderChips() {
-    navEnds();
     const ol = $('#chips'); ol.innerHTML = ''; ol.style.position = 'relative';
     state.path.forEach((id, i) => {
       const st = D.STAGES[id];
@@ -85,11 +70,7 @@
     });
     const act = ol.querySelector('[aria-current]');
     if (act) {
-      // Centre the current chip, then back off to a chip boundary so the first visible chip is whole
-      let left = Math.min(ol.scrollWidth - ol.clientWidth, act.parentElement.offsetLeft - ol.clientWidth / 2 + act.offsetWidth / 2);
-      const lis = [...ol.children]; let snap = 0;
-      lis.forEach((li) => { if (li.offsetLeft - 2 <= left) snap = Math.max(0, li.offsetLeft - 2); });
-      left = snap;
+      const left = act.parentElement.offsetLeft - ol.clientWidth / 2 + act.offsetWidth / 2;
       ol.scrollTo({ left: Math.max(0, left), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     }
   }
@@ -98,7 +79,6 @@
     state.idx = Math.max(0, Math.min(state.path.length - 1, i));
     renderChips(); renderStage(); renderHR(); centerHR();
   }
-  function navEnds() { $('#prev').disabled = state.idx <= 0; $('#next').disabled = state.idx >= state.path.length - 1; }
   function centerHR() {
     const box = document.querySelector('.hr-box'), cur = document.querySelector('#hr .now');
     if (!box || !cur || box.scrollWidth <= box.clientWidth + 2) return;
@@ -154,17 +134,14 @@
 
   /* ---------- Cutaway tools: true scale, zoom, labels, probe ---------- */
   const RSUN_KM = 695700, EARTH_KM = 6371;
-  const kmText = (km) => km >= 1e6 ? F.sig(km / RSUN_KM, 3) + ' R☉' : F.sig(km, 3) + ' km';
+  const kmText = (km) => km >= 1e6 ? F.sig(km / RSUN_KM, 3) + ' R☉' : Math.round(km).toLocaleString('en-US') + ' km';
   const earths = (km) => { const e = km / EARTH_KM; return e < 0.1 ? F.sig(e * 100, 2) + '% of Earth' : e < 1.5 ? F.sig(e, 2) + '× Earth' : e < 200 ? F.sig(e, 2) + ' Earths' : F.sig(km / RSUN_KM, 2) + ' Suns'; };
-  // Degenerate matter (C/O or He cores, white dwarfs) carries heat by electron conduction, not radiation
-  const isDegen = (l) => !!l && (/degenera/i.test(l.name + ' ' + (l.note || '')) || l.name === 'Helium interior');
-  const CONDUCT = '<span>Energy moves by <b>conduction (degenerate electrons)</b></span>';
   function layerAt(layers, r) { return layers.find((l) => r <= l.r + 1e-9) || layers[layers.length - 1]; }
   view.probeText = (h) => {
     if (h.surface) return state.interior && state.at ? `<b>Photosphere</b><span>The visible surface, ${Math.round(state.at.T).toLocaleString('en-US')} K. Darker toward the edge (limb darkening).</span>` : '';
     if (!state.interior || !state.at) {
       const L = view.layers || []; const l = L.find((x) => h.r <= x.r) || L[L.length - 1];
-      return l ? `<b>${l.name}</b><span>${l.note || ''}</span>` + (isDegen(l) ? CONDUCT : '') : '';
+      return l ? `<b>${l.name}</b><span>${l.note || ''}</span>` : '';
     }
     const at = state.at, prof = at.profile, r = Math.min(0.9999, h.r), map = window.Evo.trueMap(prof, at.R);
     const l = layerAt(prof.layers, r), x = window.Evo.toTrue(map, r), km = x * at.R * RSUN_KM;
@@ -172,7 +149,7 @@
     return `<b>${l.name}</b>`
       + `<span>${kmText(km)} from the centre · ${F.sig(x * 100, 2)}% of the way out</span>`
       + `<span>${compText(c)}</span>`
-      + `<span>Energy moves by <b>${conv ? 'convection' : isDegen(l) ? 'conduction (degenerate electrons)' : 'radiation'}</b>${burn ? ' · <b class="hot">fusion here</b>' : ''}</span>`;
+      + `<span>Energy moves by <b>${conv ? 'convection' : 'radiation'}</b>${burn ? ' · <b class="hot">fusion here</b>' : ''}</span>`;
   };
   function cutNote() {
     const n = $('#cutNote'); if (!n) return;
@@ -182,18 +159,18 @@
     const starKm = at.R * RSUN_KM;
     const seen = x * view.zoom / 1.25 > 0.04;
     n.innerHTML = view.scaleMode === 'true'
-      ? `<b>True scale${state.M >= 8 ? ' (shell radii are factor-of-two estimates from 15–25 M☉ models)' : ''}.</b> The ${core.name.toLowerCase()} is ${kmText(km)} in radius (${earths(km)}) inside a star of ${kmText(starKm)}: <b>${F.sig(x * 100, 2)}%</b> of the radius. ${seen ? (view.zoom > 1.5 ? `You're zoomed in ${F.sig(view.zoom, 2)}×.` : '') : 'Too small to see at this zoom: press <b>Zoom to core</b>.'}`
+      ? `<b>True scale.</b> The ${core.name.toLowerCase()} is ${kmText(km)} in radius (${earths(km)}) inside a star of ${kmText(starKm)}: <b>${F.sig(x * 100, 2)}%</b> of the radius. ${seen ? (view.zoom > 1.5 ? `You're zoomed in ${F.sig(view.zoom, 2)}×.` : '') : 'Too small to see at this zoom: press <b>Zoom to core</b>.'}`
       : `<b>Schematic.</b> Layers are stretched so you can see them all. Real size of the ${core.name.toLowerCase()}: ${kmText(km)} (${F.sig(x * 100, 2)}% of the star's radius). Switch to true scale to see it.`;
   }
-  const zoomOut = () => { const z = view.zoom; $('#cutZoomOut').innerHTML = '×' + (z < 10 ? z.toFixed(1) : F.sig(z, 2).replace(/^1 × /, '')); };
+  const zoomOut = () => { const z = view.zoom; $('#cutZoomOut').innerHTML = '×' + (z < 10 ? z.toFixed(1) : F.sig(z, 2)); };
   function setZoom(z) { view.zoom = Math.max(1, Math.min(1e6, z)); $('#cutZoom').value = Math.round(Math.log10(view.zoom) * 100); zoomOut(); view.draw(); cutNote(); }
-  function setScaleMode(mode, persist = true) {
+  function setScaleMode(mode) {
     view.scaleMode = mode;
     $$('#cutScale button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.scale === mode)));
     $('#cutZoomWrap').hidden = mode !== 'true'; $('#cutCore').hidden = mode !== 'true';
     if (mode !== 'true') view.zoom = 1;
     setZoom(view.zoom); cutNote();
-    if (persist) store.set('scale', mode);
+    store.set('scale', mode);
   }
   $$('#cutScale button').forEach((b) => b.addEventListener('click', () => setScaleMode(b.dataset.scale)));
   $('#cutZoom').addEventListener('input', (e) => { cancelAnimationFrame(zoomAnim); setZoom(Math.pow(10, +e.target.value / 100)); });
@@ -218,16 +195,16 @@
     cutNote();
     $('#scrubPhase').textContent = at.phase.label;
     const pct = Math.round(at.p * 100);
-    $('#scrubAge').innerHTML = `Age ${F.years(at.age)} · ${pct}% through this phase (${at.phase.id === 'flash' ? 'peak runaway lasts hours; smaller flashes continue ~1–2 Myr' : 'lasts ' + F.years(at.phase.dur)})`;
+    $('#scrubAge').innerHTML = `Age ${F.years(at.age)} · ${pct}% through this phase (lasts ${F.years(at.phase.dur)})`;
     if (light) return;
     // legend from the profile (outside first)
     const box = $('#legend'); box.innerHTML = '';
     let r0 = 0;
-    const rows = prof.layers.map((l) => { const mid = (r0 + l.r) / 2; const row = { l, mid, burning: false, whole: false }; let n = 0; for (let k = 1; k < 20; k++) { const rr = r0 + (l.r - r0) * k / 20; if (prof.burn(rr) > 0.05) { row.burning = true; n++; } } if (r0 > 0 && prof.burn(r0 + 0.006) > 0.05) row.burning = true; row.whole = r0 === 0 || n > 9; r0 = l.r; return row; });
-    rows.reverse().forEach(({ l, mid, burning, whole }) => {
+    const rows = prof.layers.map((l) => { const mid = (r0 + l.r) / 2; const row = { l, mid, burning: false }; for (let k = 1; k < 20; k++) { const rr = r0 + (l.r - r0) * k / 20; if (prof.burn(rr) > 0.05) row.burning = true; } r0 = l.r; return row; });
+    rows.reverse().forEach(({ l, mid, burning }) => {
       const c = prof.comp(mid), col = compColor(c);
       const row = document.createElement('div'); row.className = 'row';
-      row.innerHTML = `<span class="sw${burning ? ' glow' : ''}" style="background:${col};color:${burning ? '#ffc864' : col}"></span><span><span class="nm">${l.name}</span>${burning ? ` <span class="hint">· ${whole ? 'burning' : 'burning at its base'}</span>` : ''}<br><span class="hint">made of: ${compText(c)}</span><br><span class="nt">${l.note}</span></span>`;
+      row.innerHTML = `<span class="sw${burning ? ' glow' : ''}" style="background:${col};color:${burning ? '#ffc864' : col}"></span><span><span class="nm">${l.name}</span>${burning ? ' <span class="hint">· fusing</span>' : ''} <span class="hint">${compText(c)}</span><br><span class="nt">${l.note}</span></span>`;
       box.appendChild(row);
     });
     const h = document.createElement('p'); h.className = 'hint';
@@ -292,18 +269,18 @@
     $('#lifeCap').textContent = `This ${state.M.toFixed(state.M < 1 ? 2 : 1)} M☉ star in the model (values at the middle of each phase)`;
     $('#lifeBody').innerHTML = ph.map((p, i) => {
       const a = window.Evo.at(state.M, i + 0.5);
-      return `<tr class="${i === at.phaseIndex ? 'cur' : ''}"><td>${p.label}</td><td>${p.id === 'flash' ? 'peak runaway: hours <span class="muted">(smaller flashes continue ~1–2 Myr)</span>' : F.years(p.dur)}${['c', 'ne', 'o', 'si'].includes(p.id) ? ' <span class="muted">(from 15–25 M☉ models)</span>' : ''}</td><td>${F.sig(a.T, 2)} K</td><td>${F.sig(a.L, 2)} L☉</td><td>${F.sig(a.R, 2)} R☉</td></tr>`;
+      return `<tr class="${i === at.phaseIndex ? 'cur' : ''}"><td>${p.label}</td><td>${F.years(p.dur)}${['c', 'ne', 'o', 'si'].includes(p.id) ? ' <span class="muted">(25 M☉ model)</span>' : ''}</td><td>${F.sig(a.T, 2)} K</td><td>${F.sig(a.L, 2)} L☉</td><td>${F.sig(a.R, 2)} R☉</td></tr>`;
     }).join('');
     const sunLike = Math.abs(state.M - 1) < 0.08;
-    $('#sunTable').innerHTML = sunLike ? `
-      <div class="table-wrap"><table class="life"><caption>The Sun's future in round numbers, as usually quoted. Diameter in Suns.</caption>
+    $('#textbookSun').innerHTML = sunLike ? `
+      <div class="table-wrap"><table class="life"><caption>Your textbook's numbers for the Sun (OpenStax Astronomy ch. 22, from your notes). Diameter in Suns.</caption>
       <thead><tr><th>Stage</th><th>Lasts</th><th>Surface T</th><th>Luminosity</th><th>Diameter</th></tr></thead><tbody>
       <tr><td>Main sequence</td><td>11 billion yr</td><td>6,000 K</td><td>1 L☉</td><td>1</td></tr>
       <tr><td>Becomes red giant</td><td>1.3 billion yr</td><td>3,100 K at minimum</td><td>2,300 L☉ at maximum</td><td>165</td></tr>
       <tr><td>Helium fusion</td><td>100 million yr</td><td>4,800 K</td><td>50 L☉</td><td>10</td></tr>
       <tr><td>Giant again</td><td>20 million yr</td><td>3,100 K</td><td>5,200 L☉</td><td>180</td></tr>
       </tbody></table></div>
-      <p class="note">The model uses these luminosities and temperatures. Check the giant-again row with Stefan–Boltzmann yourself: 5,200 L☉ at 3,100 K gives R = √L / (T/5,772 K)² ≈ 250 R☉, so the table's 180 is a rounder figure. The red-giant row is consistent: 2,300 L☉ at 3,100 K → ≈ 165 R☉.</p>` : '';
+      <p class="note">The model uses the textbook's luminosities and temperatures. Check the giant-again row with Stefan–Boltzmann yourself: 5,200 L☉ at 3,100 K gives R = √L / (T/5,772 K)² ≈ 250 R☉, so the table's 180 is a rounder figure. The red-giant row is consistent: 2,300 L☉ at 3,100 K → ≈ 165 R☉.</p>` : '';
   }
   $('#prev').addEventListener('click', () => go(state.idx - 1));
   $('#next').addEventListener('click', () => go(state.idx + 1));
@@ -365,7 +342,7 @@
     state.interior = interiorScrub != null;
     if (state.interior) spec.layers = null;
     if (fromScrub && view.spec.mode === 'cutaway' && spec.mode === 'cutaway' && state.interior) {
-      view.spec = Object.assign({}, spec); // fresh spec, no stale keys; rotation lives on the view (yaw, pitch)
+      Object.assign(view.spec, spec);
     } else {
       view.setStage(spec);
     }
@@ -373,10 +350,9 @@
     $('#scrubBox').hidden = !state.interior;
     $('#cutTools').hidden = spec.mode !== 'cutaway';
     $('#cutScale [data-scale=true]').disabled = !state.interior;
-    if (!state.interior && view.scaleMode === 'true') setScaleMode('schematic', false);
-    else if (state.interior && view.scaleMode !== 'true' && store.get('scale') === 'true') setScaleMode('true', false);
+    if (!state.interior && view.scaleMode === 'true') setScaleMode('schematic');
     if (!state.interior) cutNote();
-    ['#insideGrid', '#lifeWrap', '#sunTable'].forEach((q) => { $(q).hidden = !state.interior; });
+    ['#insideGrid', '#lifeWrap', '#textbookSun'].forEach((q) => { $(q).hidden = !state.interior; });
     $('#insideEmpty').hidden = state.interior;
     if (!state.interior) {
       const why = { cloud: 'a cold gas cloud, not yet a star', collapse: 'a collapsing cloud, not yet a star', protostar: 'a protostar, shining by contraction, not fusion', pn: 'a planetary nebula around a hot carbon-oxygen core', wd: 'a white dwarf: carbon-oxygen, no fusion', hewd: 'a helium white dwarf: no fusion', nova: 'a white dwarf in a binary', sn1a: 'a white dwarf being destroyed', sn2: 'an exploding star: its layers are flying apart', ns: 'a neutron star: no fusion', pulsar: 'a neutron star: no fusion', bh: 'a black hole: no surface, no layers', xrb: 'a binary with a collapsed star', kilonova: 'a neutron star merger', bhmerger: 'a black hole merger' }[id] || 'not a fusing star';
@@ -395,7 +371,7 @@
     $('#stMyth').textContent = st.myth || '';
     let trBox = $('#stTR');
     if (!trBox) { trBox = document.createElement('div'); trBox.id = 'stTR'; $('#stMyth').before(trBox); }
-    trBox.innerHTML = st.tr ? `<div class="tr-callout"><div><p class="h">Classic picture</p><p>${st.tr[0]}</p></div><div><p class="h">What we know now</p><p>${st.tr[1]}</p></div></div>` : '';
+    trBox.innerHTML = st.tr ? `<div class="tr-callout"><div><p class="h">Your textbook</p><p>${st.tr[0]}</p></div><div><p class="h">Current research</p><p>${st.tr[1]}</p></div></div>` : '';
     const s = SUPPORT[st.support.kind] || SUPPORT.none;
     $('#balance').innerHTML = st.support.kind === 'none' && !st.support.label ? '' : `
       <div class="bars">
@@ -457,12 +433,11 @@
     const s1 = 0.6, s2 = 5;
     const strip = [[P.stripBlue(s1), s1], [P.stripRed(s1), s1], [P.stripRed(s2), s2], [P.stripBlue(s2), s2]].map(([t, l]) => X(t) + ',' + Y(l)).join(' ');
     el('polygon', { points: strip, fill: '#a98bff', opacity: 0.14 }, g);
-    // region labels get a halo in the chart background so the track can't hide them
-    const lab = (txt, x, y, opts) => { const t = el('text', Object.assign({ x, y, 'font-size': 11, fill: faint, style: 'paint-order: stroke; stroke: var(--hr-bg, var(--surface)); stroke-width: 4px; stroke-linejoin: round' }, opts || {}), g); t.textContent = txt; return t; };
-    lab('Main sequence', X(narrow ? 4.3 : 4.2), Y(narrow ? 1.9 : 1.2), { class: 'region', transform: `rotate(-28 ${X(narrow ? 4.3 : 4.2)} ${Y(narrow ? 1.9 : 1.2)})` });
-    lab('Giants', X(3.62), Y(2.15), narrow ? { class: 'region', 'text-anchor': 'end' } : { class: 'region' });
-    lab('Supergiants', X(4.05), Y(5.75), { class: 'region' });
-    lab('White dwarfs', X(4.62), Y(-3.2), { class: 'region' });
+    const lab = (txt, x, y, opts) => { const t = el('text', Object.assign({ x, y, 'font-size': 11, fill: faint }, opts || {}), g); t.textContent = txt; return t; };
+    lab('Main sequence', X(narrow ? 4.3 : 4.2), Y(narrow ? 1.9 : 1.2), { transform: `rotate(-28 ${X(narrow ? 4.3 : 4.2)} ${Y(narrow ? 1.9 : 1.2)})` });
+    lab('Giants', X(3.62), Y(2.15), narrow ? { 'text-anchor': 'end' } : {});
+    lab('Supergiants', X(4.05), Y(5.75));
+    lab('White dwarfs', X(4.62), Y(-3.2));
     if (!narrow) lab('Instability strip', X(3.86) + 4, Y(4.9), { 'font-size': 10 });
     if (!narrow) lab('RR Lyrae', X(3.82) - 7, Y(1.7) + 4, { 'font-size': 10, 'text-anchor': 'end' });
     el('circle', { cx: X(3.82), cy: Y(1.7), r: 3, fill: '#a98bff' }, g);
@@ -505,9 +480,6 @@
         });
         el('rect', { x: x + best[0], y: y + best[1], width: tw, height: 19, rx: 4, fill: css.getPropertyValue('--surface').trim(), opacity: 0.92 }, g);
         lab(t, x + best[0] + 5, y + best[1] + 14, { fill: fg, 'font-size': 12 });
-        // hide any region label (Main sequence, Giants…) that the active label sits on
-        const box = [x + best[0] - 4, y + best[1] - 4, x + best[0] + tw + 4, y + best[1] + 23];
-        svg.querySelectorAll('text.region').forEach((r) => { try { const b = r.getBBox(); if (b.x < box[2] && b.x + b.width > box[0] && b.y < box[3] && b.y + b.height > box[1]) r.setAttribute('visibility', 'hidden'); } catch (e) { /* not rendered */ } });
       }
     });
     if (state.interior) {
@@ -539,8 +511,6 @@
     if (id === 'clusters' && window.Modules) window.Modules.Clusters.draw();
     if (id === 'elements' && !renderNP.raf) renderNP();
     if (bhView && bhView.setOpen) bhView.setOpen(id === 'blackhole');
-    // charts drawn while their tab was hidden had no width to measure; enforce the phone minimum now
-    requestAnimationFrame(() => $$('svg[viewBox]', $('#' + id)).forEach((s) => D.Fmt.minFont(s)));
   }
   // In-text links like <a href="#blackhole" class="tab-link"> open a tab
   document.addEventListener('click', (e) => {
@@ -585,7 +555,7 @@
     const css = getComputedStyle(document.documentElement), muted = css.getPropertyValue('--muted').trim();
     const cap = el('text', { x: 16, y: 24, 'font-size': 12, fill: muted }, svg); cap.textContent = `Step ${k + 1} of ${R.steps.length}`;
     const eq = el('text', { x: 544, y: 24, 'text-anchor': 'end', 'font-size': 12, fill: muted }, svg); eq.textContent = `${rxName(st.in)} → ${rxName(st.out)}`;
-    const qv = el('text', { x: 280, y: 206, 'text-anchor': 'middle', 'font-size': 12, fill: css.getPropertyValue('--warn').trim() || D.EL.gam.c, 'font-weight': 600 }, svg); qv.textContent = st.q;
+    const qv = el('text', { x: 280, y: 206, 'text-anchor': 'middle', 'font-size': 12, fill: D.EL.gam.c }, svg); qv.textContent = st.q;
     const ins = st.in.map((sp, i) => ({ sp, x0: st.in.length === 1 ? 110 : 60 + i * 120, y0: cy + (i ? 18 : -18), node: null }));
     const outs = st.out.map((sp, i) => ({ sp, x1: 360 + (st.out.length === 1 ? 70 : i * (150 / Math.max(1, st.out.length - 1))), y1: cy + (i - (st.out.length - 1) / 2) * 46, node: null }));
     ins.forEach((o) => { o.node = nucleus(svg, o.sp, o.x0, o.y0); });
@@ -606,7 +576,6 @@
     };
     rxAnim = requestAnimationFrame(frame);
     $$('#rxSteps button').forEach((b, i) => b.setAttribute('aria-current', i === k ? 'true' : 'false'));
-    D.Fmt.minFont(svg);
   }
 
   function renderReaction() {
@@ -669,16 +638,16 @@
       }
     });
     // arrows
-    const arr = (x1, y1, x2, y2, txt, anchor, dy) => {
+    const arr = (x1, y1, x2, y2, txt, anchor) => {
       el('path', { d: `M${x1},${y1} L${x2},${y2}`, stroke: accent, 'stroke-width': 1.5, fill: 'none', 'marker-end': 'url(#ah)' }, svg);
-      const t = el('text', { x: (x1 + x2) / 2, y: (y1 + y2) / 2 + (dy == null ? 16 : dy), 'text-anchor': anchor || 'middle', 'font-size': 10, fill: accent }, svg); t.textContent = txt;
+      const t = el('text', { x: (x1 + x2) / 2, y: (y1 + y2) / 2 + 16, 'text-anchor': anchor || 'middle', 'font-size': 10, fill: accent }, svg); t.textContent = txt;
     };
     const defs = el('defs', {}, svg); const m = el('marker', { id: 'ah', viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto' }, defs);
     el('path', { d: 'M1,1 L9,5 L1,9', fill: 'none', stroke: accent, 'stroke-width': 1.6 }, m);
     arr(X(14), Y(5.6), X(44), Y(7.9), 'fusion releases energy', 'start');
-    arr(X(225), Y(6.9), X(150), Y(7.85), 'fission releases energy', 'middle', -10);
-    ['⁶²Ni is the most tightly bound;', '⁵⁶Fe is a hair behind.', 'Silicon burning ends at ⁵⁶Ni,', 'which decays to ⁵⁶Fe.'].forEach((line, i) => { const n = el('text', { x: X(70), y: Y(2.2) + i * 14, 'font-size': 10, fill: muted }, svg); n.textContent = line; });
-    D.Fmt.minFont(svg);
+    arr(X(225), Y(6.9), X(150), Y(7.85), 'fission releases energy');
+    const n = el('text', { x: X(70), y: Y(1.6), 'font-size': 10, fill: muted }, svg); n.textContent = '⁶²Ni is the most tightly bound; ⁵⁶Fe is a hair behind.';
+    const n2 = el('text', { x: X(70), y: Y(1.0), 'font-size': 10, fill: muted }, svg); n2.textContent = 'Silicon burning ends at ⁵⁶Ni, which decays to ⁵⁶Fe.';
   }
 
   /* ---------- Neutron capture chart ---------- */
@@ -741,18 +710,15 @@
       });
       decays.forEach((dc, i) => {
         el('path', { d: `M${X(dc.from[0])},${Y(dc.from[1])} L${X(dc.to[0])},${Y(dc.to[1])}`, stroke: D.EL[dc.sym] ? D.EL[dc.sym].c : fg, 'stroke-width': 1.6, 'stroke-dasharray': '5 3', fill: 'none', 'marker-end': 'url(#nah)' }, svg);
-        if (i < 2) txt(dc.lbl, X(dc.to[0]) - 7, Y(dc.to[1]) + 4, { fill: D.EL[dc.sym] ? D.EL[dc.sym].c : fg, 'text-anchor': 'end', 'font-weight': 600, 'paint-order': 'stroke', stroke: css.getPropertyValue('--bg').trim() || '#000', 'stroke-width': 3 });
       });
     }
     const defs = el('defs', {}, svg); const mk = el('marker', { id: 'nah', viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto' }, defs);
     el('path', { d: 'M1,1 L9,5 L1,9', fill: 'none', stroke: fg, 'stroke-width': 1.6 }, mk);
     // landmark nuclei
     [['Fe', 26, 30, '⁵⁶Fe', 'Fe'], ['Sr', 38, 50, '⁸⁸Sr', null], ['Ba', 56, 82, '¹³⁸Ba', null], ['Pt', 78, 117, '¹⁹⁵Pt', 'Pt'], ['Au', 79, 118, '¹⁹⁷Au', 'Au'], ['Pb', 82, 126, '²⁰⁸Pb', null], ['U', 92, 146, '²³⁸U', null]].forEach(([s, Z, N, lbl, key]) => {
-      const sb = npMode === 'r' && (s === 'Sr' || s === 'Ba');   // s-process landmarks: fade in r mode so the peaks aren't read as Sr/Ba
-      el('circle', { cx: X(N), cy: Y(Z), r: sb ? 3.5 : 5, fill: key ? D.EL[key].c : fg, stroke: 'rgba(0,0,0,.4)', opacity: sb ? 0.3 : 1 }, svg);
-      if (!sb) txt(lbl, X(N) + (s === 'Pt' ? -8 : 8), Y(Z) + (s === 'Pt' ? 14 : -6), { fill: fg, 'text-anchor': s === 'Pt' ? 'end' : 'start' });
+      el('circle', { cx: X(N), cy: Y(Z), r: 5, fill: key ? D.EL[key].c : fg, stroke: 'rgba(0,0,0,.4)' }, svg);
+      txt(lbl, X(N) + (s === 'Pt' ? -8 : 8), Y(Z) + (s === 'Pt' ? 14 : -6), { fill: fg, 'text-anchor': s === 'Pt' ? 'end' : 'start' });
     });
-    D.Fmt.minFont(svg);
     // animated dot along the path
     const dot = el('circle', { r: 6, fill: '#ffffff', stroke: col, 'stroke-width': 2 }, svg);
     const len = pathEl.getTotalLength ? pathEl.getTotalLength() : 0;
@@ -809,14 +775,14 @@
       bh: { name: `Black hole (${bhM.toFixed(0)} M☉)`, M: bhM * P.K.Msun, R: 0, T: 0 },
     };
   }
-  // where each kind of object's surface sits, in units of its own rₛ (1 Msun for the compact ones)
+  // where each kind of object's surface sits, in units of its own r_s (1 Msun for the compact ones)
   function markersFor() {
     const rs1 = P.schwarzschildRadius(P.K.Msun);
     return [
       { label: 'Sun surface', r: P.K.Rsun / rs1 },
       { label: 'white dwarf', r: P.whiteDwarfRadius(1.0) * P.K.Rsun / rs1 },
       { label: 'neutron star', r: 12e3 / P.schwarzschildRadius(1.4 * P.K.Msun) },
-      { label: 'photon sphere 1.5 rₛ', r: 1.5 },
+      { label: 'photon sphere 1.5 r_s', r: 1.5 },
     ];
   }
   function refreshSpaceObjects() {
@@ -843,14 +809,14 @@
   };
   function updateSpaceStats() {
     const s = st.stats(), o = st.obj;
-    $('#probeOut').innerHTML = `${F.sig(s.r, s.r < 10 ? 4 : 3)} rₛ${s.Rrs && s.r <= s.Rrs * 1.0001 ? ' (surface)' : ''}`;
+    $('#probeOut').innerHTML = `${F.sig(s.r, s.r < 10 ? 4 : 3)} r<sub>s</sub>${s.Rrs && s.r <= s.Rrs * 1.0001 ? ' (surface)' : ''}`;
     const kind = !s.Rrs ? 'black hole' : s.Rrs < 10 ? 'neutron star' : s.Rrs < 1e5 ? 'white dwarf' : 'ordinary star or planet';
     $('#stHeadline').innerHTML = s.Rrs
-      ? `<b>${o.name}</b>: surface at <b>${F.sig(s.Rrs, 3)} rₛ</b>. The well stops there, so it is ${s.Rrs > 1e5 ? 'shallow' : s.Rrs > 100 ? 'deeper' : 'very deep'}.`
-      : `<b>${o.name}</b>: no surface. The well runs all the way down to the horizon at 1 rₛ and beyond.`;
+      ? `<b>${o.name}</b>: surface at <b>${F.sig(s.Rrs, 3)} r<sub>s</sub></b>. The well stops there, so it is ${s.Rrs > 1e5 ? 'shallow' : s.Rrs > 100 ? 'deeper' : 'very deep'}.`
+      : `<b>${o.name}</b>: no surface. The well runs all the way down to the horizon at 1 r<sub>s</sub> and beyond.`;
     const rows = [
-      ['Schwarzschild radius rₛ', s.rs < 1 ? F.sig(s.rs * 1000, 3) + ' mm' : F.sig(s.rs / 1000, 3) + ' km'],
-      ['Radius in units of rₛ', s.Rrs ? F.sig(s.Rrs, 3) : '— (all horizon)'],
+      ['Schwarzschild radius r_s', s.rs < 1 ? F.sig(s.rs * 1000, 3) + ' mm' : F.sig(s.rs / 1000, 3) + ' km'],
+      ['Radius in units of r_s', s.Rrs ? F.sig(s.Rrs, 3) : '— (all horizon)'],
       ['Clock rate at probe, dτ/dt', s.rate > 0.999999 ? s.rate.toFixed(10) : F.sig(s.rate, 6)],
       ['Probe clock loses per day', fmtLoss(1 - s.rate)],
     ];
@@ -874,7 +840,7 @@
       if (!morph) return;
       morph.t += dt;
       const f = Math.min(1, morph.t / dur);
-      // Buchdahl: no static star can be smaller than 9/8 rₛ. Hold there, then collapse.
+      // Buchdahl: no static star can be smaller than 9/8 r_s. Hold there, then collapse.
       const xB = Math.log10(9 / 8);
       let x = x0 * (1 - f), Rm, name;
       if (x > xB) {
@@ -884,7 +850,7 @@
         if (morph.hold == null) morph.hold = morph.t;
         const held = morph.t - morph.hold;
         Rm = held < 2.2 ? 9 / 8 * rs : 0;
-        name = Rm ? 'Buchdahl limit (9/8 rₛ): no static star can be more compact' : '1 M☉ black hole';
+        name = Rm ? 'Buchdahl limit (9/8 r_s): no static star can be more compact' : '1 M☉ black hole';
       }
       const T = Rm === 0 ? 0 : (x > 4.5 ? 5772 : x > 2 ? 25000 : 1e6);
       st.setObject({ name, M: P.K.Msun, R: Rm, T, morph: true }, markersFor());
@@ -914,10 +880,10 @@
   const z = () => P.zams(state.M);
   const EQS = [
     { t: 'Schwarzschild radius', f: 'r<sub>s</sub> = 2GM / c²', ins: [['M', 'Mass (M☉)', () => state.M]],
-      go: (v) => { const rs = P.schwarzschildRadius(v.M * P.K.Msun); return [['rₛ', F.sig(rs / 1e3, 4) + ' km'], ['per solar mass', '2.953 km']]; },
+      go: (v) => { const rs = P.schwarzschildRadius(v.M * P.K.Msun); return [['r_s', F.sig(rs / 1e3, 4) + ' km'], ['per solar mass', '2.953 km']]; },
       why: 'Squeeze the mass inside this radius and light cannot escape. Earth: 8.9 mm.' },
     { t: 'Gravitational time dilation', f: 'dτ/dt = √(1 − r<sub>s</sub>/r)', ins: [['M', 'Mass (M☉)', () => 1.4], ['r', 'Distance r (km)', () => 12]],
-      go: (v) => { const rs = P.schwarzschildRadius(v.M * P.K.Msun) / 1e3; if (v.r <= rs) return [['', 'r is inside the horizon (rₛ = ' + F.sig(rs, 3) + ' km)']]; const k = Math.sqrt(1 - rs / v.r); return [['dτ/dt', F.sig(k, 6)], ['clock at r per far hour', F.sig(60 * k, 5) + ' min']]; },
+      go: (v) => { const rs = P.schwarzschildRadius(v.M * P.K.Msun) / 1e3; if (v.r <= rs) return [['', 'r is inside the horizon (r_s = ' + F.sig(rs, 3) + ' km)']]; const k = Math.sqrt(1 - rs / v.r); return [['dτ/dt', F.sig(k, 6)], ['clock at r per far hour', F.sig(60 * k, 5) + ' min']]; },
       why: 'Clocks deeper in gravity tick slower relative to distant clocks.' },
     { t: 'Stefan–Boltzmann law', f: 'L = 4πR²σT⁴', ins: [['R', 'Radius (R☉)', () => +z().R.toPrecision(3)], ['T', 'Surface T (K)', () => Math.round(z().T)]],
       go: (v) => { const Lw = P.luminositySB(v.R * P.K.Rsun, v.T); return [['L', F.sig(Lw / P.K.Lsun, 4) + ' L☉'], ['', F.sig(Lw, 3) + ' W']]; },
@@ -953,7 +919,7 @@
       go: (v) => [['t_KH', F.years(P.kelvinHelmholtz(v.M * P.K.Msun, v.R * P.K.Rsun, v.L * P.K.Lsun) / P.K.yr)]],
       why: 'How long contraction alone could power the star. For the Sun ~30 million years, far too short, which proved stars need nuclear fusion.' },
     { t: 'Photon sphere and innermost orbit', f: 'r<sub>ph</sub> = 1.5 r<sub>s</sub> · r<sub>ISCO</sub> = 3 r<sub>s</sub> (non-spinning)', ins: [['M', 'Black hole mass (M☉)', () => P.blackHoleMass(Math.max(state.M, 25))]],
-      go: (v) => { const rs = P.schwarzschildRadius(v.M * P.K.Msun) / 1e3; return [['horizon rₛ', F.sig(rs, 4) + ' km'], ['photon sphere', F.sig(1.5 * rs, 4) + ' km'], ['ISCO', F.sig(3 * rs, 4) + ' km'], ['shadow radius', F.sig(Math.sqrt(27) / 2 * rs, 4) + ' km']]; },
+      go: (v) => { const rs = P.schwarzschildRadius(v.M * P.K.Msun) / 1e3; return [['horizon r_s', F.sig(rs, 4) + ' km'], ['photon sphere', F.sig(1.5 * rs, 4) + ' km'], ['ISCO', F.sig(3 * rs, 4) + ' km'], ['shadow radius', F.sig(Math.sqrt(27) / 2 * rs, 4) + ' km']]; },
       why: 'Light can circle at the photon sphere. Gas cannot orbit stably inside the ISCO, so accretion disks end there.' },
     { t: 'Inverse-square brightness', f: 'F = L / (4πd²)', ins: [['L', 'Luminosity (L☉)', () => +P.msLuminosity(state.M).toPrecision(3)], ['d', 'Distance (light-years)', () => 100]],
       go: (v) => { const Fl = v.L * P.K.Lsun / (4 * Math.PI * Math.pow(v.d * 9.4607e15, 2)); const Fsun = P.K.Lsun / (4 * Math.PI * Math.pow(1.495978707e11, 2)); return [['flux', F.sig(Fl, 3) + ' W/m²'], ['vs Sun from Earth', F.sig(Fl / Fsun, 3)]]; },
@@ -998,7 +964,7 @@
   function renderQuiz() {
     const box = $('#quizBox');
     if (qi >= D.QUIZ.length) {
-      box.innerHTML = `<div class="card"><p class="progress">Done</p><h3>${score} / ${D.QUIZ.length}</h3><p class="muted">${score / D.QUIZ.length >= 0.85 ? 'Excellent.' : score / D.QUIZ.length >= 0.65 ? 'Solid. Review the ones you missed.' : 'Go back through the stages and the topic tabs, then try again.'}</p><div class="actions"><button class="btn btn-primary" type="button" id="qRestart">Restart</button></div></div>`;
+      box.innerHTML = `<div class="card"><p class="progress">Done</p><h3>${score} / ${D.QUIZ.length}</h3><p class="muted">${score / D.QUIZ.length >= 0.85 ? 'Exam-ready.' : score / D.QUIZ.length >= 0.65 ? 'Solid. Review the ones you missed.' : 'Go back through the stages and the course tabs, then try again.'}</p><div class="actions"><button class="btn btn-primary" type="button" id="qRestart">Restart</button></div></div>`;
       $('#qRestart').addEventListener('click', () => { qi = 0; score = 0; quizSeed = (quizSeed * 7 + 1) & 0xffff; renderQuiz(); });
       return;
     }
@@ -1022,7 +988,6 @@
       answered = true;
       const pick = +sel.value, ok = pick === q.c;
       if (ok) score++;
-      $('.progress', form).textContent = `Question ${qi + 1} of ${D.QUIZ.length} · score ${score}`;
       $$('.opt', form).forEach((o) => { const i = +o.querySelector('input').value; if (i === q.c) o.classList.add('right'); else if (i === pick) o.classList.add('wrong'); o.querySelector('input').disabled = true; });
       const fb = $('#qFb'); fb.hidden = false; fb.className = 'fb ' + (ok ? 'ok' : 'no');
       fb.innerHTML = `<b>${ok ? 'Correct.' : 'Not quite.'}</b> ${q.e}`;
@@ -1064,10 +1029,6 @@
   // Charts whose coordinate width follows their box: redraw when the box resizes
   const reflow = (fn) => { let raf = 0, last = 0; return (entries) => { const w = Math.round(entries[0].contentRect.width); if (w === last || !w) return; last = w; cancelAnimationFrame(raf); raf = requestAnimationFrame(fn); }; };
   new ResizeObserver(reflow(() => renderHR())).observe(document.querySelector('.hr-box'));
-  // mark tables that scroll sideways (CSS fades their right edge as a cue)
-  const markScroll = () => $$('.table-wrap').forEach((w) => w.classList.toggle('scrolls', w.scrollWidth > w.clientWidth + 2));
-  new ResizeObserver(() => markScroll()).observe(document.body);
-  new MutationObserver(() => requestAnimationFrame(markScroll)).observe($('main'), { childList: true, subtree: true });
   new ResizeObserver(reflow(() => { if (state.interior) applyInterior(); })).observe($('#compSvg').parentElement);
   new ResizeObserver(reflow(() => renderBinding())).observe($('#bindSvg').parentElement);
   new ResizeObserver(reflow(() => window.Modules.Distances.ladder())).observe($('#ladderSvg').parentElement);

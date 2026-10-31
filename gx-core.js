@@ -52,27 +52,16 @@
   // Population colours for "Population I vs II" mode
   const POP1 = [0.35, 0.65, 1.0], POP2 = [1.0, 0.45, 0.25];
 
-  // Fisher–Yates on the first n points, so drawing only a prefix is an even subsample
-  function shuffle(cl, n, r) {
-    for (let i = n - 1; i > 0; i--) {
-      const j = (r() * (i + 1)) | 0;
-      for (let a = 0; a < 3; a++) { [cl.p[i * 3 + a], cl.p[j * 3 + a]] = [cl.p[j * 3 + a], cl.p[i * 3 + a]]; [cl.c[i * 3 + a], cl.c[j * 3 + a]] = [cl.c[j * 3 + a], cl.c[i * 3 + a]]; }
-      [cl.s[i], cl.s[j]] = [cl.s[j], cl.s[i]]; [cl.g[i], cl.g[j]] = [cl.g[j], cl.g[i]]; [cl.k[i], cl.k[j]] = [cl.k[j], cl.k[i]];
-    }
-  }
-
   /* ---------- Milky Way model (kpc) ----------
    * Groups: 0 thin disk (old), 1 young disk / arms, 2 HII regions, 3 thick disk,
    * 4 bulge + bar, 5 stellar halo, 6 globular clusters, 7 dark-matter halo.
    * Kind 1 = rotates with the disk.
    */
   const ARMS = [
-    // named so that, along the Sun's direction, they run outward in the real order:
-    // Scutum–Centaurus (~5 kpc), Sagittarius–Carina (~7), [Sun 8.2], Perseus (~10), Norma–Outer (~14)
-    { name: 'Sagittarius–Carina Arm', phi0: 0.35 },
-    { name: 'Scutum–Centaurus Arm', phi0: 0.35 + Math.PI / 2 },
-    { name: 'Norma–Outer Arm', phi0: 0.35 + Math.PI },
-    { name: 'Perseus Arm', phi0: 0.35 + 3 * Math.PI / 2 },
+    { name: 'Perseus Arm', phi0: 0.35 },
+    { name: 'Norma–Outer Arm', phi0: 0.35 + Math.PI / 2 },
+    { name: 'Scutum–Centaurus Arm', phi0: 0.35 + Math.PI },
+    { name: 'Sagittarius–Carina Arm', phi0: 0.35 + 3 * Math.PI / 2 },
   ];
   const PITCH = 13 * Math.PI / 180, ARM_R0 = 3.6, BAR_ANGLE = 27 * Math.PI / 180;
   const armPhi = (R, k) => ARMS[k].phi0 + Math.log(R / ARM_R0) / Math.tan(PITCH);
@@ -84,8 +73,7 @@
     }
     return [best, which];
   }
-  // Coordinates: north Galactic pole = -y. The Sun sits at (-R0, -0.02, 0), ~20 pc north of the plane.
-  // Seen from the north the disk turns clockwise and the arms trail; the bar's near end is at positive longitude.
+  // Sun sits at (-R0, 0.02, 0); the bar's near end points toward positive longitude
   function milkyWay(scale) {
     const r = rng(42), cl = new Cloud(), f = scale || 1;
     const expR = (h, rmin, rmax) => { let R; do { R = -h * Math.log(1 - r() * 0.999); } while (R < rmin || R > rmax); return R; };
@@ -130,12 +118,12 @@
       cl.add(X, y, Z, mixc(COL.old, COL.red, 0.3 + r() * 0.5), 0.1 + r() * 0.1, 4, 1);
     }
     // unresolved starlight: dim, wide points that give the disk and bulge a smooth glow
-    for (let i = 0; i < 4500 * f; i++) {
+    for (let i = 0; i < 9000 * f; i++) {
       const R = expR(2.6, 0.3, 15), phi = r() * TAU, [d] = armDist(R, phi);
-      const k = 0.08 + 0.08 * Math.exp(-(d * d) / 0.8);
-      cl.add(R * Math.cos(phi), gauss(r) * 0.25, R * Math.sin(phi), mixc(COL.old, COL.young, Math.exp(-(d * d) / 0.8) * 0.6).map((v) => v * k), 0.7 + r() * 0.4, 0, 1);
+      const k = 0.05 + 0.05 * Math.exp(-(d * d) / 0.8);
+      cl.add(R * Math.cos(phi), gauss(r) * 0.25, R * Math.sin(phi), mixc(COL.old, COL.young, Math.exp(-(d * d) / 0.8) * 0.6).map((v) => v * k), 0.8 + r() * 0.6, 0, 1);
     }
-    for (let i = 0; i < 1500 * f; i++) {
+    for (let i = 0; i < 2500 * f; i++) {
       const p = [gauss(r) * 1.1, gauss(r) * 0.5, gauss(r) * 0.9];
       cl.add(p[0] * -Math.cos(BAR_ANGLE) - p[2] * Math.sin(BAR_ANGLE), p[1], p[0] * Math.sin(BAR_ANGLE) - p[2] * Math.cos(BAR_ANGLE), COL.old.map((v) => v * 0.22), 0.7 + r() * 0.5, 4, 1);
     }
@@ -145,19 +133,16 @@
     for (let i = 0; i < 3500 * f; i++) { const p = sph(hs(1.5, 60)); cl.add(p[0], p[1], p[2], COL.red, 0.15 + r() * 0.1, 5, 0); }
     // ~150 globular clusters
     for (let i = 0; i < 150; i++) { const p = sph(hs(0.8, 40)); cl.add(p[0], p[1], p[2], COL.gc, 0.35 + r() * 0.25, 6, 0); }
-    cl.nStars = cl.n;
     // dark-matter halo (NFW-like, out to ~200 kpc; shown faint)
     for (let i = 0; i < 9000 * f; i++) {
       const rs = 16; let rr; do { const u = r(); rr = rs * u / (1 - u) * 1.2; } while (rr > 220 || rr < 0.5);
       const p = sph(rr); cl.add(p[0], p[1], p[2], COL.dm, 2.5 + r() * 3, 7, 0);
     }
-    shuffle(cl, cl.nStars, r);
     return cl;
   }
   milkyWay.ARMS = ARMS; milkyWay.armPhi = armPhi; milkyWay.ARM_R0 = ARM_R0; milkyWay.BAR_ANGLE = BAR_ANGLE;
   milkyWay.GROUPS = ['Thin disk (old stars)', 'Young stars on the arms', 'Star-forming nebulae', 'Thick disk', 'Bulge and bar', 'Stellar halo', 'Globular clusters', 'Dark-matter halo'];
-  // stellar population of each group: 1 = Pop I, 2 = Pop II, 3 = old but metal-rich bulge/bar, 0 = not stars
-  milkyWay.POP = [1, 1, 1, 2, 3, 2, 2, 0];
+  milkyWay.POP = [1, 1, 1, 2, 2, 2, 2, 0];    // stellar population of each group (0 = not stars)
 
   /* ---------- Hubble types (unit radius ~1) ----------
    * type: E0..E7 ('E', n), 'S0', 'Sa','Sb','Sc', 'SBa','SBb','SBc', 'Irr'
@@ -172,26 +157,24 @@
       return cl;
     }
     if (type === 'Irr') {
-      // a faint, lopsided body of older stars plus a few distinct clumps of young blue stars and pink nebulae
-      const blobs = Array.from({ length: 6 }, () => [gauss(r) * 0.38, gauss(r) * 0.1, gauss(r) * 0.3, 0.04 + r() * 0.07]);
+      const blobs = Array.from({ length: 7 }, () => [gauss(r) * 0.35, gauss(r) * 0.12, gauss(r) * 0.3, 0.1 + r() * 0.2]);
       for (let i = 0; i < N; i++) {
-        if (r() < 0.3) { cl.add(gauss(r) * 0.4 + 0.08, gauss(r) * 0.1, gauss(r) * 0.3, mixc(COL.old, COL.young, 0.3 + r() * 0.5).map((v) => v * 0.6), 0.012, 0, 1); continue; }
         const b = blobs[(r() * blobs.length) | 0];
-        cl.add(b[0] + gauss(r) * b[3], b[1] + gauss(r) * b[3] * 0.5, b[2] + gauss(r) * b[3], mixc(COL.young, COL.white, r() * 0.3), 0.012, 0, 1);
-        if (r() < 0.05) cl.add(b[0] + gauss(r) * b[3] * 0.6, 0, b[2] + gauss(r) * b[3] * 0.6, COL.hii, 0.03, 0, 1);
+        cl.add(b[0] + gauss(r) * b[3], b[1] + gauss(r) * b[3] * 0.4, b[2] + gauss(r) * b[3], r() < 0.6 ? mixc(COL.young, COL.white, r() * 0.5) : COL.old, 0.012, 0, 1);
+        if (r() < 0.04) cl.add(b[0] + gauss(r) * b[3], 0, b[2] + gauss(r) * b[3], COL.hii, 0.03, 0, 1);
       }
       return cl;
     }
     const barred = type.startsWith('SB'), sub = type.slice(-1);
     const bulgeA = type === 'S0' ? 0.16 : { a: 0.15, b: 0.09, c: 0.05 }[sub];
-    const bulgeFrac = (type === 'S0' ? 0.45 : { a: 0.4, b: 0.25, c: 0.12 }[sub]) * (barred ? 0.65 : 1);   // barred: some bulge light is in the bar
+    const bulgeFrac = type === 'S0' ? 0.45 : { a: 0.4, b: 0.25, c: 0.12 }[sub];
     const pitch = { a: 9, b: 15, c: 24 }[sub] * Math.PI / 180;
     const youngFrac = type === 'S0' ? 0 : { a: 0.25, b: 0.4, c: 0.55 }[sub];
-    const r0 = barred ? 0.5 : 0.15, nArms = 2;
+    const r0 = barred ? 0.32 : 0.15, nArms = 2;
     for (let i = 0; i < N; i++) {
       const u = r();
       if (u < bulgeFrac) { const p = sph(hern(bulgeA, 0.6)); cl.add(p[0], p[1] * 0.8, p[2], mixc(COL.old, COL.red, r() * 0.4), 0.012, 0, 1); continue; }
-      if (barred && u < bulgeFrac + 0.22) { cl.add((r() * 2 - 1) * r0, gauss(r) * 0.03, gauss(r) * 0.055, mixc(COL.old, COL.white, r() * 0.3), 0.012, 0, 1); continue; }   // a long bar whose ends launch the arms
+      if (barred && u < bulgeFrac + 0.2) { cl.add((r() * 2 - 1) * r0 * 1.05, gauss(r) * 0.03, gauss(r) * 0.045, mixc(COL.old, COL.white, r() * 0.3), 0.012, 0, 1); continue; }
       let R; do { R = -0.28 * Math.log(1 - r()); } while (R > 1.2 || R < 0.05);
       let phi;
       const young = r() < youngFrac;
@@ -241,7 +224,7 @@
   /* ---------- WebGL point renderer ---------- */
   const VS = `
 attribute vec3 aP; attribute vec3 aC; attribute float aS; attribute float aG; attribute float aK;
-uniform mat4 uMVP; uniform float uScale, uT, uWind, uPopMode, uMax, uGain;
+uniform mat4 uMVP; uniform float uScale, uT, uWind, uPopMode, uMax;
 uniform float uVis[8]; uniform float uPop[8];
 varying vec3 vC; varying float vA;
 void main(){
@@ -252,8 +235,7 @@ void main(){
   if (aK > 0.5) {
     float R = length(p.xz);
     // flat rotation curve: angular speed ∝ 1/R (stars) vs rigid pattern speed (arms)
-    // the bar (group 4) turns as one solid body at its own pattern speed, ~1.4x the Sun's angular speed
-    float om = uWind > 0.5 ? (g == 4 ? 0.17 : 1.0 / max(R, 0.4)) : 0.06;
+    float om = uWind > 0.5 ? 1.0 / max(R, 0.4) : 0.06;
     float a = -uT * om;
     float c = cos(a), s = sin(a);
     p.xz = vec2(c * p.x - s * p.z, s * p.x + c * p.z);
@@ -263,12 +245,11 @@ void main(){
   float sz = aS * uScale / max(q.w, 0.01);
   gl_PointSize = clamp(sz, 1.0, uMax);
   vec3 col = aC;
-  // population colour keeps each point's own brightness (the dim glow points stay dim)
-  if (uPopMode > 0.5 && pop > 0.5) col = (pop < 1.5 ? vec3(0.35, 0.65, 1.0) : pop < 2.5 ? vec3(1.0, 0.45, 0.25) : vec3(1.0, 0.8, 0.3)) * max(aC.r, max(aC.g, aC.b));
+  if (uPopMode > 0.5 && pop > 0.5) col = pop < 1.5 ? vec3(0.35, 0.65, 1.0) : vec3(1.0, 0.45, 0.25);
   vC = col;
   // keep total light roughly fixed: tiny points get dimmer, clamped big points too
   float shown = clamp(sz, 1.0, uMax);
-  vA = uGain * (g == 7 ? 0.22 : 0.32) * min(1.0, sz * sz / (shown * shown) + 0.15) * min(1.0, 0.35 + sz * 0.25);
+  vA = (g == 7 ? 0.22 : 0.32) * min(1.0, sz * sz / (shown * shown) + 0.15) * min(1.0, 0.35 + sz * 0.25);
 }`;
   const FS = `
 precision mediump float;
@@ -300,7 +281,7 @@ void main(){
     setCloud(cl) {
       const gl = this.gl, data = [[cl.p, 3], [cl.c, 3], [cl.s, 1], [cl.g, 1], [cl.k, 1]];
       data.forEach(([arr, sz], i) => { gl.bindBuffer(gl.ARRAY_BUFFER, this.bufs[i]); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(arr), gl.STATIC_DRAW); });
-      this.n = cl.n; this.nStars = cl.nStars || cl.n;
+      this.n = cl.n;
     }
     draw(mvp, o) {
       const gl = this.gl, c = this.c;
@@ -309,10 +290,10 @@ void main(){
       gl.useProgram(this.p);
       [3, 3, 1, 1, 1].forEach((sz, i) => { gl.bindBuffer(gl.ARRAY_BUFFER, this.bufs[i]); gl.enableVertexAttribArray(i); gl.vertexAttribPointer(i, sz, gl.FLOAT, false, 0, 0); });
       gl.uniformMatrix4fv(this.u.uMVP, false, new Float32Array(mvp));
-      gl.uniform1f(this.u.uScale, o.scale); gl.uniform1f(this.u.uMax, o.max || 16); gl.uniform1f(this.u.uGain, o.gain || 1); gl.uniform1f(this.u.uT, o.t); gl.uniform1f(this.u.uWind, o.wind ? 1 : 0); gl.uniform1f(this.u.uPopMode, o.pop ? 1 : 0);
+      gl.uniform1f(this.u.uScale, o.scale); gl.uniform1f(this.u.uMax, o.max || 40); gl.uniform1f(this.u.uT, o.t); gl.uniform1f(this.u.uWind, o.wind ? 1 : 0); gl.uniform1f(this.u.uPopMode, o.pop ? 1 : 0);
       gl.uniform1fv(this.u.uVis, new Float32Array(o.vis)); gl.uniform1fv(this.u.uPop, new Float32Array(o.popOf));
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.disable(gl.DEPTH_TEST);
-      gl.drawArrays(gl.POINTS, 0, Math.min(this.n, o.count || this.n));
+      gl.drawArrays(gl.POINTS, 0, this.n);
     }
   }
 
