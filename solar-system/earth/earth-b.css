@@ -1,0 +1,70 @@
+/* Stellar Life — Earth (builder B): water, air, Moon tabs */
+.eb-ctlrow { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.eb-out { font-size: 0.9rem; color: var(--muted); max-width: 80ch; flex: 1 1 320px; min-height: 3em; }
+.eb-out b { color: var(--fg); }
+.eb-chart svg { max-width: 540px; margin: 0 auto; }
+.eb-mini svg { max-width: 540px; margin: 0 auto; }
+.eb-wide svg { max-width: 1000px; margin: 0 auto; }
+.eb-chart svg, .eb-wide svg, .eb-mini svg { user-select: none; -webkit-user-select: none; }
+
+/* reservoirs */
+.eb-res { display: grid; gap: 4px; }
+.eb-res-row { display: grid; grid-template-columns: minmax(0, 11.5em) minmax(0, 1fr) 5.2em; gap: 10px; align-items: center; width: 100%; text-align: left; padding: 6px 8px; border: 1px solid var(--line-soft); border-radius: 8px; background: var(--surface); cursor: pointer; font-size: 0.86rem; }
+.eb-res-row:hover { border-color: var(--line); }
+.eb-res-row[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); background: var(--surface-2); }
+.eb-res-n { line-height: 1.3; }
+.eb-res-bar { height: 12px; border-radius: 3px; background: var(--line-soft); overflow: hidden; }
+.eb-res-bar i { display: block; height: 100%; border-radius: 3px; transition: width .35s ease; }
+.eb-res-v { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; font-size: 0.82rem; }
+@media (max-width: 520px) {
+  .eb-res-row { grid-template-columns: minmax(0, 1fr) 5em; row-gap: 4px; }
+  .eb-res-bar { grid-column: 1 / -1; grid-row: 2; }
+}
+
+/* svg interaction */
+.eb-fx, .eb-chip, .eb-node { outline: none; }
+.eb-fx:focus-visible .eb-fx-line, .eb-fx.eb-on .eb-fx-line { opacity: 1 !important; filter: drop-shadow(0 0 4px rgba(255, 255, 255, .5)); }
+.eb-fx:hover .eb-fx-line { opacity: 1 !important; }
+.eb-chip:hover rect, .eb-node:hover rect { stroke: var(--accent); }
+.eb-chip.eb-on rect, .eb-node.eb-on rect, .eb-chip:focus-visible rect, .eb-node:focus-visible rect { stroke: var(--accent); stroke-width: 3; }
+@media (prefers-reduced-motion: no-preference) {
+  .eb-run .eb-dash { animation: eb-flow 0.9s linear infinite; }
+}
+@keyframes eb-flow { to { stroke-dashoffset: -18; } }
+.eb-drag { cursor: grab; }
+#ebPh, #ebHj, #ebAtm { cursor: crosshair; }
+
+/* air composition */
+.eb-comp { display: grid; gap: 8px; }
+.eb-comp-bar { display: flex; height: 16px; border-radius: 4px; overflow: hidden; }
+.eb-comp-bar i { display: block; height: 100%; min-width: 0; }
+.eb-comp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 0.86rem; }
+.eb-comp-list li { display: flex; align-items: center; gap: 6px; }
+.eb-comp-list b { margin-left: auto; font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.eb-feats2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 560px) { .eb-feats2 { grid-template-columns: minmax(0, 1fr); } }
+#ebGapDist[hidden], #ebGapW[hidden] { display: none; }
+
+/* small colour keys under charts */
+:root { --eb-ero: #d9822b; --eb-tra: #3a8ee6; --eb-dep: #b49a5a; --eb-sheath: #5a3424; --eb-msph: #1b2a55; --eb-sw: #cfd6ea; --eb-fl: #7fa6e8; --eb-inner: #ff9a4a; --eb-outer: #ffd36a; --eb-aur: #5ee6a8; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --eb-ero: #e98a3a; --eb-dep: #b08d3c; --eb-sheath: #f0cfb2; --eb-msph: #d4def2; --eb-sw: #5b6385; --eb-fl: #3d5f9e; --eb-inner: #d0742c; --eb-outer: #c9a227; --eb-aur: #127a50; } }
+:root[data-theme="light"] { --eb-ero: #e98a3a; --eb-dep: #b08d3c; --eb-sheath: #f0cfb2; --eb-msph: #d4def2; --eb-sw: #5b6385; --eb-fl: #3d5f9e; --eb-inner: #d0742c; --eb-outer: #c9a227; --eb-aur: #127a50; }
+:root[data-theme="dark"] { --eb-ero: #d9822b; --eb-dep: #b49a5a; --eb-sheath: #5a3424; --eb-msph: #1b2a55; --eb-sw: #cfd6ea; --eb-fl: #7fa6e8; --eb-inner: #ff9a4a; --eb-outer: #ffd36a; --eb-aur: #5ee6a8; }
+.eb-key { display: inline-block; width: 16px; height: 12px; border-radius: 2px; margin-right: 7px; vertical-align: middle; border: 1px solid var(--line); }
+.eb-key.ln { height: 4px; border: 0; width: 18px; }
+.eb-key.dash { height: 0; border: 0; border-top: 2px dashed currentColor; width: 18px; border-radius: 0; }
+.eb-key.soft { opacity: 0.5; }
+/* seasons: facts rows and orbit inset */
+#ebOrbit { margin-top: 8px; }
+.eb-orb { outline: none; }
+.eb-orb:hover .eb-orb-ring { stroke: var(--line); }
+.eb-orb.eb-on .eb-orb-ring { stroke: var(--accent); }
+.eb-orb:focus-visible .eb-orb-ring { stroke: var(--accent); stroke-width: 3.5; stroke-dasharray: 4 3; }
+/* space-backdrop diagrams (tides, phases, gap, magnetosphere, greenhouse): the card takes the backdrop colour and the drawing runs edge to edge */
+:root { --eb-space: #060914; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --eb-space: #eef1f8; } }
+:root[data-theme="light"] { --eb-space: #eef1f8; }
+:root[data-theme="dark"] { --eb-space: #060914; }
+.gx-svgbox.eb-space { padding: 0; overflow: hidden; background: var(--eb-space); }
+.gx-svgbox.eb-space svg { margin-inline: auto; } /* capped like the other charts (540 / 1000 px) so labels keep one size; the card's backdrop fills the bands beside it */

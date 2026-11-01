@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Earth · Stellar Life</title>
+<meta name="description" content="Earth as a planet: its layered interior and seismic waves, plate tectonics, volcanoes, water and erosion, the atmosphere and magnetic field, and the Moon and tides. Interactive and built from real measurements.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../../shared/style.css">
+<link rel="stylesheet" href="earth-a.css">
+<link rel="stylesheet" href="earth-b.css">
+</head>
+<body>
+<header class="masthead">
+<nav class="site-nav wrap" aria-label="Site">
+  <a class="site-brand" href="../../index.html">Stellar Life</a>
+  <div class="site-links">
+    <a href="../../stars/index.html">Stars</a>
+    <a href="../../galaxies/index.html">Galaxies &amp; cosmology</a>
+    <a href="index.html" aria-current="page">Earth</a>
+    <a href="../small-bodies/index.html">Small bodies</a>
+    <a href="../../tools/index.html">Tools</a>
+    <a href="../../missions/index.html">Missions</a>
+    <a href="../../sources.html">Sources</a>
+  </div>
+</nav>
+  <div class="wrap masthead-inner">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="16" r="6.5" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="16" cy="16" r="2.6" fill="currentColor"/></svg>
+      <div>
+        <h1>Earth</h1>
+        <p class="tagline">The one planet we can study from the inside. How it is built, why its surface keeps moving, and what water, air and the Moon do to it.</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="tabs" role="tablist" aria-label="Topics">
+    <button role="tab" id="tab-inside" aria-controls="inside" aria-selected="true">Inside Earth</button>
+    <button role="tab" id="tab-plates" aria-controls="plates" aria-selected="false">Plate tectonics</button>
+    <button role="tab" id="tab-volcano" aria-controls="volcano" aria-selected="false">Volcanoes</button>
+    <button role="tab" id="tab-water" aria-controls="water" aria-selected="false">Water &amp; erosion</button>
+    <button role="tab" id="tab-air" aria-controls="air" aria-selected="false">Air &amp; magnetism</button>
+    <button role="tab" id="tab-moon" aria-controls="moon" aria-selected="false">Moon, tides &amp; seasons</button>
+  </nav>
+
+  <section id="inside" role="tabpanel" aria-labelledby="tab-inside" class="panel">
+    <div class="panel-intro">
+      <h2>Inside Earth: layers found by listening to earthquakes</h2>
+      <p>The deepest hole ever drilled reached 12 km, about 0.2% of the way to the centre. Everything below that comes from earthquake waves: how they speed up, slow down, bend, bounce and sometimes vanish on their way through the planet.</p>
+    </div>
+
+    <div class="gx-two">
+      <div class="gx-svgbox ea-stack">
+        <svg id="eaCut" viewBox="0 0 640 480" role="img" aria-label="Cross-section of Earth to true scale: inner core, outer core, lower mantle, transition zone, upper mantle and a crust too thin to see"></svg>
+        <div class="ea-wide"><svg id="eaZoom" viewBox="0 0 640 250" role="img" aria-label="Zoom on the top 150 km: a 4 km ocean over 7 km of oceanic crust, 35 km of continental crust with a 70 km root under mountains, and the base of the plates at about 100 km"></svg></div>
+      </div>
+      <div class="gx-ctrl">
+        <p class="probe-label">Pick a layer, or tap one in the picture</p>
+        <div class="seg" role="group" aria-label="Layers" id="eaLayers"></div>
+        <div class="agn-class" id="eaLayerHead" aria-live="polite"></div>
+        <dl class="facts ea-facts" id="eaLayerFacts"></dl>
+        <p class="note">The cross-section is to true scale. At this size the crust is thinner than the outline, so the strip below it zooms in on the top 150 km. Densities and pressures are from PREM; deep temperatures are estimates from lab experiments and models, uncertain by several hundred kelvin.</p>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Density and wave speed with depth</h3><p class="sub">The Preliminary Reference Earth Model (PREM), built from thousands of earthquake recordings plus Earth's mass and spin. Move across the chart (or focus it and use the arrow keys). Pressure and gravity are worked out here from PREM's densities.</p></div>
+      <div class="gx-svgbox"><svg id="eaProf" class="ea-prof" viewBox="0 0 640 312" tabindex="0" role="img" aria-label="Chart of density, P-wave speed and S-wave speed against depth. S-wave speed drops to zero in the liquid outer core. Details for the chosen depth are listed below the chart."></svg>
+        <div class="ea-legend"><span><i class="ea-key" style="background:var(--ea-p)"></i>P-wave speed</span><span><i class="ea-key" style="background:var(--ea-s)"></i>S-wave speed</span><span><i class="ea-key" style="background:var(--ea-rho)"></i>Density</span></div>
+      </div>
+      <dl class="facts ea-prof-out" id="eaProfOut" aria-live="polite"></dl>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Send an earthquake through the planet</h3><p class="sub">P waves squeeze and stretch rock and can cross liquids. S waves shake it sideways and cannot. Each ray bends as the speed changes, following Snell's law in spherical shells: r · sin(angle) / speed stays the same all along the ray.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox"><svg id="eaRay" viewBox="0 0 640 640" role="img" aria-label="Seismic rays from an earthquake at the top of the Earth, bending through the mantle and core. Coloured arcs on the rim mark the shadow zones where direct waves do not arrive."></svg>
+          <div class="ea-legend"><span><i class="ea-key" style="background:var(--ea-p)"></i>P rays and P shadow zone</span><span><i class="ea-key" style="background:var(--ea-s)"></i>S rays and S shadow zone</span></div>
+          <div class="ea-row"><button type="button" class="btn btn-small" id="eaPlay" aria-pressed="false">Play animation</button></div>
+        </div>
+        <div class="gx-ctrl">
+          <p class="probe-label">Earthquake</p>
+          <div class="seg" role="group" aria-label="Earthquake" id="eaQuake"></div>
+          <p class="probe-label">Waves</p>
+          <div class="seg" role="group" aria-label="Wave type" id="eaWave"></div>
+          <label for="eaTk" class="probe-label">Highlighted ray: angle from straight down <output id="eaTkOut"></output></label>
+          <input id="eaTk" type="range" min="0" max="90" step="0.5" value="22">
+          <label class="toggle" for="eaFan"><input id="eaFan" type="checkbox" checked><span class="track" aria-hidden="true"></span>Show a fan of rays (every 2.5°)</label>
+          <dl class="facts ea-facts" id="eaRayOut" aria-live="polite"></dl>
+          <p class="note">Rays are traced through PREM in 2 km shells. Only rays that start downward are drawn; real seismograms also show reflections off the surface and the core, and waves that change type (an S wave can enter the core as P and come out as S). Waves that just graze the core diffract around it, so real recordings see faint P out to about 104°.</p>
+        </div>
+      </div>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>1906 · Richard Oldham</b><span>Noticed that waves crossing the far side of the planet arrived late. Something in the middle was slowing them down: the first sign of a core.</span></div>
+        <div class="bh-feat gx-card"><b>1914 · Beno Gutenberg</b><span>Used the P-wave shadow to put the edge of the core at about 2,900 km depth, within a few tens of km of today's 2,891. In 1926 Harold Jeffreys argued it is liquid, since S waves never get through.</span></div>
+        <div class="bh-feat gx-card"><b>1936 · Inge Lehmann</b><span>Spotted faint P waves arriving inside the shadow zone, where none should be. She explained them with a smaller inner core, where waves travel faster and are bent back out. It was later shown to be solid.</span></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>Earth as a planet</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>4.54 billion years old</b><span>Earth's age comes from radioactive dating of meteorites, leftover building blocks from the same time, together with the oldest lead on Earth: 4.54 billion years, give or take about 1%. The oldest pieces of Earth itself are zircon crystals from the Jack Hills of Western Australia, about 4.4 billion years old.</span></div>
+        <div class="bh-feat gx-card"><b>Not quite round</b><span>Spin makes Earth bulge at the equator. Its equatorial radius is 6,378 km and its polar radius 6,357 km, a difference of 21 km. So the summit of Chimborazo in Ecuador, near the equator, is the point farthest from Earth's centre, not Everest.</span></div>
+        <div class="bh-feat gx-card"><b>A warm planet inside</b><span>About 47 terawatts of heat flows out through Earth's surface, about two and a half times the rate at which humanity uses energy. About half comes from the decay of uranium, thorium and potassium in the rock, measured partly by detecting neutrinos from those decays (KamLAND 2011). The rest is heat left over from Earth's formation and the core slowly freezing.</span></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>Hot, crushed and solid</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Why the inner core is solid</b><span>It is hotter than the outer core, yet frozen. The pressure there is 330–360 GPa, over 3 million times the air pressure you feel. That squeezing raises iron's melting point faster than the temperature rises with depth, so the core freezes from the centre outward.</span></div>
+        <div class="bh-feat gx-card"><b>Heavy in the middle</b><span>Earth's average density is 5.5 g/cm³, but surface rocks are only 2.7–3. The extra mass has to be deep down. Iron cores of 10–13 g/cm³ make the numbers work, and they match iron meteorites.</span></div>
+        <div class="bh-feat gx-card"><b>Gravity peaks at the core</b><span>Going down, you leave mass above you, but the dense core keeps the pull strong. In PREM, gravity rises to about 10.7 m/s² at the core–mantle boundary, then falls to zero at the centre.</span></div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"The mantle is an ocean of molten magma."</b> It is solid rock: S waves, which cannot cross liquids, travel right through it. Over millions of years it flows like very stiff putty, a few cm per year.</p></div><div><p class="h">Why it matters</p><p>Magma forms only in small pockets, where pressure drops, water is added, or the rock is unusually hot. That is why volcanoes sit at ridges, above sinking plates and over hotspots, not everywhere.</p></div></div>
+      <div class="tr-callout"><div><p class="h">Open questions</p><p><b>Two continent-sized blobs at the base of the mantle.</b> Under Africa and the Pacific, seismic waves slow down in two huge regions above the core, called large low-velocity provinces (LLVPs). Nobody knows for sure what they are. One idea (Yuan et al. 2023, <i>Nature</i>) is that they are dense, iron-rich remains of Theia, the body whose impact made the Moon, still sitting there after 4.5 billion years.</p></div><div><p class="h">Still argued about</p><p><b>Does the inner core spin at its own pace?</b> Repeating earthquakes suggest it turns slightly faster than the mantle at some times and slower at others. Yang &amp; Song (2023) found the difference paused around 2009; Wang et al. (2024, <i>Nature</i>) found it slowed and began to slip backwards relative to the mantle. Other seismologists read the same signals differently. Waves that bounce across the planet up to five times also hint at an innermost inner core, about 650 km in radius, with different crystal alignment (Pham &amp; Tkalčić 2023).</p></div></div>
+    </div>
+  </section>
+  <section id="plates" role="tabpanel" aria-labelledby="tab-plates" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Plate tectonics: a surface that keeps moving</h2>
+      <p>Earth's cold outer shell, the lithosphere, is broken into about fifteen large plates and many small ones. They move a few centimetres a year, about as fast as fingernails grow. Almost every earthquake, volcano and mountain range sits where two plates meet.</p>
+    </div>
+
+    <div class="gx-block" style="margin-top:0">
+      <div class="seg" role="group" aria-label="Boundary type" id="eaBnd"></div>
+      <div class="gx-two">
+        <div class="gx-svgbox"><svg id="eaBndSvg" viewBox="0 0 640 340" role="img" aria-label="Animated cross-section of a plate boundary"></svg>
+          <div class="ea-row"><button type="button" class="btn btn-small" id="eaBndPlay" aria-pressed="true">Pause animation</button><span class="note">Not to scale; depths stretched. Yellow dots are earthquakes. Stripes on the plates show their motion.</span></div>
+        </div>
+        <div class="gx-ctrl">
+          <div class="agn-class" id="eaBndHead" aria-live="polite"></div>
+          <dl class="facts ea-facts" id="eaBndFacts"></dl>
+          <p class="note">Speeds are measured with GPS and from sea-floor ages. "Full spreading" is how fast the two sides of a ridge move apart.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block" id="eaStripes">
+      <div class="hr-head"><h3>The stripes that proved sea-floor spreading</h3><p class="sub">Earth's magnetic field flips every so often. Lava cooling at a ridge locks in the direction of the field at that moment, then spreads away on both sides. A ship towing a magnetometer reads the result as a barcode, mirrored around the ridge.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox"><svg id="eaMag" viewBox="0 0 640 330" role="img" aria-label="Magnetic reading measured by a ship above a mid-ocean ridge, and below it the stripes of normal and reversed magnetized sea floor, symmetric around the ridge"></svg>
+          <div class="ea-legend"><span><i class="ea-key box" style="background:var(--accent)"></i>Normal polarity (like today)</span><span><i class="ea-key box" style="background:var(--surface-2)"></i>Reversed polarity</span></div>
+        </div>
+        <div class="gx-ctrl">
+          <p class="probe-label">Ridge</p>
+          <div class="seg" role="group" aria-label="Ridge presets" id="eaMagPre"></div>
+          <label for="eaRate" class="probe-label">Spreading speed, per side (half the full rate) <output id="eaRateOut"></output></label>
+          <input id="eaRate" type="range" min="0.5" max="8" step="0.05" value="1.25">
+          <div class="gx-btns"><button type="button" class="btn btn-primary" id="eaSail">Sail across the ridge</button></div>
+          <dl class="facts ea-facts" id="eaMagOut" aria-live="polite"></dl>
+          <p class="note">Reversal ages: the geomagnetic polarity timescale (GTS2012), back to 6 million years. The reading is the vertical field over a 0.5 km magnetized layer 3 km below the ship, as it would look near a magnetic pole; at other latitudes the bumps are lopsided. Real anomalies are a few hundred nanotesla.</p>
+        </div>
+      </div>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>The field flips</b><span>North and south magnetic poles swap at irregular times, a few times per million years recently. The last full flip, at the start of the Brunhes chron, was 781,000 years ago.</span></div>
+        <div class="bh-feat gx-card"><b>Rock as a tape recorder</b><span>Iron-oxide grains in lava line up with the field as the rock cools below about 580 °C, the Curie temperature of magnetite, and keep that direction afterward.</span></div>
+        <div class="bh-feat gx-card"><b>Vine and Matthews, 1963</b><span>Fred Vine and Drummond Matthews (and, separately, Lawrence Morley) saw that the stripes match the reversal record on both sides of a ridge. Wider stripes mean faster spreading.</span></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>What moves the plates</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Slab pull</b><span>Old ocean floor is cold and denser than the mantle under it. Where it sinks at a trench, its weight drags the rest of the plate along. Plates with sinking edges move fastest.</span></div>
+        <div class="bh-feat gx-card"><b>Ridge push</b><span>New plate at a ridge sits high because it is hot. It slides gently downhill away from the ridge as it cools and thickens.</span></div>
+        <div class="bh-feat gx-card"><b>Mantle convection</b><span>Heat from the core and from radioactive elements keeps the solid mantle slowly churning. The plates are the cold top layer of that circulation.</span></div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Classic picture</p><p>In 1912 Alfred Wegener proposed continental drift. The coastlines fit, and matching fossils and old glacier scratches lined up across oceans. Most geologists rejected it: he had no believable force that could push continents through solid ocean floor.</p></div><div><p class="h">What we know now</p><p>Continents don't plough through anything. They ride on plates of lithosphere that glide over the soft asthenosphere, pulled mainly by sinking slabs. Sea-floor stripes in the 1960s, then GPS, which now measures each plate's motion directly, settled it.</p></div></div>
+    </div>
+  </section>
+  <section id="volcano" role="tabpanel" aria-labelledby="tab-volcano" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Volcanoes: why some ooze and some explode</h2>
+      <p>Whether a volcano pours out rivers of lava or blasts ash into the stratosphere depends mostly on one thing: how much silica is in its magma. Silica makes magma sticky, and sticky magma traps gas.</p>
+    </div>
+
+    <div class="gx-two">
+      <div class="gx-svgbox"><div class="ea-wide"><svg id="eaVol" viewBox="0 0 640 300" role="img" aria-label="Magma with gas bubbles, and the volcano shape and eruption style it produces"></svg></div>
+        <p class="probe-label" style="margin:8px 4px 2px">Viscosity, Pa·s (log scale)</p>
+        <div class="ea-vbar"><output id="eaVisMark" role="img"></output><div class="ea-vticks"><span style="left:0">1</span><span style="left:25%">1,000</span><span style="left:50%">10⁶</span><span style="left:75%">10⁹</span><span style="left:100%">10¹²</span></div></div>
+        <div class="ea-row"><button type="button" class="btn btn-small" id="eaVolPlay" aria-pressed="true">Pause animation</button></div>
+      </div>
+      <div class="gx-ctrl">
+        <label for="eaSi" class="probe-label">Silica in the magma <output id="eaSiOut"></output></label>
+        <input id="eaSi" type="range" min="45" max="75" step="1" value="50">
+        <div class="agn-class" id="eaVolHead" aria-live="polite"></div>
+        <dl class="facts ea-facts" id="eaVolFacts"></dl>
+        <p class="note">Viscosity is a rough trend at each magma's eruption temperature; heat and dissolved water each change it by orders of magnitude. Water flows at 0.001 Pa·s; honey is around 10.</p>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>How big was it? The Volcanic Explosivity Index</h3><p class="sub">VEI rates an eruption mostly by the volume of ash and rock it throws out, and by how high the column rises. Above VEI 2, each step is ten times more material.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox"><div class="ea-wide"><svg id="eaVei" viewBox="0 0 640 240" role="img" aria-label="Bar chart of erupted volume for VEI 0 to 8 on a logarithmic scale; tap a bar to choose a level"></svg></div></div>
+        <div class="gx-ctrl">
+          <p class="probe-label">VEI level</p>
+          <div class="seg ea-seg-num" role="group" aria-label="VEI level" id="eaVeiBtns"></div>
+          <div class="agn-class" id="eaVeiHead" aria-live="polite"></div>
+          <dl class="facts ea-facts" id="eaVeiFacts"></dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Hawaiʻi: a plate passing over a hotspot</h3><p class="sub">A plume of hot mantle stays roughly fixed while the Pacific plate slides north-west over it. Each volcano is carried off its magma supply and dies, and a new one grows behind it. So the islands get older with distance. Drag on the chart or use the slider to fit a line, then compare with the best fit.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox"><svg id="eaHot" class="ea-hot" viewBox="0 0 640 356" role="img" aria-label="Chart of the age of the oldest lava on each Hawaiian volcano against its distance from Kīlauea; ages rise steadily with distance, up to 5.1 million years for Kauaʻi at 519 km"></svg></div>
+        <div class="gx-ctrl">
+          <label for="eaSpd" class="probe-label">Plate speed over the hotspot <output id="eaSpdOut"></output></label>
+          <input id="eaSpd" type="range" min="4" max="15" step="0.1" value="6">
+          <div class="gx-btns"><button type="button" class="btn btn-primary" id="eaFit">Best fit</button><button type="button" class="btn" id="eaFitClear">Clear fit</button></div>
+          <dl class="facts ea-facts" id="eaHotOut" aria-live="polite"></dl>
+          <p class="note">Ages: oldest dated shield lavas (potassium–argon) and distances from Kīlauea along the chain, from Clague &amp; Dalrymple (1987). Your line starts at Kīlauea, over the hotspot. Through Kīlauea the best line is about 11 cm/yr; the free least-squares fit is about 9 cm/yr because its young end sits off zero.</p>
+        </div>
+      </div>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>The next island is already growing</b><span>Kamaʻehuakanaloa (formerly Lōʻihi), a seamount 35 km off the Big Island's south coast, rises from the sea floor but its summit is still about 1 km below the waves.</span></div>
+        <div class="bh-feat gx-card"><b>The bend</b><span>The chain runs north-west to Midway, then turns north as the Emperor Seamounts. The bend formed about 47 million years ago, from a change in the Pacific plate's motion and a drift of the plume itself.</span></div>
+        <div class="bh-feat gx-card"><b>Old islands sink</b><span>As each volcano drifts away from the hot swell, it cools, erodes and subsides. Kauaʻi is lower and more worn than Hawaiʻi; past Midway the volcanoes are all underwater.</span></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>Where volcanoes form, here and elsewhere</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Mid-ocean ridges</b><span>Most of Earth's lava erupts here, unseen, building new sea floor. Pressure drop melts the rising mantle. Iceland is a ridge that rises above the sea.</span></div>
+        <div class="bh-feat gx-card"><b>Subduction zones</b><span>Most volcanoes on land, including the Pacific "Ring of Fire", sit above sinking plates, where water from the slab melts the mantle. Their silica-rich magma makes them the explosive ones.</span></div>
+        <div class="bh-feat gx-card"><b>Hotspots</b><span>Plumes rising from deep in the mantle punch through the middle of plates: Hawaiʻi, Yellowstone, Réunion, Galápagos.</span></div>
+        <div class="bh-feat gx-card"><b>Io</b><span>Jupiter's moon is the most volcanic place in the solar system, with about 400 active volcanoes. Tides from Jupiter flex it and heat its interior, not radioactivity.</span></div>
+        <div class="bh-feat gx-card"><b>Olympus Mons, Mars</b><span>A shield volcano like Mauna Loa but about 22 km high and 600 km wide. Mars has no moving plates, so the volcano stayed over its magma source and kept growing.</span></div>
+        <div class="bh-feat gx-card"><b>Ice volcanoes</b><span>On Saturn's moon Enceladus, jets of water vapour and ice spray from cracks near the south pole, fed by a hidden ocean. Cassini flew through them. Neptune's moon Triton has geysers too.</span></div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"Lava is what kills people."</b> Lava flows are usually slow enough to walk away from. Most volcano deaths have come from pyroclastic flows (avalanches of hot ash and gas), lahars (volcanic mudflows), and the famine and disease after large eruptions.</p></div><div><p class="h">Why it matters</p><p>In 1985 a fairly small eruption (VEI 3) of Nevado del Ruiz in Colombia melted summit ice. The lahars that followed swept down river valleys and buried the town of Armero, tens of kilometres away. They killed more than 23,000 people.</p></div></div>
+    </div>
+  </section>
+  <section id="water" role="tabpanel" aria-labelledby="tab-water" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Water: the part of the planet that never sits still</h2>
+      <p>Earth is the only planet with liquid water on its surface today. Sunlight lifts it as vapour, gravity brings it back down, and on the way it dissolves rock, carries sand downhill and lays it down as new layers. Most landscapes you see were shaped by water.</p>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Where Earth's water is</h3><p class="sub">About 1.39 billion km³ in all. Tap a row to see how much is there and how long a water molecule usually stays.</p></div>
+      <div class="gx-two">
+        <div class="gx-ctrl">
+          <div class="eb-ctlrow">
+            <div class="seg" role="group" aria-label="Which water to show" id="ebResMode"></div>
+            <div class="seg" role="group" aria-label="Bar scale" id="ebResScale"></div>
+          </div>
+          <div class="eb-res" id="ebRes"></div>
+          <p class="note" id="ebResNote"></p>
+        </div>
+        <div class="gx-ctrl">
+          <div class="agn-class" id="ebResOut" aria-live="polite"></div>
+          <dl class="facts" id="ebResFacts"></dl>
+          <p class="note">Volumes from the USGS Water Science School, after Gleick (1996), rounded. Residence times are typical averages; individual molecules vary enormously.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>The water cycle in real numbers</h3><p class="sub">Arrow widths are proportional to the global flow, in thousands of km³ per year (Trenberth et al. 2007); the dashed groundwater arrow has no number and is not to scale. Tap or focus an arrow to read about it.</p></div>
+      <div class="gx-svgbox eb-wide"><div class="ms-wide"><svg id="ebCycle" viewBox="0 0 900 440" role="img" aria-label="Water cycle diagram. Ocean evaporation 413, ocean precipitation 373, transport of vapour from ocean to land 40, land precipitation 113, evaporation and transpiration from land 73, and runoff back to the sea 40, all in thousands of cubic kilometres per year."></svg></div>
+        <div class="ea-row"><button type="button" class="btn btn-small" id="ebCyclePlay" aria-pressed="true">Pause animation</button></div>
+      </div>
+      <p class="eb-out" id="ebCycleOut" aria-live="polite"></p>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Can this river move this grain?</h3><p class="sub">The Hjulström–Sundborg diagram: for each grain size, how fast the water must flow to pick a grain up, to keep it moving, or to let it drop. Both axes are logarithmic.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox eb-chart"><svg id="ebHj" viewBox="0 0 400 380" role="img" aria-label="Hjulström–Sundborg diagram: flow velocity against grain size, with erosion, transport and deposition zones and a marker for the chosen grain and velocity"></svg><div class="eb-legend" aria-hidden="true"><span><i class="eb-key soft" style="background:var(--eb-ero)"></i>Erosion: picked up</span><span><i class="eb-key soft" style="background:var(--eb-tra)"></i>Transport: kept moving</span><span><i class="eb-key soft" style="background:var(--eb-dep)"></i>Deposition: settles</span></div></div>
+        <div class="gx-ctrl">
+          <div class="seg" role="group" aria-label="Grain presets" id="ebHjPre"></div>
+          <label for="ebHjD" class="probe-label">Grain size <output id="ebHjDOut"></output></label>
+          <input id="ebHjD" type="range" min="-3" max="3" step="0.01" value="-0.3">
+          <label for="ebHjV" class="probe-label">Flow velocity <output id="ebHjVOut"></output></label>
+          <input id="ebHjV" type="range" min="-1" max="3" step="0.01" value="1.5">
+          <div class="agn-class" id="ebHjOut" aria-live="polite"></div>
+          <p class="note">Curves are approximate, for quartz grains in water about 1 m deep, after Hjulström (1935) and Sundborg (1956) as redrawn by Earle (<i>Physical Geology</i>, 2019). Real thresholds shift with depth, grain shape and how tightly the bed is packed.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>The rock cycle</h3><p class="sub">Every rock is made from older rock. Tap a rock type or a process; the arrows show which way material moves.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox eb-chart"><svg id="ebRock" viewBox="0 0 400 400" role="group" aria-label="Rock cycle: igneous, sedimentary and metamorphic rock, sediment and magma. Any rock type can be weathered into sediment or melted into magma; sediment is cemented into sedimentary rock; heat and pressure make metamorphic rock; magma cools into igneous rock"></svg></div>
+        <div class="gx-ctrl">
+          <div class="agn-class" id="ebRockOut" aria-live="polite"></div>
+          <p class="note">The cycle has no fixed order. A granite can be buried and turned into gneiss without ever becoming sand, and a sandstone can be lifted and worn down into new sand. Every arrow into Sediment is weathering and erosion, every arrow into Metamorphic is heat and pressure, and every arrow into Magma is melting, so only one arrow of each kind is labelled.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>How water takes rock apart</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Mechanical weathering breaks</b><span>Water seeps into cracks, freezes and expands by about 9%, wedging rock apart a little more each winter. Roots, salt crystals and heating and cooling do the same. The pieces are smaller but chemically unchanged.</span></div>
+        <div class="bh-feat gx-card"><b>Chemical weathering dissolves</b><span>Rain picks up CO₂ and becomes a weak acid. It dissolves limestone (making caves) and slowly turns feldspar in granite into clay. Warm, wet climates weather fastest, and the more cracks there are, the more surface the water can reach.</span></div>
+        <div class="bh-feat gx-card"><b>Sediment does the cutting</b><span>Clear water barely scratches solid rock. Sand and boulders dragged along the bed during floods grind it down. That is why a river cuts fastest when it carries the most sediment.</span></div>
+        <div class="bh-feat gx-card"><b>Grand Canyon: old rock, young canyon</b><span>The dark rocks at the bottom (the Vishnu basement rocks) are about 1.7 to 1.8 billion years old. The Colorado River cut the canyon itself, up to about 1.8 km deep, in roughly the last 5 to 6 million years, as the Colorado Plateau rose.</span></div>
+        <div class="bh-feat gx-card"><b>Mars had rivers too</b><span>Jezero crater on Mars holds a fan-shaped river delta, built where a river ran into a crater lake more than 3.5 billion years ago. The Perseverance rover landed there in 2021 because a delta sorts and buries fine mud, the best place to look for signs of past life.</span></div>
+        <div class="bh-feat gx-card"><b>Deltas sort grains by size</b><span>Where a river meets still water it slows suddenly. Gravel drops first, then sand, and the finest clay drifts farthest out. The diagram above shows why: each grain size settles at its own speed.</span></div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"The Grand Canyon is as old as its rocks."</b> The rocks record almost 2 billion years of history, but the canyon cut through them is less than 0.5% of that age. Rocks are dated by when they formed; landscapes by when they were carved.</p></div><div><p class="h">Why it matters</p><p>Erosion is fast on geological timescales. The continents lose a few centimetres per thousand years on average, which would flatten today's mountains in tens of millions of years if plate tectonics weren't lifting new ones.</p></div></div>
+    </div>
+  </section>
+  <section id="air" role="tabpanel" aria-labelledby="tab-air" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>A thin blanket and an invisible shield</h2>
+      <p>If Earth were an apple, the atmosphere would be thinner than its skin: 99% of the air lies below about 30 km. That thin layer keeps the surface warm, burns up meteors and blocks ultraviolet light. Farther out, the magnetic field turns aside the solar wind.</p>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Climb through the atmosphere</h3><p class="sub">Temperature against height in the US Standard Atmosphere (1976), an average for the middle latitudes. Move along the chart, or use the slider, to read each height.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox eb-chart"><svg id="ebAtm" viewBox="0 0 400 460" role="img" aria-label="Temperature profile of the atmosphere from the ground up, with troposphere, stratosphere, mesosphere and thermosphere"></svg><div class="eb-legend" aria-hidden="true"><span><i class="eb-key soft" style="background:#5fa0d8"></i>Troposphere</span><span><i class="eb-key soft" style="background:#7fb4a0"></i>Stratosphere</span><span><i class="eb-key soft" style="background:#9a8fd0"></i>Mesosphere</span><span><i class="eb-key soft" style="background:#d08f7a"></i>Thermosphere</span><span><i class="eb-key ln" style="background:var(--accent)"></i>Temperature</span></div></div>
+        <div class="gx-ctrl">
+          <div class="seg" role="group" aria-label="Height range" id="ebAtmRange"></div>
+          <label for="ebAtmZ" class="probe-label">Height <output id="ebAtmZOut"></output></label>
+          <input id="ebAtmZ" type="range" min="0" max="120" step="0.5" value="8.8">
+          <div class="agn-class" id="ebAtmOut" aria-live="polite"></div>
+          <dl class="facts" id="ebAtmFacts"></dl>
+          <p class="probe-label">Dry air by volume</p>
+          <div class="eb-comp" id="ebComp"></div>
+          <p class="note">Water vapour is extra: from almost 0 to about 4% of the air near the ground, depending on temperature. CO₂ is the NOAA global monthly mean for July 2026 (426 ppm), up from about 280 ppm before 1800.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>The greenhouse balance</h3><p class="sub">A planet warms until it sends out as much infrared as the sunlight it absorbs. A layer of gas that absorbs infrared sends part of it back down, so the surface has to get warmer to balance. Change the numbers.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox eb-chart eb-space"><svg id="ebGh" viewBox="0 0 400 330" role="img" aria-label="Energy flows in a one-layer greenhouse model: absorbed sunlight, reflected sunlight, surface infrared, back radiation and infrared escaping to space"></svg></div>
+        <div class="gx-ctrl">
+          <div class="seg" role="group" aria-label="Planet presets" id="ebGhPre"></div>
+          <label for="ebGhS" class="probe-label">Sunlight arriving, S <output id="ebGhSOut"></output></label>
+          <input id="ebGhS" type="range" min="400" max="2800" step="1" value="1361">
+          <label for="ebGhA" class="probe-label">Albedo (fraction reflected) <output id="ebGhAOut"></output></label>
+          <input id="ebGhA" type="range" min="0" max="0.8" step="0.01" value="0.3">
+          <label for="ebGhE" class="probe-label">Infrared absorbed by the air, ε <output id="ebGhEOut"></output></label>
+          <input id="ebGhE" type="range" min="0" max="1" step="0.01" value="0.78">
+          <dl class="facts" id="ebGhFacts" aria-live="polite"></dl>
+          <p class="formula">T<sub>e</sub> = [S(1 − a) / 4σ]<sup>1/4</sup><br>T<sub>surface</sub> = T<sub>e</sub> · [2 / (2 − ε)]<sup>1/4</sup></p>
+          <p class="note" id="ebGhNote"></p>
+        </div>
+      </div>
+      <div class="tr-callout"><div><p class="h">What the model leaves out</p><p>One layer, one temperature, no clouds, no weather, no oceans moving heat. It gets Earth's average about right only because ε is tuned to fit. Real warming depends on how the absorbing gases are spread through many heights.</p></div><div><p class="h">Why Venus breaks it</p><p>Even at ε = 1 a single layer can only warm a surface by 19% (2<sup>1/4</sup>). Venus has about 90 times Earth's surface pressure of CO₂, which acts like dozens of layers stacked up, so its surface reaches about 737 K although its albedo is 0.76.</p></div></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>The magnetosphere</h3><p class="sub">Earth's field pushes back on the solar wind, a stream of charged particles leaving the Sun at about 400 km/s. Where the two pressures balance is the magnetopause. Raise the solar wind pressure and watch it move in. Distances along the Sun–Earth line to scale (Earth = small blue dot); shapes and field lines sketched.</p></div>
+      <div class="gx-svgbox eb-wide eb-space"><div class="ms-wide"><svg id="ebMag" viewBox="0 0 900 470" role="img" aria-label="Earth's magnetosphere: solar wind from the left, bow shock, magnetopause compressed on the dayside, field lines, Van Allen belts and the magnetotail stretched away from the Sun"></svg></div>
+      <div class="eb-legend" aria-hidden="true"><span><i class="eb-key ln" style="background:var(--eb-sw)"></i>Solar wind</span><span><i class="eb-key dash" style="color:var(--eb-sw)"></i>Bow shock</span><span><i class="eb-key" style="background:var(--eb-sheath)"></i>Between bow shock and magnetopause</span><span><i class="eb-key" style="background:var(--eb-msph)"></i>Magnetosphere</span><span><i class="eb-key ln" style="background:var(--accent)"></i>Magnetopause</span><span><i class="eb-key ln" style="background:var(--eb-fl)"></i>Field lines</span><span><i class="eb-key soft" style="background:var(--eb-inner)"></i>Inner belt</span><span><i class="eb-key soft" style="background:var(--eb-outer)"></i>Outer belt</span><span><i class="eb-key ln" style="background:var(--eb-aur)"></i>Aurora</span></div></div>
+      <div class="gx-two">
+        <div class="gx-ctrl">
+          <div class="seg" role="group" aria-label="Solar wind presets" id="ebMagPre"></div>
+          <label for="ebMagP" class="probe-label">Solar wind pressure <output id="ebMagPOut"></output></label>
+          <input id="ebMagP" type="range" min="-0.3" max="1.5" step="0.01" value="0.301">
+          <dl class="facts" id="ebMagFacts" aria-live="polite"></dl>
+        </div>
+        <div class="gx-ctrl">
+          <p class="formula">r<sub>mp</sub> ∝ P<sup>−1/6</sup>   (field pressure B²/2μ<sub>0</sub>, with B ∝ 1/r³, balances the wind's pressure P)</p>
+          <p class="note">This is Chapman and Ferraro's pressure balance. Scaled so that a typical 2 nPa gives about 10 Earth radii, the average distance satellites measure (Shue et al. 1998). Doubling the pressure moves the magnetopause in by only 11%, because the field strength rises so steeply closer in.</p>
+        </div>
+      </div>
+      <div class="bh-feats eb-feats2">
+        <div class="bh-feat gx-card"><b>Aurora</b><span>Particles from the solar wind get into the magnetotail, are accelerated toward Earth, and run down field lines into the upper air near the magnetic poles. They hit oxygen and nitrogen 100 to 300 km up, which glow green (oxygen, about 100–250 km), red (oxygen, higher) and blue-violet (nitrogen).</span></div>
+        <div class="bh-feat gx-card"><b>Van Allen belts</b><span>Two doughnut-shaped zones of trapped, fast particles found by Explorer 1 in 1958. The inner belt is mostly protons, roughly 1,000 to 10,000 km up; the outer belt is mostly electrons, roughly 13,000 to 60,000 km up. Spacecraft cross them quickly to limit radiation damage.</span></div>
+        <div class="bh-feat gx-card"><b>The field flips</b><span>The field comes from liquid iron moving in the outer core. Every few hundred thousand years on average it reverses; the last full reversal was about 780,000 years ago. New sea floor records each flip as magnetic stripes (see <a class="tab-link" href="#plates" data-scroll="eaStripes">Plate tectonics</a>).</span></div>
+        <div class="bh-feat gx-card"><b>Mars lost its shield</b><span>Mars had a global field about 4 billion years ago; its crust is still magnetised in places. When its smaller core cooled the field shut off. NASA's MAVEN orbiter measures the solar wind still stripping gas from the top of Mars's thin atmosphere today.</span></div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"The thermosphere, at over 1,000 K, would burn you."</b> Temperature measures how fast the molecules move. Up there they are so few, about two trillionths of the density at the ground near 400 km, that they deliver almost no heat. A spacesuit's temperature is set by sunlight and shadow, not by the air.</p></div><div><p class="h">Why it matters</p><p>The ozone layer warms the stratosphere by absorbing ultraviolet, and that warm lid stops most storm clouds rising above the tropopause, 8 to 18 km up depending on latitude. The temperature profile is not a detail; it decides where weather can happen.</p></div></div>
+    </div>
+  </section>
+  <section id="moon" role="tabpanel" aria-labelledby="tab-moon" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>The Moon, the tilt and the seasons</h2>
+      <p>The Moon raises the tides, slows Earth's spin and has been drifting away for 4.5 billion years. Compared with its planet it is unusually large: a quarter of Earth's width, probably made in one giant collision. The last section turns to Earth's own tilted axis, which, not the distance from the Sun, gives us the seasons.</p>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Tides</h3><p class="sub">Seen from above the North Pole, with the Sun far off to the left. Move the Moon around its orbit and the hour of day, or play. The water bulges are hugely exaggerated: in the open ocean they are well under a metre high.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox eb-chart eb-space"><svg id="ebTide" viewBox="0 0 400 400" role="img" aria-label="Top-down view of Earth with two tidal bulges, the Moon in its orbit, the Sun's direction, and a marker for a place on the equator"></svg>
+          <div class="ea-row"><button type="button" class="btn btn-small" id="ebTidePlay" aria-pressed="false">Play animation</button></div></div>
+        <div class="gx-ctrl">
+          <label for="ebTideM" class="probe-label">Moon's angle from the Sun <output id="ebTideMOut"></output></label>
+          <input id="ebTideM" type="range" min="0" max="360" step="1" value="0">
+          <label for="ebTideH" class="probe-label">Local time at the marked place <output id="ebTideHOut"></output></label>
+          <input id="ebTideH" type="range" min="0" max="24" step="0.05" value="9">
+          <div class="eb-ctlrow">
+            <div class="seg" role="group" aria-label="Playback speed" id="ebTideSpeed"></div>
+          </div>
+          <div class="agn-class" id="ebTideOut" aria-live="polite"></div>
+          <div class="gx-svgbox eb-mini"><svg id="ebTideCurve" viewBox="0 0 400 190" role="img" aria-label="Tide height over 24 hours at the marked place"></svg></div>
+        </div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"The Moon pulls the water up toward it."</b> Then there would be one bulge, not two. The Moon pulls the near side of Earth a little harder than the centre, and the centre a little harder than the far side. That difference across Earth stretches it along the Earth–Moon line, making a bulge on each side, so most coasts get two high tides a day.</p></div><div><p class="h">Why the numbers</p><p>Tidal pull scales with mass ÷ distance³. The Sun is 27 million times more massive than the Moon but 390 times farther, so its tide is about 0.46 of the Moon's (the Moon's is 2.2 times stronger). They add at new and full moon (spring tides) and partly cancel at the quarters (neap tides).</p></div></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>The Moon in numbers</h3></div>
+      <div class="gx-two">
+        <dl class="facts">
+          <div><dt>Mean distance (centre to centre)</dt><dd>384,400 km</dd></div>
+          <div><dt>Closest and farthest (average perigee, apogee)</dt><dd>363,300 – 405,500 km</dd></div>
+          <div><dt>Radius</dt><dd>1,737 km (0.27 Earth)</dd></div>
+          <div><dt>Mass</dt><dd>7.35 × 10<sup>22</sup> kg (1/81.3 Earth)</dd></div>
+          <div><dt>Mean density</dt><dd>3.34 g/cm³ (Earth 5.51)</dd></div>
+          <div><dt>Surface gravity</dt><dd>1.62 m/s² (about 1/6 g)</dd></div>
+          <div><dt>Orbit, relative to the stars</dt><dd>27.32 days</dd></div>
+          <div><dt>New moon to new moon</dt><dd>29.53 days</dd></div>
+          <div><dt>Moving away</dt><dd>3.8 cm per year</dd></div>
+          <div><dt>Earth's day, 620 million years ago</dt><dd>21.9 ± 0.4 h</dd></div>
+        </dl>
+        <div class="bh-feats eb-feats2">
+          <div class="bh-feat gx-card"><b>Measured with lasers</b><span>Apollo astronauts and Soviet rovers left reflectors on the Moon. Observatories time laser pulses bouncing back to millimetres. The distance grows by about 3.8 cm a year, roughly as fast as your fingernails grow.</span></div>
+          <div class="bh-feat gx-card"><b>Why it drifts away</b><span>Earth spins faster than the Moon orbits, so friction drags the tidal bulges slightly ahead of the Moon. Their pull speeds the Moon up, lifting it into a wider orbit, and brakes Earth's spin.</span></div>
+          <div class="bh-feat gx-card"><b>Longer days</b><span>Tidal braking alone would lengthen the day by about 2.3 ms per century. Ancient eclipse records show about 1.8 ms; the gap is mostly Earth's shape rebounding since the ice ages. Tidal layers in 620-million-year-old rock (Williams 2000) record a 21.9-hour day and about 400 days a year.</span></div>
+          <div class="bh-feat gx-card"><b>Tidal locking</b><span>Earth's tides on the young Moon braked its spin in the same way, until it turned once per orbit. That is why we always see the same face. It does have a far side, not a dark side: every part gets two weeks of daylight per month.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>The gap, to scale</h3><p class="sub">Earth and Moon drawn at true scale, with true distance between them. About 29½ Earths fit between the surfaces. Can all the other planets?</p></div>
+      <div class="gx-svgbox eb-wide eb-space"><div class="ms-wide"><svg id="ebGap" viewBox="0 0 900 200" role="img" aria-label="Earth and Moon at true scale and true distance"></svg></div></div>
+      <div class="eb-ctlrow">
+        <button type="button" class="btn btn-primary" id="ebGapFit" aria-pressed="false">Line up the planets</button>
+        <div class="seg" role="group" aria-label="Moon's distance" id="ebGapDist"></div>
+        <div class="seg" role="group" aria-label="Planet width used" id="ebGapW"></div>
+      </div>
+      <p class="eb-out" id="ebGapOut" aria-live="polite"></p>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Phases</h3><p class="sub">Half the Moon is always lit by the Sun. A phase is how much of that lit half faces us. Drag the Moon around its orbit, or use the slider. Not to scale.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox eb-chart eb-space"><svg id="ebPh" viewBox="0 0 400 340" role="img" aria-label="Top-down view: Sun to the left, Earth in the middle, Moon on its orbit with its sunlit half shown, and the Moon as seen from Earth"></svg></div>
+        <div class="gx-ctrl">
+          <label for="ebPhA" class="probe-label">Moon's angle from the Sun (elongation) <output id="ebPhAOut"></output></label>
+          <input id="ebPhA" type="range" min="0" max="359" step="1" value="60">
+          <div class="agn-class" id="ebPhOut" aria-live="polite"></div>
+          <p class="formula">lit fraction = (1 − cos φ) / 2</p>
+          <p class="note">The view assumes you are in the northern hemisphere: a waxing Moon is lit on the right. From the southern hemisphere it is the other way round.</p>
+        </div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"Phases are Earth's shadow on the Moon."</b> Earth's shadow only reaches the Moon during a lunar eclipse, which can happen only at full moon. A crescent is simply the Moon seen mostly from its night side, with a thin edge of its day side showing.</p></div><div><p class="h">Why not an eclipse every month?</p><p>The Moon's orbit is tilted about 5° to Earth's. Most months the Moon passes above or below the Sun–Earth line, so eclipses only happen in the few weeks a year when the line-up is exact.</p></div></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Where the Moon came from</h3><p class="sub">The leading idea: about 4.5 billion years ago a Mars-sized body, called Theia, struck the young Earth a glancing blow. Debris from both formed a disk around Earth that gathered into the Moon.</p></div>
+      <div class="bh-feats eb-feats2">
+        <div class="bh-feat gx-card"><b>Matching isotopes</b><span>Oxygen, titanium and other isotopes in Apollo samples are almost identical to Earth's mantle. Meteorites from Mars and the asteroid belt all differ. The Moon is made of Earth-like stuff.</span></div>
+        <div class="bh-feat gx-card"><b>Too little iron</b><span>The Moon's density is 3.34 g/cm³, near that of Earth's rocky mantle. Its iron core is only 1 to 2 percent of its mass, against about a third for Earth. An impact would have thrown mostly mantle into orbit.</span></div>
+        <div class="bh-feat gx-card"><b>Once molten</b><span>Pale highland rocks brought back by Apollo are anorthosite, which forms by floating on a sea of melted rock. The young Moon had a magma ocean hundreds of kilometres deep, which needs a lot of energy, fast.</span></div>
+        <div class="bh-feat gx-card"><b>Dried out</b><span>Lunar rocks are poor in elements that boil off easily, such as potassium and zinc, as if heated very hot. The large spin (angular momentum) of the Earth–Moon pair also fits a glancing blow.</span></div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Classic picture</p><p>A Mars-sized Theia hits Earth, and the Moon forms mostly from Theia's mantle (Canup &amp; Asphaug 2001 style models). It explains the size of the Moon, its small core and the angular momentum.</p></div><div><p class="h">What we know now</p><p>Measurements since 2001 show the Moon matches Earth too closely to be mostly Theia. Newer models mix the two far more: a faster-spinning early Earth, a more violent impact that left a vaporised cloud (a "synestia"), or a Theia already made of Earth-like material. Which is right is still open; that a giant impact happened is widely accepted.</p></div></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Earth in orbit: why there are seasons</h3><p class="sub">Earth's spin axis is tilted 23.44° to its orbit and keeps pointing the same way in space all year. So for half the year the north leans toward the Sun, and for the other half the south does. Change the tilt and your latitude, and pick a date, or click Earth on the orbit. The top diagram is the view at local noon, with the Sun far off to the left. Not to scale.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox eb-chart"><svg id="ebSeason" viewBox="0 0 400 340" role="img" aria-label="Earth at noon with its tilted axis, the line of your latitude, the part of that line in daylight, and the angle of the noon Sun"></svg>
+          <svg id="ebOrbit" viewBox="0 0 400 302" role="group" aria-label="Earth's orbit seen from above the North Pole, with the four dates. Choose a date."></svg>
+          <svg id="ebDayLen" viewBox="0 0 400 210" role="img" aria-label="Day length through the year at the chosen latitude and tilt"></svg></div>
+        <div class="gx-ctrl">
+          <div class="seg" role="group" aria-label="Date" id="ebSeasDate"></div>
+          <label for="ebSeasTilt" class="probe-label">Axial tilt <output id="ebSeasTiltOut"></output></label>
+          <input id="ebSeasTilt" type="range" min="0" max="40" step="0.01" value="23.44">
+          <label for="ebSeasLat" class="probe-label">Your latitude <output id="ebSeasLatOut"></output></label>
+          <input id="ebSeasLat" type="range" min="-90" max="90" step="0.5" value="40">
+          <div class="agn-class" id="ebSeasOut" aria-live="polite"></div>
+          <dl class="facts" id="ebSeasFacts"></dl>
+          <p class="formula">Sun's declination δ = tilt on the June solstice, −tilt in December, 0 at the equinoxes<br>noon Sun height = 90° − |latitude − δ|<br>between those dates δ ≈ tilt · sin(360° · (day − 79) ÷ 365)<br>cos H = −tan(latitude) · tan δ;  day length = 2H ÷ 15° per hour</p>
+          <p class="note">Day lengths are for the centre of the Sun on a flat horizon, without the bending of light by the air. Real sunrise to sunset is a few minutes longer.</p>
+        </div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"Summer is when Earth is closest to the Sun."</b> Earth is closest (perihelion, about 147.1 million km) in early January, in the middle of northern winter, and farthest (aphelion, 152.1 million km) in early July. The distance changes by only about 3.3%, so the sunlight changes by about 6.9%. The seasons come from the tilt: it changes how high the Sun climbs and how long it stays up, and the two hemispheres have opposite seasons at the same time.</p></div><div><p class="h">Why the tilt wins</p><p>At 40° north the noon Sun stands 73° high in June and only 27° high in December. Low sunlight is spread over more ground, about half as much per square metre at noon, and the December day is about 6 hours shorter. Together that gives a summer day roughly three times the sunshine of a winter day.</p></div></div>
+      <div class="bh-feats eb-feats2">
+        <div class="bh-feat gx-card"><b>Milankovitch cycles</b><span>The orbit and the tilt slowly change. The axis wobbles round once in about 26,000 years (precession); counting the orbit's own slow turn, the seasons line up with perihelion again every 19,000 to 23,000 years (about 21,000 on average). The tilt rocks between 22.1° and 24.5° over about 41,000 years. The orbit stretches and rounds out over about 100,000 and 405,000 years (eccentricity). Together they pace the ice ages.</span></div>
+        <div class="bh-feat gx-card"><b>Lines drawn by the tilt</b><span>The tropics, at 23.44° north and south, are as far from the equator as the Sun can stand straight overhead. The polar circles, at 66.56° (90° minus the tilt), are where the Sun can stay up for a whole day in summer and stay down for a whole day in winter. With no tilt the tropics would shrink to the equator and the polar circles to the poles, and every day of the year would be alike.</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>Built from published measurements (PREM, USGS, NOAA, NASA). Diagrams are drawn by this site; where something is not to scale, it says so.</p>
+  <p class="site-foot-links"><a href="../../sources.html">Sources &amp; simplifications</a><a href="../../missions/index.html">Missions &amp; telescopes →</a></p>
+</footer>
+<script src="js/earth-tabs.js"></script>
+<script src="js/earth-a.js"></script>
+<script src="js/earth-b.js"></script>
+</body>
+</html>

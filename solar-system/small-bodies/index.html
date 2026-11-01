@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Small bodies · Stellar Life</title>
+<meta name="description" content="Asteroids, comets, the Kuiper belt and Oort cloud, impacts and meteors: the small bodies of the Solar System, drawn from real orbits and measurements. Interactive.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../../shared/style.css">
+<link rel="stylesheet" href="small-bodies.css">
+</head>
+<body>
+<header class="masthead">
+<nav class="site-nav wrap" aria-label="Site">
+  <a class="site-brand" href="../../index.html">Stellar Life</a>
+  <div class="site-links">
+    <a href="../../stars/index.html">Stars</a>
+    <a href="../../galaxies/index.html">Galaxies &amp; cosmology</a>
+    <a href="../earth/index.html">Earth</a>
+    <a href="index.html" aria-current="page">Small bodies</a>
+    <a href="../../tools/index.html">Tools</a>
+    <a href="../../missions/index.html">Missions</a>
+    <a href="../../sources.html">Sources</a>
+  </div>
+</nav>
+  <div class="wrap masthead-inner">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="16" r="6.5" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="16" cy="16" r="2.6" fill="currentColor"/></svg>
+      <div>
+        <h1>Small bodies</h1>
+        <p class="tagline">Asteroids, comets and the icy worlds beyond Neptune: leftovers from the making of the planets. What they are, where they orbit, and what happens when one hits Earth.</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="tabs" role="tablist" aria-label="Topics">
+    <button role="tab" id="sbTabBelt" aria-controls="belt" aria-selected="true">Asteroid belt</button>
+    <button role="tab" id="sbTabComets" aria-controls="comets" aria-selected="false">Comets</button>
+    <button role="tab" id="sbTabOuter" aria-controls="outer" aria-selected="false">Kuiper belt &amp; Oort cloud</button>
+    <button role="tab" id="sbTabImpacts" aria-controls="impacts" aria-selected="false">Impacts</button>
+    <button role="tab" id="sbTabMeteors" aria-controls="meteors" aria-selected="false">Meteors &amp; meteorites</button>
+  </nav>
+
+  <!-- ===================== ASTEROID BELT ===================== -->
+  <section id="belt" role="tabpanel" aria-labelledby="sbTabBelt" class="panel">
+    <div class="panel-intro">
+      <h2>The asteroid belt: a planet that never formed</h2>
+      <p>Between Mars and Jupiter, from about 2.1 to 3.3 AU from the Sun (1 AU is Earth's distance), orbit more than a million rocks wider than 1 km. Jupiter's gravity stirred them up early on, so they hit each other too fast to stick together. Collisions and Jupiter have since thrown most of the material out. What remains adds up to only about 3% of the Moon's mass.</p>
+    </div>
+
+    <div class="gx-two">
+      <div class="gx-svgbox sb-cvbox"><canvas id="sbBeltCv" role="img" aria-label="Top-down view of the inner Solar System: the Sun, the orbits of Mercury, Venus, Earth, Mars and Jupiter, a ring of a few thousand asteroids between Mars and Jupiter, and two swarms of Trojan asteroids sharing Jupiter's orbit 60 degrees ahead of and behind it"></canvas>
+        <div class="sb-legend"><span><i class="sb-key" style="background:var(--sb-ast)"></i>Main-belt asteroids</span><span><i class="sb-key" style="background:var(--sb-tro)"></i>Jupiter Trojans</span><span><i class="sb-key ln" style="border-color:var(--muted)"></i>Planet orbits</span></div></div>
+      <div class="gx-ctrl">
+        <p class="probe-label">View</p>
+        <div class="seg" role="group" aria-label="View" id="sbBeltView"></div>
+        <div class="gx-btns"><button type="button" class="btn btn-primary" id="sbBeltPlay" aria-pressed="true">Pause</button></div>
+        <label for="sbBeltSpd" class="probe-label">Speed <output id="sbBeltSpdOut"></output></label>
+        <input id="sbBeltSpd" type="range" min="-1.3" max="1" step="0.01" value="-0.3">
+        <label class="toggle" for="sbBeltRings"><input id="sbBeltRings" type="checkbox"><span class="track" aria-hidden="true"></span>Mark the resonance distances</label>
+        <dl class="facts" id="sbBeltFacts" aria-live="off"></dl>
+        <p class="note">Each body moves on its own Kepler orbit: period in years = (distance in AU)<sup>1.5</sup>. Inner asteroids lap the outer ones. The asteroids are a sample drawn from a smooth model of the real distribution, not a catalogue; the planets' orbits are drawn as circles, and sizes are not to scale.</p>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>The Kirkwood gaps</h3><p class="sub">Count asteroids by the size of their orbit (semi-major axis) and gaps appear. They sit where an asteroid would go round the Sun a whole number of times while Jupiter goes round a smaller whole number: 3 laps to Jupiter's 1, for example. Pick a distance on the chart, or a resonance below.</p></div>
+      <div class="gx-svgbox sb-wide"><svg id="sbHist" viewBox="0 0 900 360" role="img" aria-label="Histogram of asteroid semi-major axes from 2.0 to 3.5 AU. Deep gaps appear at the 4:1, 3:1, 5:2, 7:3 and 2:1 resonances with Jupiter, at 2.06, 2.50, 2.82, 2.96 and 3.28 AU"></svg></div>
+      <div class="gx-two sb-two-even">
+        <div class="gx-ctrl">
+          <label for="sbHistA" class="probe-label">Orbit size (semi-major axis) <output id="sbHistAOut"></output></label>
+          <input id="sbHistA" type="range" min="2" max="3.5" step="0.001" value="2.5">
+          <div class="seg" role="group" aria-label="Resonances with Jupiter" id="sbRes"></div>
+          <p class="formula">Kepler's third law: P² ∝ a³<br>resonance p:q (p laps per q of Jupiter's) → a = 5.20 AU × (q/p)<sup>2/3</sup></p>
+        </div>
+        <div class="agn-class" id="sbHistOut" aria-live="polite"></div>
+      </div>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Why a gap forms</b><span>In the 3:1 resonance, an asteroid meets Jupiter at the same points of its orbit every 3 laps. The small tugs add up instead of cancelling, the orbit gets more and more stretched, and within a few million years it crosses Mars or Earth and is removed. Many meteorites come from here.</span></div>
+        <div class="bh-feat gx-card"><b>Daniel Kirkwood, 1866</b><span>With fewer than 100 asteroids known, the American astronomer noticed that none had periods a simple fraction of Jupiter's. The gaps carry his name.</span></div>
+        <div class="bh-feat gx-card"><b>Resonances can also protect</b><span>Not every resonance clears space. The Hilda asteroids gather at the 3:2 resonance (3.97 AU), and the Trojans share Jupiter's orbit (1:1), clustered 60° ahead of and behind it at the L4 and L5 points. Both are kept safely away from Jupiter by the same timing. NASA's Lucy probe is on its way to visit Trojans from 2027.</span></div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"You can see the gaps in a picture of the belt."</b> Not in a snapshot. Asteroid orbits are stretched (eccentric), so an asteroid with a 2.5 AU orbit spends time well inside and outside 2.5 AU. Turn on the resonance rings in the top view: no empty lanes. The gaps only show when you sort asteroids by orbit size.</p></div><div><p class="h">Why it matters</p><p>Resonances act as escape hatches. They feed a steady trickle of asteroid pieces into orbits that cross Earth's, which is why we have meteorites from the belt at all, and where most near-Earth asteroids come from.</p></div></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Where the mass is</h3><p class="sub">The whole belt has a mass of about 2.4 × 10<sup>21</sup> kg (Pitjeva &amp; Pitjev 2018, from their pull on the planets and spacecraft). Four bodies hold more than 60% of it. Choose one.</p></div>
+      <div class="sb-stack" id="sbMassBar" aria-hidden="true"></div>
+      <div class="seg" role="group" aria-label="Largest asteroids" id="sbMassSeg"></div>
+      <div class="gx-two sb-two-even">
+        <div class="agn-class" id="sbMassHead" aria-live="polite"></div>
+        <dl class="facts" id="sbMassFacts"></dl>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>What asteroids are made of</h3>
+      <p class="sub">Sunlight reflected off an asteroid carries the fingerprints of its minerals. Sorting by these colours and spectra gives the main types. Of asteroids classified this way, roughly three quarters are C-type and about a sixth S-type.</p>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b><span class="sb-tag" style="--c:var(--sb-c)">C</span>Carbon-rich</b><span>Dark as charcoal, reflecting only 3–10% of sunlight. Clay minerals with water locked in them, and organic compounds. Most common in the outer belt. Samples from Ryugu (Hayabusa2, 2020) and Bennu (OSIRIS-REx, 2023) are of this kind.</span></div>
+        <div class="bh-feat gx-card"><b><span class="sb-tag" style="--c:var(--sb-s)">S</span>Stony</b><span>Brighter, made of silicate rock with some metal. Common in the inner belt. Grains brought back from Itokawa by Hayabusa in 2010 matched ordinary chondrites, the most common meteorites.</span></div>
+        <div class="bh-feat gx-card"><b><span class="sb-tag" style="--c:var(--sb-m)">M</span>Metal-rich</b><span>Some look like iron–nickel, perhaps the exposed cores of small worlds whose rocky outsides were stripped by collisions. NASA's Psyche probe, launched in 2023, arrives at 16 Psyche in 2029 to find out.</span></div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"The belt is a crowded field of rocks you must dodge."</b> Space between asteroids is vast: on average they are around a million kilometres apart, more than twice the Earth–Moon distance. More than a dozen spacecraft have crossed the belt without trouble. Standing on one asteroid you would usually not see another with the naked eye.</p></div><div><p class="h">Why it matters</p><p>Films show a dense rock field because a realistic belt would look empty. The true number is large (over a million bodies wider than 1 km), but the volume is far larger: a ring about 1.2 AU wide around the whole Sun.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ===================== COMETS ===================== -->
+  <section id="comets" role="tabpanel" aria-labelledby="sbTabComets" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Comets: dirty snowballs on stretched orbits</h2>
+      <p>A comet's nucleus is a lump of ice, dust and rock a few kilometres across. For most of its orbit it is frozen and dark. As it nears the Sun, ice turns straight to gas, dragging dust with it into a glowing cloud (the coma) and two tails that can stretch for tens of millions of kilometres.</p>
+    </div>
+
+    <div class="gx-two">
+      <div class="gx-svgbox"><svg id="sbOrb" viewBox="0 0 600 440" role="img" aria-label="Orbit of a comet around the Sun with the orbits of Earth and Jupiter for comparison. The comet moves fast near the Sun and slowly far away, and grows tails when close"></svg>
+        <div class="sb-legend"><span><i class="sb-key" style="background:var(--sb-ion)"></i>Ion (gas) tail</span><span><i class="sb-key" style="background:var(--sb-dust)"></i>Dust tail</span><span><i class="sb-key ln" style="border-color:var(--muted)"></i>Planet orbits</span></div>
+      </div>
+      <div class="gx-ctrl">
+        <p class="probe-label">Comet</p>
+        <div class="seg" role="group" aria-label="Comet presets" id="sbCoPre"></div>
+        <label for="sbCoE" class="probe-label">Eccentricity (how stretched) <output id="sbCoEOut"></output></label>
+        <input id="sbCoE" type="range" min="0" max="0.995" step="0.0001" value="0.96714">
+        <label for="sbCoQ" class="probe-label">Closest distance to the Sun (perihelion) <output id="sbCoQOut"></output></label>
+        <input id="sbCoQ" type="range" min="0.1" max="3" step="0.001" value="0.586">
+        <p class="probe-label">View</p>
+        <div class="seg" role="group" aria-label="View" id="sbCoView"></div>
+        <label for="sbCoT" class="probe-label">Time from perihelion (finer steps near the middle) <output id="sbCoTOut"></output></label>
+        <input id="sbCoT" type="range" min="-1" max="1" step="0.001" value="-0.2">
+        <div class="gx-btns"><button type="button" class="btn btn-primary" id="sbCoPlay" aria-pressed="false">Play</button></div>
+        <label class="toggle" for="sbCoAreas"><input id="sbCoAreas" type="checkbox"><span class="track" aria-hidden="true"></span>Show equal times (Kepler's second law)</label>
+        <dl class="facts" id="sbCoFacts" aria-live="polite"></dl>
+      </div>
+    </div>
+    <p class="note">Position from Kepler's equation, E − e sin E = M, solved by Newton's method; speed from the vis-viva equation. Each comet runs through one orbit in the same time here, so Hale–Bopp's 2,400 years pass as quickly as Encke's 3.3. Orbits are drawn flat, ignoring their tilt.</p>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Close up: which way the tails point</h3><p class="sub">The head of the comet from the orbit above, with the Sun always off to the left. Move the time slider: the tails point away from the Sun, not back along the path.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox"><svg id="sbHead" viewBox="0 0 600 340" role="img" aria-label="Close-up of the comet: nucleus, coma, a straight blue ion tail pointing directly away from the Sun and a curved, paler dust tail, with an arrow showing the direction of travel"></svg></div>
+        <div class="gx-ctrl">
+          <div class="agn-class" id="sbHeadOut" aria-live="polite"></div>
+          <div class="bh-feats sb-feats1">
+            <div class="bh-feat gx-card"><b><span class="sb-tag" style="--c:var(--sb-ion)">Ion tail</span>Straight and blue</b><span>Gas molecules are ionised by sunlight and swept up by the solar wind, which blows outward at about 400 km/s. So this tail points straight away from the Sun. The blue is glowing CO⁺ ions.</span></div>
+            <div class="bh-feat gx-card"><b><span class="sb-tag" style="--c:var(--sb-dust)">Dust tail</span>Curved and pale</b><span>Dust grains are pushed gently by the pressure of sunlight but keep much of the comet's orbital motion, so they fan out in a curve that lags behind. It shines by reflected sunlight, so it looks yellowish-white.</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"A comet's tail streams out behind it, like a rocket's exhaust."</b> The tails point away from the Sun, whichever way the comet moves. Heading out after perihelion, a comet travels tail-first.</p></div><div><p class="h">Why it matters</p><p>The ion tail is a free wind sock. Before any spacecraft measured it, Ludwig Biermann used comet tails in 1951 to argue that a steady wind of particles flows out from the Sun: the solar wind, confirmed by spacecraft in 1959–1962.</p></div></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Anatomy of a comet</h3><p class="sub">Water ice starts to sublimate (turn straight from solid to gas) at about 3 AU from the Sun, inside Jupiter's orbit. More volatile ices, such as carbon monoxide and carbon dioxide, can switch a comet on farther out.</p></div>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Nucleus: kilometres</b><span>The solid part. Halley's is about 15 × 8 km, 67P's about 4 km, Hale–Bopp's unusually large, perhaps 60 km. It is darker than coal: Halley's reflects about 4% of the light that hits it. A crust of dust covers the ice.</span></div>
+        <div class="bh-feat gx-card"><b>Coma: up to a million km</b><span>The cloud of gas and dust around the nucleus. Near the Sun it can grow wider than Jupiter, from a nucleus smaller than a city. Around it, a still larger cloud of hydrogen glows in ultraviolet.</span></div>
+        <div class="bh-feat gx-card"><b>Tails: up to 100 million km+</b><span>Hyakutake's ion tail (1996) was measured at over 500 million km by the Ulysses spacecraft, which flew through it by chance. Most tails are a few tens of millions of km long.</span></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>What visiting comets taught us</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>1986 · Giotto at Halley</b><span>ESA's probe flew 596 km from Halley's nucleus on 14 March 1986, taking the first pictures of a comet's core. It showed a dark, peanut-shaped body with jets of gas from a few active spots, not a clean snowball.</span></div>
+        <div class="bh-feat gx-card"><b>2005–2006 · Deep Impact and Stardust</b><span>Deep Impact fired a 370 kg copper block into comet Tempel 1, revealing fine powdery material under the crust. Stardust brought dust from comet Wild 2 to Earth, and it held minerals that formed at high temperatures close to the young Sun, then travelled out to the comet region.</span></div>
+        <div class="bh-feat gx-card"><b>2014–2016 · Rosetta at 67P</b><span>ESA's Rosetta orbited comet 67P/Churyumov–Gerasimenko for two years, and its lander Philae touched down on 12 November 2014. Its water has about three times the heavy-hydrogen (D/H) ratio of Earth's oceans, so comets like it probably did not supply most of Earth's water. It also found molecular oxygen and the amino acid glycine.</span></div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Classic picture</p><p>Fred Whipple's 1950 "dirty snowball": a ball of ice with some dust mixed in.</p></div><div><p class="h">What we know now</p><p>Spacecraft found more dust than ice: an "icy dirtball". 67P's nucleus is very porous, about 70% empty space, with a density close to half that of water ice (about 0.53 g/cm³). It is two lobes stuck together, like many small bodies.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ===================== KUIPER BELT & OORT CLOUD ===================== -->
+  <section id="outer" role="tabpanel" aria-labelledby="sbTabOuter" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>The Kuiper belt and the Oort cloud: the far, frozen edge</h2>
+      <p>Past Neptune lies the Kuiper belt, a wide ring of icy bodies, Pluto among them. Far beyond, a vast round shell of comets, the Oort cloud, is thought to reach a good part of the way to the nearest stars. Distances out here span so many powers of ten that only a logarithmic scale can show them together.</p>
+    </div>
+
+    <div class="gx-block" style="margin-top:0">
+      <div class="hr-head"><h3>How far is far?</h3><p class="sub">Each step along the scale is ten times farther than the last. Drag the marker, use the slider, or jump to a landmark.</p></div>
+      <div class="gx-svgbox sb-wide"><svg id="sbLog" viewBox="0 0 960 300" role="img" aria-label="Logarithmic distance scale from 1 AU to 300,000 AU: Earth, Jupiter, Neptune at 30 AU, the Kuiper belt from 30 to 50 AU, Pluto, Sedna's closest approach at 76 AU, Eris, the heliopause, Voyager 1 at about 173 AU, the Oort cloud from about 2,000 to 100,000 AU, and Proxima Centauri at 268,000 AU. A second axis shows light-travel time."></svg></div>
+      <div class="gx-two sb-two-even">
+        <div class="gx-ctrl">
+          <label for="sbLogX" class="probe-label">Distance from the Sun <output id="sbLogXOut"></output></label>
+          <input id="sbLogX" type="range" min="0" max="5.5" step="0.005" value="1.477">
+          <div class="seg" role="group" aria-label="Landmarks" id="sbLogMarks"></div>
+        </div>
+        <dl class="facts" id="sbLogOut" aria-live="polite"></dl>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"Voyager 1 has left the Solar System."</b> In August 2012, at about 122 AU, it left the heliosphere, the bubble blown by the solar wind, and entered interstellar space. But the Sun's gravity still rules far beyond: Voyager will take about 300 years to reach the inner edge of the Oort cloud and perhaps 30,000 years to pass through it.</p></div><div><p class="h">A milestone this month</p><p>Around 18 November 2026, Voyager 1 becomes the first spacecraft one light-day from Earth, about 173 AU or 25.9 billion km. A command sent from Earth then takes a full day to arrive, and the reply another day to come back.</p></div></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Pluto and Neptune: crossing orbits that never meet</h3><p class="sub">Pluto's orbit dips inside Neptune's, yet they can never collide. Pluto goes round the Sun twice for every three of Neptune's (a 3:2 resonance), timed so that whenever Pluto is closest to the Sun, Neptune is far away around the other side.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox sb-sq"><svg id="sbPN" viewBox="0 0 500 500" role="img" aria-label="Orbits of Neptune and Pluto seen from above. Pluto's orbit crosses inside Neptune's near Pluto's perihelion, but the two are always far apart"></svg></div>
+        <div class="gx-ctrl">
+          <p class="probe-label">Frame</p>
+          <div class="seg" role="group" aria-label="Frame of view" id="sbPNFrame"></div>
+          <div class="gx-btns"><button type="button" class="btn btn-primary" id="sbPNPlay" aria-pressed="true">Pause</button></div>
+          <dl class="facts" id="sbPNFacts" aria-live="off"></dl>
+          <p class="note">Flat model: Neptune on a circle at 30.07 AU, Pluto on an ellipse with a = 39.5 AU and e = 0.249, with the period ratio set to exactly 3:2 and the timing at the centre of its slow swing (libration). In reality Pluto's orbit is also tilted 17°, which adds to the separation. The small dot marks Pluto's perihelion, just inside Neptune's orbit; it was last there in 1989.</p>
+        </div>
+      </div>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Plutinos</b><span>Pluto is not alone: thousands of Kuiper belt objects share the same 3:2 resonance, near 39.4 AU. They are called plutinos. Their orbits suggest Neptune migrated outward early on and swept them into step.</span></div>
+        <div class="bh-feat gx-card"><b>1992 QB1, the first</b><span>David Jewitt and Jane Luu found the first Kuiper belt object after Pluto and Charon in 1992, after five years of searching. Thousands are now known, and there are likely over 100,000 wider than 100 km.</span></div>
+        <div class="bh-feat gx-card"><b>Arrokoth</b><span>On 1 January 2019, New Horizons flew past Arrokoth, 6.6 billion km from the Sun. It is a reddish snowman 36 km long: two lobes that came together gently, at walking pace, left untouched for 4.5 billion years since the planets formed.</span></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>The dwarf planets</h3><p class="sub">The five the International Astronomical Union recognises, drawn to scale beside our Moon. Choose one to highlight it in the table.</p></div>
+      <div class="gx-svgbox sb-wide"><svg id="sbDwarf" viewBox="0 0 900 290" role="img" aria-label="The Moon, Pluto, Eris, Haumea, Makemake and Ceres drawn to the same scale. Pluto and Eris are each about two thirds of the Moon's width; Haumea is egg-shaped; Ceres is about a quarter of the Moon's width"></svg></div>
+      <div class="seg" role="group" aria-label="Dwarf planets" id="sbDwarfSeg"></div>
+      <div class="table-wrap scrolls"><table class="sb-table" id="sbDwarfTable"><thead><tr><th>Name</th><th>Size</th><th>Mass</th><th>Average distance</th><th>One orbit</th><th>Moons</th><th>Visited</th></tr></thead><tbody></tbody></table></div>
+      <div class="agn-class" id="sbDwarfOut" aria-live="polite"></div>
+      <div class="tr-callout"><div><p class="h">Classic picture</p><p>Nine planets, with Pluto, found by Clyde Tombaugh in 1930, as the ninth. For decades it was thought to be about Earth's size; it turned out to be smaller than our Moon.</p></div><div><p class="h">What we know now</p><p>On 24 August 2006 the IAU defined a planet as a body that (1) orbits the Sun, (2) is massive enough for its gravity to pull it nearly round, and (3) has cleared the neighbourhood around its orbit. Pluto passes the first two but shares its zone with the rest of the Kuiper belt, so it became a dwarf planet. The trigger was Eris, found in 2005: about Pluto's size and 27% more massive.</p></div></div>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Sedna</b><span>Its closest approach to the Sun is about 76 AU, well beyond Neptune's reach, and it swings out to around 900 AU. Something else must have shaped its orbit: perhaps a star passing near the young Sun. A few similar bodies are now known.</span></div>
+        <div class="bh-feat gx-card"><b>The Oort cloud is inferred, not seen</b><span>No Oort cloud object has been observed out there; they are too small and faint. In 1950 Jan Oort noticed that long-period comets fall in from all directions and from distances of tens of thousands of AU, and deduced a huge round reservoir of maybe hundreds of billions of comets.</span></div>
+        <div class="bh-feat gx-card"><b>Where it ends</b><span>Beyond roughly 100,000 to 200,000 AU, the pull of passing stars and the Milky Way's tides beats the Sun's. Those same nudges send Oort cloud comets falling inward, which is how we ever see them.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== IMPACTS ===================== -->
+  <section id="impacts" role="tabpanel" aria-labelledby="sbTabImpacts" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Impacts: when a small body hits Earth</h2>
+      <p>Something from space hits Earth's atmosphere every day, mostly dust and sand. Because it arrives at 11 to 72 km/s, even a small rock carries enormous energy: at 20 km/s, each kilogram carries about 50 times the energy of a kilogram of TNT. Whether that energy makes a crater or an explosion in the sky depends mainly on size and what the body is made of.</p>
+    </div>
+
+    <div class="gx-block" style="margin-top:0">
+      <div class="hr-head"><h3>Impact calculator</h3><p class="sub">Choose an impactor, or start from a real event. The calculator follows it down through the air, then estimates the crater, using the method of the Earth Impact Effects Program (Collins, Melosh &amp; Marcus 2005).</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox"><svg id="sbImp" viewBox="0 0 600 380" role="img" aria-label="Chart of altitude against the impactor's speed and the energy it loses on the way down, marking where it breaks up and whether it explodes in the air or reaches the ground"></svg>
+          <svg id="sbCrater" viewBox="0 0 600 186" role="img" aria-label="Cross-section of the estimated crater with the impactor drawn to the same scale"></svg>
+          <div class="sb-legend"><span><i class="sb-key" style="background:var(--sb-heat)"></i>Energy lost per km of height</span><span><i class="sb-key ln" style="border-color:var(--sb-ion)"></i>Speed</span></div>
+        </div>
+        <div class="gx-ctrl">
+          <p class="probe-label">Real events</p>
+          <div class="seg" role="group" aria-label="Real impacts" id="sbImpPre"></div>
+          <label for="sbImpD" class="probe-label">Diameter <output id="sbImpDOut"></output></label>
+          <input id="sbImpD" type="range" min="0" max="4.3" step="0.005" value="1.28">
+          <p class="probe-label">Made of</p>
+          <div class="seg" role="group" aria-label="Material" id="sbImpRho"></div>
+          <label for="sbImpV" class="probe-label">Speed entering the air <output id="sbImpVOut"></output></label>
+          <input id="sbImpV" type="range" min="11" max="72" step="0.5" value="19">
+          <label for="sbImpA" class="probe-label">Angle above the horizon <output id="sbImpAOut"></output></label>
+          <input id="sbImpA" type="range" min="15" max="90" step="1" value="18">
+          <div class="agn-class" id="sbImpHead" aria-live="polite"></div>
+          <dl class="facts" id="sbImpFacts"></dl>
+        </div>
+      </div>
+      <p class="formula">kinetic energy = ½ m v²   (1 Mt of TNT = 4.184 × 10<sup>15</sup> J)<br>breaks up when air pressure ρ<sub>air</sub> v² exceeds its strength; then spreads like a pancake (7× wider = airburst)<br>transient crater D<sub>tc</sub> = 1.161 (ρ<sub>i</sub>/ρ<sub>t</sub>)<sup>1/3</sup> L<sup>0.78</sup> v<sup>0.44</sup> g<sup>−0.22</sup> sin<sup>1/3</sup>θ;  final: 1.25 D<sub>tc</sub> (simple) or 1.17 D<sub>tc</sub><sup>1.13</sup> / D<sub>c</sub><sup>0.13</sup> above D<sub>c</sub> = 3.2 km</p>
+      <p class="note">These are order-of-magnitude estimates. The model treats the air as an exponential atmosphere, uses an average strength for each material, and assumes a rock target (2,500 kg/m³). Real bodies vary a lot in strength, and for the biggest craters the scaling laws are uncertain by tens of percent.</p>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"A crater is about the size of the rock that made it."</b> An impact at many km/s is an explosion, not a dent. Craters come out 10 to 20 times wider than the impactor, and round even when it hits at a slant.</p></div><div><p class="h">Small rocks burst in the air</p><p>Stony bodies up to a few tens of metres are crushed by the air in front of them and usually explode high up, as at Chelyabinsk and Tunguska. The danger is the blast wave and heat, not a crater. Iron bodies are much stronger and can reach the ground, as at Meteor Crater.</p></div></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>How often?</h3><p class="sub">Small impacts are common and large ones rare. The line is a fit to flashes of bursting meteoroids seen by satellites (Brown et al. 2002), converted to sizes for stony bodies at 20 km/s; it is dashed where it is extended beyond the data. Points are other estimates. The marker follows the calculator's size.</p></div>
+      <div class="gx-svgbox"><svg id="sbFreq" viewBox="0 0 640 380" role="img" aria-label="Log-log chart of the average time between impacts against impactor diameter: about yearly for 4 m, every 50 to 100 years for 20 m, centuries to a millennium for 50 m, about every 500,000 years for 1 km and about every 100 million years for 10 km"></svg></div>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Chelyabinsk, 15 February 2013</b><span>A stony asteroid about 19 m across hit the air at 19 km/s and burst about 30 km above Chelyabinsk, Russia, with the energy of roughly half a megaton. The shock wave blew in windows across the city, and about 1,500 people were hurt, mostly by flying glass. Nobody saw it coming: it arrived from the direction of the Sun.</span></div>
+        <div class="bh-feat gx-card"><b>Tunguska, 30 June 1908</b><span>An explosion a few kilometres above Siberia flattened about 2,000 km² of forest, some 80 million trees. No crater was found. Estimates of its energy range from about 3 to 15 Mt, from a body several tens of metres across.</span></div>
+        <div class="bh-feat gx-card"><b>Chicxulub, 66 million years ago</b><span>A body about 10 km wide hit what is now Mexico's Yucatán Peninsula, leaving a crater about 180 km across now buried under sediment. Dust, soot and sulfur blocked sunlight around the world, and about three quarters of species, including all non-bird dinosaurs, died out.</span></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Planetary defence: nudging an asteroid</h3><p class="sub">On 26 September 2022, NASA's DART spacecraft, about 580 kg, hit Dimorphos, the 150 m moon of the asteroid Didymos, at 6.1 km/s. Its orbit period dropped from 11 h 55 min by 33 ± 1 minutes. A small change, but it builds up every orbit. Compare where Dimorphos would have been with where it is.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox sb-sq"><svg id="sbDart" viewBox="0 0 420 420" role="img" aria-label="Didymos with two copies of its moon Dimorphos: where it would be without the DART impact and where it actually is. The actual one gains on the other every orbit"></svg></div>
+        <div class="gx-ctrl">
+          <label for="sbDartT" class="probe-label">Time after the impact <output id="sbDartTOut"></output></label>
+          <input id="sbDartT" type="range" min="0" max="30" step="0.01" value="0">
+          <div class="gx-btns"><button type="button" class="btn btn-primary" id="sbDartPlay" aria-pressed="false">Play</button></div>
+          <dl class="facts" id="sbDartFacts" aria-live="polite"></dl>
+          <p class="note">Sizes and orbit to scale with each other: Didymos about 760 m wide, Dimorphos about 150 m, orbiting 1.2 km apart. The shrink of the orbit is worked out from the period change with Kepler's third law.</p>
+        </div>
+      </div>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>More push than the spacecraft</b><span>Rock thrown off by the impact recoiled like a rocket exhaust. It gave Dimorphos about 3.6 times the push of the spacecraft alone (Cheng et al. 2023), good news for using this method on a real threat.</span></div>
+        <div class="bh-feat gx-card"><b>Hera, arriving now</b><span>ESA's Hera, launched in October 2024, is due to reach Didymos in November 2026 to measure Dimorphos's mass and the shape of DART's crater, turning one experiment into a calibrated method.</span></div>
+        <div class="bh-feat gx-card"><b>Find them first</b><span>A nudge only works years ahead of an impact. Surveys have found well over 90% of near-Earth asteroids wider than 1 km, and none is on a collision course. Smaller ones, of a few hundred metres, are still largely undiscovered; NASA's NEO Surveyor telescope is being built to find them.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== METEORS & METEORITES ===================== -->
+  <section id="meteors" role="tabpanel" aria-labelledby="sbTabMeteors" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Meteors and meteorites: space dust meets the air</h2>
+      <p>On any clear, dark night you can see a few meteors an hour. On certain dates each year, many more appear, all seeming to fly out of one spot in the sky. These meteor showers happen when Earth ploughs through a trail of dust left along a comet's orbit.</p>
+    </div>
+
+    <div class="gx-block" style="margin-top:0">
+      <div class="hr-head"><h3>Meteor shower calendar</h3><p class="sub">The height of each peak is its ZHR: the number of meteors an observer would see per hour at the peak, under a perfectly dark sky with the radiant overhead. Real counts are usually lower. Choose a shower.</p></div>
+      <div class="gx-svgbox sb-wide"><svg id="sbCal" viewBox="0 0 960 270" role="img" aria-label="Calendar of the year with the major meteor showers drawn as peaks: Quadrantids in early January, Lyrids in April, Eta Aquariids in May, Perseids in August, Orionids in October, Leonids in November and Geminids in December"></svg></div>
+      <div class="seg" role="group" aria-label="Meteor showers" id="sbShw"></div>
+      <div class="gx-two sb-two-even">
+        <div class="agn-class" id="sbShwHead" aria-live="polite"></div>
+        <dl class="facts" id="sbShwFacts"></dl>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Earth crossing a debris stream</h3><p class="sub">Dust shed by the parent comet spreads all along its orbit. Earth reaches the place where that stream crosses its own orbit on about the same date every year. Move the date and watch the rate rise. In the sky, the meteors all travel in parallel, but perspective makes them seem to fan out from one point, the radiant, the way parallel rails meet in the distance.</p></div>
+      <div class="gx-two sb-two-even">
+        <div class="gx-svgbox sb-sq"><svg id="sbStream" viewBox="0 0 460 460" role="img" aria-label="Top-down view of Earth's orbit and the stream of dust along the parent comet's orbit, with Earth's position on the chosen date. Not to scale"></svg></div>
+        <div class="gx-ctrl">
+          <div class="sb-sky"><svg id="sbSky" viewBox="0 0 420 300" role="img" aria-label="Night sky with meteors streaking outward from the radiant of the chosen shower"></svg></div>
+          <label for="sbDay" class="probe-label">Date <output id="sbDayOut"></output></label>
+          <input id="sbDay" type="range" min="0" max="364" step="0.25" value="214">
+          <div class="gx-btns"><button type="button" class="btn btn-primary" id="sbDayPlay" aria-pressed="false">Play the year</button><button type="button" class="btn" id="sbSkyPlay" aria-pressed="true">Pause meteors</button></div>
+          <div class="sb-meter" aria-hidden="true"><i id="sbMeterBar"></i></div>
+          <p class="probe-label" id="sbRate" aria-live="polite"></p>
+          <p class="note">Orbits are drawn flat and only the inner part of the comet's orbit is shown. The rate curve is a simple bell shape around the peak; real showers often have a sharp core with a broader base.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>Three words, three places</h3>
+      <dl class="gloss sb-gloss">
+        <div><dt>Meteoroid</dt><dd>A small body in space, from about 30 µm (a speck of dust) up to 1 m across (IAU definition, 2017). Bigger than that is an asteroid or comet.</dd></div>
+        <div><dt>Meteor</dt><dd>The streak of light, not the object. Air rams into the meteoroid so hard that it heats up and vaporises, making a glowing trail of hot gas, mostly 120 to 70 km up. A typical shower meteor comes from a grain smaller than a grain of rice.</dd></div>
+        <div><dt>Meteorite</dt><dd>A piece that survives the fall and lands. Only bodies bigger than a few centimetres and slow enough leave meteorites; shower meteors, from fragile comet dust, essentially never do.</dd></div>
+        <div><dt>Fireball and bolide</dt><dd>A fireball is a meteor brighter than Venus. A bolide is one that explodes in a bright flash, often with a sonic boom heard minutes later.</dd></div>
+      </dl>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"Shooting stars are burning stars" or "meteorites land red-hot."</b> Meteors are grains of rock, burning nothing like a star; the light is heated air and vapour. Surviving meteorites lose their cosmic speed tens of km up and fall the rest of the way at a few hundred km/h. The heated outer skin ablates away, and they usually land no more than warm to the touch.</p></div><div><p class="h">Why it matters</p><p>Most meteoroids are ancient material that never became part of a planet. Meteorites are the only pieces of asteroids, and of Mars and the Moon, that come to us without a space mission.</p></div></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Kinds of meteorites</h3><p class="sub">Shares of observed falls, the fairest count of what arrives, since a fall is collected whatever it looks like. Choose a kind.</p></div>
+      <div class="sb-stack" id="sbMetBar" aria-hidden="true"></div>
+      <div class="seg" role="group" aria-label="Meteorite types" id="sbMetSeg"></div>
+      <div class="agn-class" id="sbMetOut" aria-live="polite"></div>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>4,567 million years</b><span>The oldest solids in the Solar System are calcium–aluminium-rich inclusions (CAIs), white specks in some chondrites. Lead–lead dating puts them at 4,567.3 ± 0.2 million years (Connelly et al. 2012). That is the start of the clock for the Solar System's age.</span></div>
+        <div class="bh-feat gx-card"><b>Chondrules</b><span>The little stone beads that give chondrites their name were once molten droplets, flash-heated and cooled within hours, over the first few million years. What heated them is still debated.</span></div>
+        <div class="bh-feat gx-card"><b>Finds versus falls</b><span>Among meteorites simply found on the ground, irons are far more common than among falls: they look unusual, resist weathering and set off metal detectors. Deserts and Antarctic ice, where dark stones stand out, provide most finds today.</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>Built from published measurements (JPL Small-Body Database, IAU, IMO, NASA, ESA and peer-reviewed papers). Diagrams are drawn by this site; where something is not to scale, it says so.</p>
+  <p class="site-foot-links"><a href="../../sources.html">Sources &amp; simplifications</a><a href="../../missions/index.html">Missions &amp; telescopes →</a></p>
+</footer>
+<script src="js/small-bodies.js"></script>
+</body>
+</html>

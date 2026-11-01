@@ -640,6 +640,11 @@ a.hub-card:hover { border-color: var(--accent); transform: translateY(-2px); }
 .ms-olist { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 0; }
 @media (max-width: 640px) {
   .ms-spec { display: none; }
-  .ms-wide { overflow-x: auto; overscroll-behavior-x: contain; -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+  .ms-wide { overflow-x: auto; overscroll-behavior-x: contain; }
+  /* fades only when a script marks the side that has more to scroll */
+  .ms-wide.fade-r { -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+  .ms-wide.fade-l { -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%); mask-image: linear-gradient(90deg, transparent, #000 12%); }
+  .ms-wide.fade-l.fade-r { -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
   .ms-wide svg { min-width: 720px; }
 }
+main a:not([class]) { color: var(--accent); text-underline-offset: 2px; }

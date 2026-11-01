@@ -8,7 +8,7 @@
   .sp-diagram { overflow-x: auto; overscroll-behavior-x: contain; -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
   .sp-diagram svg { min-width: 780px; }
 }
-@media (max-width: 640px) { .op-box canvas { aspect-ratio: 4 / 3; } }
+@media (max-width: 640px) { .op-box canvas { aspect-ratio: 1 / 1; } }
 /* Spectrum facts: some values are whole sentences, so give labels a fixed minimum column and use the body font */
 #spOut div, #tcOut div { display: grid; grid-template-columns: minmax(9rem, auto) 1fr; align-items: baseline; }
 #spOut dd, #tcOut dd { font-family: inherit; font-variant-numeric: tabular-nums; }

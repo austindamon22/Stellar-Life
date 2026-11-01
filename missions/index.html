@@ -19,6 +19,7 @@
     <a href="../stars/index.html">Stars</a>
     <a href="../galaxies/index.html">Galaxies &amp; cosmology</a>
     <a href="../solar-system/earth/index.html">Earth</a>
+    <a href="../solar-system/small-bodies/index.html">Small bodies</a>
     <a href="../tools/index.html">Tools</a>
     <a href="index.html" aria-current="page">Missions</a>
     <a href="../sources.html">Sources</a>
@@ -49,12 +50,12 @@
       <h2>Filter by the light they see</h2>
       <p>Every kind of light carries different news. Pick a band of the spectrum to see which missions observe it, then open any mission for its instruments and discoveries.</p>
     </div>
-    <div class="ms-spec"><svg id="msBand" viewBox="0 0 900 96" role="group" aria-label="Electromagnetic spectrum: choose a band"></svg></div>
+    <div class="ms-spec"><svg id="msBand" viewBox="0 0 900 116" role="group" aria-label="Electromagnetic spectrum: choose a band"></svg></div>
     <div class="ms-filters">
       <div class="seg" role="group" aria-label="Band" id="msBandSeg"></div>
       <div class="seg" role="group" aria-label="Type" id="msKind"></div>
     </div>
-    <p class="note ms-edge">Band edges are conventions, and fields draw them in slightly different places: millimetre waves are “microwave” to some astronomers and “radio” to others.</p>
+    <p class="note ms-edge">Band edges are conventions. This page uses the common split: microwave from 1 mm to 30 cm (300 GHz down to 1 GHz), radio beyond 30 cm. Some astronomers call everything longer than infrared “radio”.</p>
     <p class="note" id="msCount" aria-live="polite"></p>
     <div class="ms-layout">
       <ul class="ms-grid" id="msGrid"></ul>
@@ -64,10 +65,12 @@
     <div class="gx-block">
       <div class="hr-head"><h3>Now and next</h3><p class="sub">Status as of late October 2026.</p></div>
       <div class="bh-feats ms-next">
-        <div class="bh-feat gx-card"><b><span class="ms-when">Now</span>Roman</b><span>Launched 30 August 2026 and being checked out on its way to L2, about three months out. First images are expected in early 2027.</span></div>
+        <div class="bh-feat gx-card"><b><span class="ms-when">Now</span>Roman</b><span>Launched 30 August 2026 and now being commissioned: its systems and two instruments are switched on, adjusted and calibrated while it settles into its orbit around Sun–Earth L2. Science is expected to begin in early 2027.</span></div>
         <div class="bh-feat gx-card"><b><span class="ms-when">Now</span>Rubin’s sky survey</b><span>The ten-year Legacy Survey of Space and Time began on 29 June 2026, photographing the whole southern sky every few nights.</span></div>
         <div class="bh-feat gx-card"><b><span class="ms-when">Ended</span>Swift</b><span>Its orbit decayed after strong solar activity; a commercial rescue failed, and science ended on 20 October 2026.</span></div>
-        <div class="bh-feat gx-card"><b><span class="ms-when">2029</span>Extremely Large Telescope</b><span>ESO’s 39 m telescope in Chile, built from 798 mirror segments. First light is planned for March 2029, science from December 2030.</span></div>
+        <div class="bh-feat gx-card"><b><span class="ms-when">3 Dec 2026</span>Europa Clipper’s Earth flyby</b><span>After a Mars flyby in March 2025, Clipper swings past Earth for a last gravity assist that sends it on to Jupiter, arriving in April 2030.</span></div>
+        <div class="bh-feat gx-card"><b><span class="ms-when">Early 2027</span>PLATO</b><span>ESA’s planet hunter, with 26 cameras, launches on an Ariane 6 to L2 to look for Earth-sized planets around Sun-like stars.</span></div>
+        <div class="bh-feat gx-card"><b><span class="ms-when">2029</span>Extremely Large Telescope</b><span>ESO’s 39 m telescope in Chile, built from 798 mirror segments. First light is planned for 2029, science from December 2030.</span></div>
         <div class="bh-feat gx-card"><b><span class="ms-when">Building</span>Square Kilometre Array</b><span>Two radio arrays, SKA-Low in Western Australia and SKA-Mid in South Africa. Early stations made their first image in 2025; construction runs to about 2029.</span></div>
         <div class="bh-feat gx-card"><b><span class="ms-when">~2035</span>LISA</b><span>ESA’s gravitational-wave observatory in space: three spacecraft in a triangle 2.5 million km on a side, linked by lasers. Launch planned for 2035.</span></div>
       </div>
@@ -110,20 +113,21 @@
       <h2>Mirrors to scale</h2>
       <p>The main mirror sets how much light a telescope collects (it grows with the area) and how sharp it can see (finer detail with a larger diameter, at a given wavelength).</p>
     </div>
-    <div class="gx-svgbox ms-wide"><svg id="msMirror" viewBox="0 0 900 300" role="img" aria-label="Primary mirror sizes of space telescopes drawn to scale beside a person"></svg></div>
+    <div class="gx-svgbox ms-wide"><svg id="msMirror" viewBox="0 0 900 570" role="img" aria-label="Primary mirror sizes of space telescopes drawn to scale beside a person, and below at one sixth of that scale the ground giants Rubin, Keck and the Extremely Large Telescope beside Webb"></svg></div>
     <div class="gx-two">
       <div class="gx-ctrl">
         <label for="msLam" class="probe-label">Wavelength for resolution <output id="msLamOut"></output></label>
         <input id="msLam" type="range" min="0" max="1000" step="1" value="380">
-        <p class="note">Resolution = 1.22 λ / D (the diffraction limit), before any blurring by air or imperfect optics. Resolution only matters where a telescope detects light, so rows fade outside each one’s band. A longer wavelength needs a bigger mirror for the same sharpness: why Webb, working in infrared, needed 6.5 m. Chandra (grazing mirrors) and Gaia, Planck and WMAP (non-round mirrors) are left out.</p>
+        <p class="note">Resolution = 1.22 λ / D (the diffraction limit), before any blurring by air or imperfect optics. Resolution only matters where a telescope detects light, so rows fade outside each one’s band. A longer wavelength needs a bigger mirror for the same sharpness: why Webb, working in infrared, needed 6.5 m. Chandra (grazing mirrors) and Gaia, Planck and WMAP (non-round mirrors) are left out. ALMA and the EHT are interferometers: linked dishes resolve like one dish as wide as their longest baseline B, so the limit is 1.22 λ / B (ALMA up to 16 km). Ground rows give the same limit before the air’s blurring; adaptive optics (Keck now, the ELT when built) gets close to it in the infrared.</p>
       </div>
       <div><div class="table-wrap"><table class="ms-table" id="msMirTable"><thead><tr><th>Telescope</th><th>Mirror</th><th>Light vs Hubble</th><th>Sharpest detail</th></tr></thead><tbody></tbody></table></div>
-      <p class="note ms-foot">Light collected compares areas like for like: Hubble ~4.0 m² once the shadow of its secondary mirror is removed (Roman, with the same 2.4 m mirror, is close), Webb 25.4 m². Other rows use the full mirror area, so they are slightly high.</p></div>
+      <p class="note ms-legend">— = outside its band. Widen the screen for the “Light vs Hubble” column.</p>
+      <p class="note ms-foot">Light collected compares areas like for like: Hubble ~4.0 m² once the shadow of its secondary mirror is removed (Roman, with the same 2.4 m mirror, is close), Webb 25.4 m². Other rows use the full mirror area, so they are slightly high; Keck 76 m², Rubin ~35 m² effective, ELT 978 m². *TESS: per camera, one 10.5 cm lens (0.0087 m²); it has four.</p></div>
     </div>
     <div class="tr-callout ms-callout"><div><p class="h">Common mistake</p><p><b>“Telescopes are about magnification.”</b> Any telescope can magnify; an eyepiece or software does that. What a bigger mirror buys is more light (fainter objects) and finer resolution (real detail). Magnifying past the resolution limit just enlarges the blur.</p></div><div><p class="h">Common mistake</p><p><b>“Webb replaced Hubble.”</b> They see different light: Hubble works from the ultraviolet to the near-infrared, Webb from red light out to the mid-infrared. They often observe the same targets to cover both, and both are still working.</p></div></div>
 
     <div class="gx-block">
-      <div class="hr-head"><h3>Timeline</h3><p class="sub">Bars run from launch to the end of the mission. Open ends are still flying. Colour shows the main band.</p></div>
+      <div class="hr-head"><h3>Timeline</h3><p class="sub">Bars run from launch to the end of the mission. Open ends are still flying. Colour shows the main band. LIGO’s fainter start is initial LIGO, 2002–2010.</p></div>
       <div class="gx-svgbox ms-tl"><svg id="msTime" role="group" aria-label="Mission timeline from 1977 to today"></svg></div>
     </div>
   </section>

@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Galaxies &amp; Cosmology · Stellar Life</title>
+<meta name="description" content="Interactive galaxies: the Milky Way in 3D, rotation curves and dark matter, weighing Sgr A*, Hubble types, active galaxies and quasars, Hubble's law and galaxy collisions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+  /* page-local additions */
+  @media (max-width: 560px) { #mw .gx-fig .gx-box { aspect-ratio: 4 / 3.2; } }
+  .cmb-map { display: block; width: 100%; height: auto; aspect-ratio: 2 / 1; }
+  .gx-solo { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
+  /* timeline: notes in place of a temperature before inflation ends */
+  .tl-out .tl-T small { display: inline-block; font-size: 0.6em; font-weight: 500; line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+<nav class="site-nav wrap" aria-label="Site">
+  <a class="site-brand" href="../index.html">Stellar Life</a>
+  <div class="site-links">
+    <a href="../stars/index.html">Stars</a>
+    <a href="index.html" aria-current="page">Galaxies &amp; cosmology</a>
+    <a href="../solar-system/earth/index.html">Earth</a>
+    <a href="../solar-system/small-bodies/index.html">Small bodies</a>
+    <a href="../tools/index.html">Tools</a>
+    <a href="../missions/index.html">Missions</a>
+    <a href="../sources.html">Sources</a>
+  </div>
+</nav>
+
+  <div class="wrap masthead-inner gx-mast">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 16c4-6 12-4 12 2s-9 9-14 6S4 13 9 7s16-3 18 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="16" cy="16" r="2.6" fill="currentColor"/></svg>
+      <div>
+        <h1>Galaxies &amp; Cosmology</h1>
+        <p class="tagline">The Milky Way, the galaxies beyond it, the monsters at their centres, and how they grew. How we know.</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="tabs gx-tabs" role="tablist" aria-label="Topics">
+    <button role="tab" id="tab-mw" aria-controls="mw" aria-selected="true">The Milky Way</button>
+    <button role="tab" id="tab-types" aria-controls="types" aria-selected="false">Galaxy types</button>
+    <button role="tab" id="tab-agn" aria-controls="agn" aria-selected="false">Active galaxies</button>
+    <button role="tab" id="tab-evo" aria-controls="evo" aria-selected="false">Evolution</button>
+    <button role="tab" id="tab-bang" aria-controls="bang" aria-selected="false">The Big Bang</button>
+    <button role="tab" id="tab-life" aria-controls="life" aria-selected="false">Life in the universe</button>
+    <button role="tab" id="tab-gquiz" aria-controls="gquiz" aria-selected="false">Quiz</button>
+  </nav>
+
+  <!-- ========== Milky Way ========== -->
+  <section id="mw" role="tabpanel" aria-labelledby="tab-mw" class="panel">
+    <div class="panel-intro">
+      <h2>Our galaxy, from outside and inside</h2>
+      <p>A barred spiral about 100,000 light-years across with a few hundred billion stars. We live inside its disk, 26,000 light-years from the centre, so we never see it face-on. Drag to fly around. Try <b>From Earth</b> to see why the Milky Way is a band across our sky.</p>
+    </div>
+    <div class="seg" role="group" aria-label="Camera" id="mwViews"></div>
+    <div class="gx-grid">
+      <figure class="gx-fig">
+        <div class="gx-box">
+          <canvas id="mwCanvas" aria-label="3D model of the Milky Way. Drag to rotate."></canvas>
+          <canvas id="mwOverlay" class="gx-overlay" aria-hidden="true"></canvas>
+          <div id="mwFallback" class="bh-fallback" hidden><p>This view needs WebGL, which your browser has turned off.</p></div>
+        </div>
+        <figcaption class="note">Model, not a photo: built from published sizes (disk scale length 2.6 kpc, thin disk ~300 pc thick, a bar ~27° from our line to the centre, four main arms with a ~13° pitch). Dust lanes are not drawn. Arm positions are approximate; mapping them from inside is still an active research problem.</figcaption>
+      </figure>
+      <div class="gx-side">
+        <p class="probe-label">Show</p>
+        <div id="mwLayers" class="gx-checks"></div>
+        <div class="bh-toggles">
+          <label class="toggle" for="mwPop"><input id="mwPop" type="checkbox"><span class="track" aria-hidden="true"></span>Colour by population</label>
+          <label class="toggle" for="mwLabels"><input id="mwLabels" type="checkbox" checked><span class="track" aria-hidden="true"></span>Labels</label>
+          <label class="toggle" for="mwSpin"><input id="mwSpin" type="checkbox" checked><span class="track" aria-hidden="true"></span>Rotate</label>
+          <label class="toggle" for="mwWind"><input id="mwWind" type="checkbox"><span class="track" aria-hidden="true"></span>Winding problem</label>
+        </div>
+        <p id="mwPopKey" class="note" hidden><span class="dot" style="background:#5aa6ff"></span> Population I: young, metal-rich, in the disk. <span class="dot" style="background:#ff7340"></span> Population II: old, metal-poor, in the halo, globular clusters and thick disk. <span class="dot" style="background:#ffcc4d"></span> Bulge and bar: old, but mostly metal-rich (near-solar or above).</p>
+        <div id="mwWindNote" class="tr-callout" hidden>
+          <div><p class="h">The winding problem</p><p>Stars here orbit at the same speed at every radius (a flat rotation curve), so inner stars lap outer ones. If arms were made of the same stars, they'd wind up tight in a few hundred million years. Watch. (The bar turns as one solid piece, so it doesn't wind.)</p></div>
+          <div><p class="h">The answer</p><p>Arms are <b>density waves</b>: slow traffic jams that stars pass through. Gas piles up in the jam, forms stars, and the brightest (short-lived blue) stars die before they leave it.</p></div>
+        </div>
+        <dl class="facts" id="mwFacts"></dl>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>How we mapped a galaxy we're inside</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Herschel's mistake (1785)</b><span>Counting stars in every direction put the Sun near the centre of a small disk. Dust was hiding everything beyond a few thousand light-years.</span></div>
+        <div class="bh-feat gx-card"><b>Shapley's globular clusters (1918)</b><span>Globular clusters sit in the halo, above the dust. Using variable stars to find their distances, Shapley saw they swarm around a point in Sagittarius, far from us: the Sun is not at the centre.</span></div>
+        <div class="bh-feat gx-card"><b>Radio and infrared see through dust</b><span>The 21-cm line of hydrogen (a flip of the electron's spin) passes through dust. Its Doppler shifts map the gas in the arms; infrared reveals the bar and the old stars.</span></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>How the Galaxy formed</h3>
+      <div class="tr-callout"><div><p class="h">Classic picture</p><p>One giant gas cloud collapsed all at once (Eggen, Lynden-Bell &amp; Sandage, 1962). Halo stars formed on the way in; the rest settled into a spinning disk.</p></div><div><p class="h">What we know now</p><p>It was built by mergers. Gaia's star motions revealed Gaia–Enceladus, a large dwarf galaxy that crashed in about 10 billion years ago; its stars still fill the inner halo. Today the Sagittarius dwarf galaxy is being torn apart into a stream of stars that wraps around the Milky Way.</p></div></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head">
+        <h3>The rotation curve: where's the missing mass?</h3>
+        <p class="sub">Dots are measured orbital speeds of stars and gas. If the visible stars and gas were all the mass, speeds would fall off outside ~10 kpc, like the planets do. They don't. Slide the dark-matter halo until the model fits.</p>
+      </div>
+      <div class="gx-two">
+        <div class="gx-svgbox"><svg id="rcSvg" viewBox="0 0 640 380" role="img" aria-label="Milky Way rotation curve with model components"></svg></div>
+        <div class="gx-ctrl">
+          <label for="rcV" class="probe-label">Dark halo speed scale v<sub>∞</sub> <output id="rcVOut"></output></label>
+          <input id="rcV" type="range" min="0" max="320" step="1" value="0">
+          <label for="rcC" class="probe-label">Halo core radius <output id="rcCOut"></output></label>
+          <input id="rcC" type="range" min="0.5" max="20" step="0.5" value="6">
+          <div class="gx-btns"><button type="button" class="btn btn-primary" id="rcFit">Best fit</button><button type="button" class="btn" id="rcNone">No dark matter</button></div>
+          <dl class="facts" id="rcStats"></dl>
+          <p class="formula">v<sup>2</sup> = GM(&lt;r)/r &nbsp;→&nbsp; M(&lt;r) = v<sup>2</sup>r/G</p>
+          <p class="note">Data: approximate, from Eilers et al. (2019) beyond 5 kpc and Sofue (2013) inside. Visible model: bulge + bar 1.8 × 10<sup>10</sup> M☉ (Hernquist, a = 0.6 kpc) + stars-and-gas disk 6.5 × 10<sup>10</sup> M☉ (Miyamoto–Nagai, a = 3 kpc, b = 0.3 kpc), bulge after Bland-Hawthorn &amp; Gerhard (2016), disk as in Bovy (2015, MWPotential2014). Visible matter explains the inner galaxy; dark matter takes over outside ~10 kpc. Halo: pseudo-isothermal sphere.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head">
+        <h3>Weighing the black hole at the centre</h3>
+        <p class="sub">Infrared cameras see through the dust to stars orbiting Sagittarius A*. Their orbits obey Kepler's third law, so one orbit weighs the black hole. Andrea Ghez and Reinhard Genzel shared the 2020 Nobel Prize for this.</p>
+      </div>
+      <div class="gx-two">
+        <div class="gx-box gx-box-sq"><canvas id="sgrCanvas" aria-label="Stars orbiting Sagittarius A*"></canvas></div>
+        <div class="gx-ctrl">
+          <div class="seg" role="group" aria-label="Star" id="sgrStars"></div>
+          <label for="sgrP" class="probe-label">Orbital period P <output id="sgrPOut"></output></label>
+          <input id="sgrP" type="range" min="2" max="40" step="0.05" value="16.05">
+          <label for="sgrA" class="probe-label">Semi-major axis (angle on the sky) <output id="sgrAOut"></output></label>
+          <input id="sgrA" type="range" min="0.03" max="0.3" step="0.0005" value="0.1255">
+          <label for="sgrD" class="probe-label">Distance to the centre <output id="sgrDOut"></output></label>
+          <input id="sgrD" type="range" min="7" max="9.5" step="0.01" value="8.18">
+          <ol class="gx-steps" id="sgrSteps"></ol>
+          <p class="note">Orbit elements: Gillessen et al. (2017); distance and S2's pericentre: GRAVITY Collaboration (2019–2020). Orbits are drawn in their own planes, not as tilted on the sky.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Galaxy types ========== -->
+  <section id="types" role="tabpanel" aria-labelledby="tab-types" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Hubble's tuning fork</h2>
+      <p>Edwin Hubble sorted galaxies by shape: ellipticals (E0 round to E7 flat), lenticulars (S0), spirals (Sa–Sc) and barred spirals (SBa–SBc), plus irregulars. Click any galaxy.</p>
+    </div>
+    <div class="fork" id="fork"></div>
+    <div class="gx-two gx-block">
+      <div id="typeInfo" class="type-info"></div>
+      <div class="tr-callout">
+        <div><p class="h">Common mistake</p><p><b>The tuning fork is not a life story.</b> Hubble himself wondered, but ellipticals don't flatten into spirals or the other way round. Galaxies change mainly by colliding and merging (see the Evolution tab).</p></div>
+        <div><p class="h">Common mistake</p><p><b>"E7" doesn't mean a flat galaxy.</b> The number is how flat it <i>looks</i> from Earth: E = 10(1 − b/a). A cigar-shaped elliptical seen end-on looks like an E0.</p></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Measuring distances to galaxies</h3><p class="sub">Each rung of the distance ladder calibrates the next. A "standard candle" has a known true brightness, so how faint it looks gives the distance.</p></div>
+      <div class="gx-two">
+        <div class="gx-ctrl">
+          <div class="seg" role="group" aria-label="Method" id="dlMethod"></div>
+          <div id="dlCeph"><label for="dlP" class="probe-label">Cepheid period <output id="dlPOut"></output></label><input id="dlP" type="range" min="3" max="100" step="0.5" value="30"></div>
+          <label for="dlM" class="probe-label">How bright it looks: apparent magnitude m <output id="dlMOut"></output></label>
+          <input id="dlM" type="range" min="10" max="26" step="0.1" value="24.5">
+          <dl class="facts" id="dlOut"></dl>
+          <p class="note">Distance modulus: m − M = 5 log<sub>10</sub>(d / 10 pc). Cepheid law (Benedict et al. 2007) as in Stellar Life's Distances tab; Type Ia peak M ≈ −19.3. Ignores dust.</p>
+        </div>
+        <ol class="ladder" id="dlLadder">
+          <li><b>Radar</b><span>Solar System</span></li>
+          <li><b>Parallax</b><span>to ~10,000 ly (Gaia)</span></li>
+          <li><b>Cepheids</b><span>to ~130 million ly (40 Mpc)</span></li>
+          <li><b>Tully–Fisher</b><span>spirals: faster rotation = brighter; to ~500 million ly</span></li>
+          <li><b>Type Ia supernovae</b><span>surveys to ~6 billion ly; the deepest HST/JWST searches to z ≈ 2</span></li>
+          <li><b>Hubble's law</b><span>anywhere: d = v / H<sub>0</sub></span></li>
+        </ol>
+      </div>
+      <div class="tr-callout"><div><p class="h">The Great Debate, 1920</p><p>Shapley argued the spiral "nebulae" were gas clouds inside our galaxy; Curtis argued they were separate galaxies. Neither could prove it.</p></div><div><p class="h">Settled, 1924</p><p>Edwin Hubble found Cepheids in Andromeda and showed it is far outside the Milky Way (~900,000 ly by his calibration; 2.5 million ly today). The universe is full of galaxies.</p></div></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Hubble's law</h3><p class="sub">The farther a galaxy, the faster it recedes. Slide H<sub>0</sub> until the line runs through the clusters.</p></div>
+      <div class="gx-two">
+      <div class="gx-svgbox"><svg id="hubSvg" viewBox="0 0 620 400" role="img" aria-label="Hubble diagram: recession velocity against distance"></svg></div>
+      <div class="gx-ctrl">
+        <label for="h0" class="probe-label">Hubble constant H<sub>0</sub> <output id="h0Out"></output></label>
+        <input id="h0" type="range" min="40" max="100" step="0.5" value="55">
+        <dl class="facts" id="hubOut"></dl>
+        <p class="formula">v = H<sub>0</sub> × d &nbsp;·&nbsp; Hubble time 1/H<sub>0</sub></p>
+        <div class="tr-callout"><div><p class="h">Classic picture</p><p>H<sub>0</sub> ≈ 70 km/s/Mpc, so the universe is about 14 billion years old.</p></div><div><p class="h">What we know now</p><p>The "Hubble tension": the early universe (Planck) gives 67.4, nearby Cepheids and supernovae (SH0ES) give ~73. Both are precise; they disagree. Unsolved.</p></div></div>
+        <p class="note">Galaxies and clusters: approximate distances and redshift velocities. Andromeda is approaching us: on small scales gravity beats expansion.</p>
+      </div>
+    </div>
+
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head">
+        <h3>Classify it</h3>
+        <p class="sub">A random galaxy at a random angle, as a telescope would see it. What type is it?</p>
+      </div>
+      <div class="gx-two">
+        <div class="gx-box gx-box-sq classify-box"><canvas id="clsCanvas" width="420" height="420" aria-label="Galaxy to classify"></canvas></div>
+        <div class="gx-ctrl">
+          <div class="cls-choices" id="clsChoices"></div>
+          <p id="clsOut" class="cls-out" aria-live="polite"></p>
+          <button type="button" class="btn btn-primary" id="clsNext">Next galaxy</button>
+          <p class="note" id="clsScore"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Weighing galaxies and the mass-to-light ratio</h3>
+        <p class="sub">Light tells you how many stars; motion tells you how much mass. The ratio says how much mass is hiding.</p></div>
+      <div class="gx-two">
+        <div class="gx-ctrl">
+          <label for="mlV" class="probe-label">Rotation speed at the edge <output id="mlVOut"></output></label>
+          <input id="mlV" type="range" min="50" max="350" step="5" value="220">
+          <label for="mlR" class="probe-label">Radius <output id="mlROut"></output></label>
+          <input id="mlR" type="range" min="2" max="60" step="1" value="25">
+          <label for="mlL" class="probe-label">Luminosity <output id="mlLOut"></output></label>
+          <input id="mlL" type="range" min="8" max="11.5" step="0.05" value="10.4">
+        </div>
+        <div><dl class="facts" id="mlOut"></dl><p class="note">The Sun has M/L = 1. Stars alone give M/L of about 1–10 (more for old red populations). Values far above that mean dark matter.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Active galaxies ========== -->
+  <section id="agn" role="tabpanel" aria-labelledby="tab-agn" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>One engine, many disguises</h2>
+      <p>Quasars, Seyfert galaxies, blazars and radio galaxies are the same thing: a supermassive black hole swallowing gas. What we call it depends mostly on the angle we see it from and whether it makes jets. Move the observer.</p>
+    </div>
+    <div class="gx-two">
+      <div class="gx-svgbox"><svg id="agnSvg" viewBox="0 0 620 460" role="img" aria-label="Unified model of an active galactic nucleus with the observer's line of sight"></svg></div>
+      <div class="gx-ctrl">
+        <label for="agnAng" class="probe-label">Viewing angle from the jet axis <output id="agnAngOut"></output></label>
+        <input id="agnAng" type="range" min="0" max="90" step="1" value="30">
+        <label for="agnLum" class="probe-label">Power <output id="agnLumOut"></output></label>
+        <input id="agnLum" type="range" min="36" max="41" step="0.1" value="39.5">
+        <label class="toggle" for="agnJet"><input id="agnJet" type="checkbox"><span class="track" aria-hidden="true"></span>Radio-loud (has jets)</label>
+        <div class="agn-class" id="agnClass" aria-live="polite"></div>
+        <div class="gx-svgbox"><svg id="specSvg" viewBox="0 0 420 180" role="img" aria-label="Schematic spectrum seen at this angle"></svg></div>
+      </div>
+    </div>
+
+    <div class="gx-block gx-two">
+      <div>
+        <h3>What powers a quasar?</h3>
+        <p class="sub">Gas spiralling into a black hole can turn ~6–40% of its mass-energy into light (E = εmc²), far more than fusion's 0.7%.</p>
+        <label for="qL" class="probe-label">Quasar luminosity <output id="qLOut"></output></label>
+        <input id="qL" type="range" min="37" max="41.5" step="0.05" value="40">
+        <label for="qEff" class="probe-label">Efficiency ε <output id="qEffOut"></output></label>
+        <input id="qEff" type="range" min="0.057" max="0.42" step="0.001" value="0.1">
+        <label for="qM" class="probe-label">Black hole mass <output id="qMOut"></output></label>
+        <input id="qM" type="range" min="6" max="10.5" step="0.05" value="9">
+        <dl class="facts" id="qOut"></dl>
+        <p class="note">ε = 5.7% for a non-spinning hole (gas falls in from 3 r<sub>s</sub>), up to 42% for a maximally spinning one. Eddington limit L<sub>Edd</sub> ≈ 1.26 × 10<sup>31</sup> W × (M/M☉): above it, radiation pressure pushes the gas away.</p>
+      </div>
+      <div>
+        <h3>How big is the engine?</h3>
+        <p class="sub">A quasar that changes brightness in a time Δt can't be much bigger than the distance light travels in Δt. Otherwise light from the far side would smear the change out.</p>
+        <label for="vT" class="probe-label">Brightness changes in <output id="vTOut"></output></label>
+        <input id="vT" type="range" min="0" max="1000" step="1" value="560">
+        <dl class="facts" id="vOut"></dl>
+        <div class="tr-callout"><div><p class="h">Classic picture</p><p>Quasars outshine whole galaxies from a region the size of our Solar System.</p></div><div><p class="h">What we know now</p><p>Nearly every large galaxy has a supermassive black hole, and its mass tracks the galaxy's bulge (the M–σ relation). Quasars are a phase that most big galaxies went through, mostly ~10 billion years ago.</p></div></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>Quasars as backlights</h3>
+      <div class="bh-feats gx-solo">
+        <div class="bh-feat gx-card"><b>Reading the gas in between</b><span>Every gas cloud between us and a distant quasar absorbs some of its light at the cloud's own redshift, stamping narrow absorption lines on the quasar's spectrum. Hydrogen's Lyman-alpha line (121.6 nm) leaves a dense "forest" of them, one for each cloud along the way. This Lyman-alpha forest maps the hydrogen of the cosmic web across billions of light-years.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Evolution ========== -->
+  <section id="evo" role="tabpanel" aria-labelledby="tab-evo" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Looking back in time</h2>
+      <p>Light from distant galaxies is old, so telescopes are time machines: the farther we look, the younger the galaxies. Hubble's law turns a redshift into a distance and an age.</p>
+    </div>
+    <div class="gx-block">
+      <div class="hr-head"><h3>Redshift → lookback time</h3><p class="sub">Pick a redshift and see when the light left. Flat universe with Planck 2018 values: H<sub>0</sub> = 67.7 km/s/Mpc, 31% matter, 69% dark energy.</p></div>
+      <div class="gx-two">
+        <div class="gx-ctrl">
+          <label for="zS" class="probe-label">Redshift z <output id="zOut"></output></label>
+          <input id="zS" type="range" min="0" max="3000" step="1" value="652">
+          <div class="seg" role="group" aria-label="Examples" id="zEx"></div>
+        </div>
+        <div><div class="z-bar" id="zBar"></div><dl class="facts" id="zFacts"></dl></div>
+      </div>
+      <p class="note">Common mistake: z = 7 does <b>not</b> mean 7 times the speed of light. v = cz only works for small z. At large z, redshift measures how much space has stretched while the light travelled: 1 + z = (size of universe now) / (size then).</p>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Galaxy collision</h3><p class="sub">Two disk galaxies swing past each other. Gravity's pull is stronger on the near side than the far side (tides), which flings out long tails of stars. Drag to rotate.</p></div>
+      <div class="gx-two">
+        <div class="gx-box gx-box-sq"><canvas id="mgCanvas" aria-label="Simulated collision of two disk galaxies"></canvas></div>
+        <div class="gx-ctrl">
+          <div class="seg" role="group" aria-label="Presets" id="mgPresets"></div>
+          <div class="gx-btns"><button type="button" class="btn btn-primary" id="mgPlay">Play</button><button type="button" class="btn" id="mgReset">Reset</button></div>
+          <p class="probe-label">Speed</p>
+          <div class="seg" role="group" aria-label="Simulation speed" id="mgSpeed"></div>
+          <label for="mgPeri" class="probe-label">Closest approach <output id="mgPeriOut"></output></label>
+          <input id="mgPeri" type="range" min="0.4" max="3" step="0.1" value="1">
+          <label for="mgTA" class="probe-label">Blue galaxy's tilt <output id="mgTAOut"></output></label>
+          <input id="mgTA" type="range" min="0" max="180" step="5" value="15">
+          <label for="mgTB" class="probe-label">Gold galaxy's tilt <output id="mgTBOut"></output></label>
+          <input id="mgTB" type="range" min="0" max="180" step="5" value="60">
+          <label for="mgQ" class="probe-label">Gold / blue mass <output id="mgQOut"></output></label>
+          <input id="mgQ" type="range" min="0.2" max="1" step="0.05" value="1">
+          <label class="toggle" for="mgDF"><input id="mgDF" type="checkbox" checked><span class="track" aria-hidden="true"></span>Dynamical friction (lets them merge)</label>
+          <p class="note">Tilt 0° = disk spins the same way the galaxies orbit (prograde): long tails. 180° = retrograde: almost no tails. Model: Toomre &amp; Toomre (1972) restricted N-body, ~8,400 stars; real mergers also have gas that crashes, makes starbursts, and feeds the black holes.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>How galaxies grew</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Small first, big later</b><span>The first galaxies were small, clumpy and blue. Big galaxies were built by merging many small ones ("hierarchical" growth).</span></div>
+        <div class="bh-feat gx-card"><b>Cosmic noon</b><span>Star formation across the universe peaked ~10 billion years ago (z ≈ 2), the same era quasars were most common. Today's rate is ~10× lower.</span></div>
+        <div class="bh-feat gx-card"><b>Mergers make ellipticals</b><span>Two spirals that merge scramble their orderly orbits into a puffy, random swarm: an elliptical. Older estimates said the Milky Way and Andromeda merge in ~4.5 billion years; a 2025 study with Gaia and Hubble data gives only about even odds within 10 billion years.</span></div>
+        <div class="bh-feat gx-card"><b>The cosmic web</b><span>Galaxies gather in groups, clusters and superclusters strung along filaments around huge voids. The Milky Way is in the Local Group, at the edge of the Virgo Supercluster (part of Laniakea).</span></div>
+        <div class="bh-feat gx-card"><b>Dark matter is the scaffolding</b><span>Gas collected in the dark-matter clumps first; galaxies formed inside them. Clusters hold ~5–10× more dark matter than visible matter.</span></div>
+        <div class="bh-feat gx-card"><b>Lensing weighs clusters</b><span>A cluster's mass bends light from galaxies behind it into arcs (gravitational lensing). The bending gives the total mass, dark matter included: far more than the stars and hot gas.</span></div>
+        <div class="bh-feat gx-card"><b>What is dark matter?</b><span>Not dim stars or black holes (MACHOs): microlensing surveys found far too few. Probably an unknown particle (WIMPs, axions), but every detector so far has come up empty.</span></div>
+        <div class="bh-feat gx-card"><b>JWST surprise</b><span>The James Webb Space Telescope finds bright galaxies already at z &gt; 10, earlier and more of them than many models predicted. Active research.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Big Bang ========== -->
+  <section id="bang" role="tabpanel" aria-labelledby="tab-bang" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>The Big Bang</h2>
+      <p>Not an explosion at a point in space, but space itself stretching everywhere at once, starting hot and dense 13.8 billion years ago. Three pieces of evidence: the expansion (Hubble's law), the cosmic microwave background, and the amount of helium.</p>
+    </div>
+
+    <div class="gx-two">
+      <div class="gx-box gx-box-sq"><canvas id="xpCanvas" aria-label="Expanding field of galaxies seen from the galaxy you pick. Click a galaxy to stand on it."></canvas></div>
+      <div class="gx-ctrl">
+        <h3>There is no centre</h3>
+        <p class="sub">Click any galaxy to stand on it. Arrows show how fast the others recede: always proportional to distance (Hubble's law), whichever galaxy you pick. Every observer sees themselves at the "centre", so there isn't one.</p>
+        <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"The Big Bang happened somewhere."</b> It happened everywhere: every point in today's universe was part of it.</p></div><div><p class="h">Common mistake</p><p><b>"Galaxies fly through space."</b> Mostly, space between them stretches. Galaxies themselves, and the Solar System, do not expand: gravity holds them together.</p></div></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Build a universe</h3><p class="sub">The future depends on what the universe contains. Matter's gravity slows the expansion; dark energy speeds it up. Curves are lined up at "today".</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox"><svg id="fateSvg" viewBox="0 0 620 360" role="img" aria-label="Size of the universe against time for the chosen contents"></svg></div>
+        <div class="gx-ctrl">
+          <div class="seg" role="group" aria-label="Universes" id="fatePre"></div>
+          <label for="fOm" class="probe-label">Matter (normal + dark), Ω<sub>m</sub> <output id="fOmOut"></output></label>
+          <input id="fOm" type="range" min="0" max="3" step="0.01" value="0.31">
+          <label for="fOL" class="probe-label">Dark energy, Ω<sub>Λ</sub> <output id="fOLOut"></output></label>
+          <input id="fOL" type="range" min="0" max="1.5" step="0.01" value="0.69">
+          <dl class="facts" id="fateOut"></dl>
+          <div class="mix-bar" aria-label="What our universe is made of"><span style="flex:4.9;background:#ffd166">5%</span><span style="flex:26.8;background:#a98bff">27% DM</span><span style="flex:68.3;background:#5aa6ff">68% dark energy</span></div>
+          <p class="note">Our universe (Planck 2018): 4.9% ordinary matter, 26.8% dark matter, 68.3% dark energy. Friedmann equation: (da/dt)² = H<sub>0</sub>²(Ω<sub>r</sub>/a² + Ω<sub>m</sub>/a + Ω<sub>k</sub> + Ω<sub>Λ</sub>a²). Critical density ρ<sub>c</sub> = 3H<sub>0</sub>²/8πG ≈ 8.6 × 10<sup>−27</sup> kg/m³, about 5 hydrogen atoms per cubic metre; Ω is density divided by ρ<sub>c</sub>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>The cosmic background, cooling</h3><p class="sub">When the universe became transparent, it glowed at ~3000 K like a red-orange star. Expansion has since stretched that light 1,100 times longer into microwaves at 2.725 K. Slide back in time.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox"><svg id="cmbSvg" viewBox="0 0 620 300" role="img" aria-label="Blackbody spectrum of the cosmic background at the chosen redshift"></svg></div>
+        <div class="gx-ctrl">
+          <label for="cmbZ" class="probe-label">Redshift z <output id="cmbZOut"></output></label>
+          <input id="cmbZ" type="range" min="0" max="1000" step="1" value="0">
+          <div class="cmb-sw"><span id="cmbSwatch"></span><p id="cmbSwatchT" class="note"></p></div>
+          <dl class="facts" id="cmbOut"></dl>
+          <p class="note">Why it's evidence: the background is the most perfect blackbody ever measured (COBE, 1990), the same in every direction to 1 part in 100,000. A hot, dense early universe explains it; nothing else does.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Ripples in the background</h3><p class="sub">The whole sky, flattened into an oval like a world map.</p></div>
+      <div class="gx-two">
+        <figure class="gx-fig"><canvas id="cmbMap" class="cmb-map" width="480" height="240" aria-label="Illustrative all-sky map of small temperature ripples in the cosmic background"></canvas>
+          <figcaption class="note">Illustrative pattern, not real data. Red is slightly warmer, blue slightly cooler.</figcaption></figure>
+        <div class="gx-ctrl">
+          <p>The background's temperature varies across the sky by only about 1 part in 100,000 (tens of millionths of a kelvin). COBE first detected these ripples in 1992; WMAP and Planck mapped them in detail.</p>
+          <p>They are the seeds of structure: slightly denser regions that gravity later grew into galaxies and clusters. The typical size of the ripples on the sky shows the universe is flat, and their pattern pins down its age and contents.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Where the helium came from</h3><p class="sub">Stars can't have made it all: about a quarter of ordinary matter is helium everywhere, even in the oldest stars. It was made in the first few minutes.</p></div>
+      <div class="gx-two">
+        <div class="gx-ctrl">
+          <label for="npR" class="probe-label">Neutrons : protons when fusion starts <output id="npOut"></output></label>
+          <input id="npR" type="range" min="0.02" max="1" step="0.001" value="0.143">
+          <p id="bbnMath" class="note"></p>
+          <ol class="gx-steps"><li>At 1 second, weak reactions stop: about 1 neutron per 6 protons (neutrons are heavier, so fewer).</li><li>Free neutrons decay (half-life ~10 min) while the universe is still too hot for deuterium to survive, leaving ~1 : 7 by ~3 minutes.</li><li>Then deuterium survives and almost every neutron ends up in helium-4. Fusion stops by ~20 minutes: too cool, too thin.</li></ol>
+        </div>
+        <div class="gx-svgbox"><svg id="bbnSvg" viewBox="0 0 420 180" role="img" aria-label="Pie chart of helium and hydrogen by mass"></svg></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Timeline: from the Planck time to today</h3><p class="sub">Three scales joined at the dashed breaks: log time to 1 year, a more stretched log scale to 100 million years, then ordinary (linear) time to today. Drag, or pick an epoch.</p></div>
+      <div class="tl-wrap">
+        <div class="tl-marks" id="tlMarks"></div>
+        <input id="tlS" type="range" min="0" max="1000" step="1" value="500" aria-label="Time since the Big Bang (log scale)">
+        <div class="tl-labels" id="tlLabels" aria-hidden="true"></div>
+        <div class="seg tl-chips" role="group" aria-label="Epochs" id="tlChips"></div>
+      </div>
+      <div class="tl-out" id="tlOut" aria-live="polite"></div>
+      <p class="note">Temperatures: T = 2.725 K × (1 + z) from the expansion model, extended before 1 second as T ≈ 1.3 × 10¹⁰ K / √(t in seconds). Ignores small effects such as electron–positron annihilation reheating the photons. Earliest times are theory, not observation.</p>
+    </div>
+    <div class="gx-block">
+      <h3>Cross-checks and big questions</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>The ages agree</b><span>The oldest globular clusters are ~12–13 billion years old (from their main-sequence turnoffs, as in Stellar Life's Clusters tab), and the oldest white dwarfs ~12–13 billion. Both just fit inside the 13.8-billion-year age from the expansion. If any star were older than the universe, the model would be broken.</span></div>
+        <div class="bh-feat gx-card"><b>Why is the universe so flat?</b><span>Its density is within ~1% of critical. Any early difference would have grown hugely, so it must have started fantastically close. Inflation explains it by stretching any curvature flat.</span></div>
+        <div class="bh-feat gx-card"><b>Why is there any matter?</b><span>The hot early universe made matter and antimatter in pairs, and almost all of it annihilated into light. For roughly every billion pairs, one extra matter particle was left over: everything we are made of is that leftover. Known physics doesn't make enough of this imbalance; its origin is unknown.</span></div>
+        <div class="bh-feat gx-card"><b>The anthropic principle</b><span>Many constants seem tuned for life: a little different and there'd be no stable stars or no carbon. One view: we can only find ourselves in a universe that allows observers. Whether that explains anything is debated.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Life ========== -->
+  <section id="life" role="tabpanel" aria-labelledby="tab-life" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Is anyone out there?</h2>
+      <p>Life as we know it needs liquid water, an energy source and time. Pick a star and a planet and see whether it could hold water, then estimate how many civilizations might share our galaxy.</p>
+    </div>
+    <div class="gx-two">
+      <div class="gx-box gx-box-sq"><canvas id="hzCanvas" aria-label="Top-down view of a star, its habitable zone and a planet's orbit"></canvas></div>
+      <div class="gx-ctrl">
+        <h3>The habitable zone</h3>
+        <p class="probe-label">Star</p>
+        <div class="seg" role="group" aria-label="Star type" id="hzStars"></div>
+        <p class="probe-label">Real planets</p>
+        <div class="seg" role="group" aria-label="Real planets" id="hzPlanets"></div>
+        <label for="hzD" class="probe-label">Planet's distance <output id="hzDOut"></output></label>
+        <input id="hzD" type="range" min="0" max="1000" step="1">
+        <label for="hzA" class="probe-label">Albedo (fraction of light reflected) <output id="hzAOut"></output></label>
+        <input id="hzA" type="range" min="0" max="0.9" step="0.01" value="0.3">
+        <dl class="facts" id="hzOut"></dl>
+        <p class="note" id="hzNote"></p>
+        <p class="formula">T<sub>eq</sub> = 278.6 K × (1 − A)<sup>¼</sup> L<sup>¼</sup> / √d &nbsp;·&nbsp; zone ≈ 0.99√L to 1.67√L&nbsp;AU</p>
+        <p class="note">Zone edges from Kopparapu et al. (2013), conservative limits: inner edge where a moist / runaway greenhouse drives the oceans off, outer edge where even a thick CO₂ atmosphere can't keep water liquid. Scaled with √L; real edges also shift with the star's colour. The equilibrium temperature ignores the greenhouse effect, which is why Earth's comes out at a frozen 255 K.</p>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>The Drake equation</h3><p class="sub">Frank Drake's 1961 way of organizing our ignorance: N = R* × f<sub>p</sub> × n<sub>e</sub> × f<sub>l</sub> × f<sub>i</sub> × f<sub>c</sub> × L. The first three are now measured; the last four are guesses.</p></div>
+      <div class="gx-two">
+        <div class="gx-ctrl"><div class="seg" role="group" aria-label="Estimates" id="dkPre"></div><div id="dkTerms" class="dk-terms"></div></div>
+        <div class="dk-result">
+          <p class="h">Civilizations signalling in the Milky Way now</p>
+          <p class="dk-n" id="dkN"></p>
+          <p id="dkMsg"></p>
+          <div class="tr-callout"><div><p class="h">Measured</p><p>R* ≈ 1.5–3 stars per year. Kepler showed nearly every star has planets (f<sub>p</sub> ≈ 1), and roughly 10–40% of Sun-like stars have a rocky planet in the habitable zone.</p></div><div><p class="h">Unknown</p><p>How easily life starts, whether it gets smart, and how long civilizations last could each be anything from ~1 to almost 0. The answer spans from "none but us" to millions.</p></div></div>
+          <p class="note">The Fermi paradox: if civilizations were common and long-lived, why haven't we seen any? Possible answers range from "life is rare" to "they don't last" to "we haven't looked enough". SETI has searched only a tiny fraction of stars and frequencies.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>Where to look in our Solar System</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Mars</b><span>Had rivers and lakes ~3.5 billion years ago. Rovers find organic molecules and ancient lakebeds; any life today would be underground.</span></div>
+        <div class="bh-feat gx-card"><b>Europa</b><span>Jupiter's moon hides a salty ocean under its ice, kept liquid by tidal heating. NASA's Europa Clipper arrives in 2030.</span></div>
+        <div class="bh-feat gx-card"><b>Enceladus</b><span>Saturn's small moon sprays its ocean into space. Cassini flew through the plumes and found water, salts, organics and hydrogen: food for microbes on Earth.</span></div>
+        <div class="bh-feat gx-card"><b>Titan</b><span>Lakes of liquid methane and a thick atmosphere; a water ocean deep inside. NASA's Dragonfly drone launches in 2028.</span></div>
+        <div class="bh-feat gx-card"><b>Life's ingredients are common</b><span>The Miller–Urey experiment (1952) made amino acids from simple gases and sparks. Meteorites carry amino acids; space is full of organic molecules.</span></div>
+        <div class="bh-feat gx-card"><b>Extremophiles</b><span>Earth microbes live in boiling vents, acid, ice and rock kilometres down. Life's range is wider than "Earth-like" suggests.</span></div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"Near the habitable zone" or even in it doesn't mean habitable.</b> Venus sits well inside the inner edge and is 737 K; Mars is inside the outer edge and frozen. The zone only says liquid water is <i>possible</i> on the surface with a suitable atmosphere.</p></div><div><p class="h">What we know now</p><p>JWST reads exoplanet atmospheres. Claims of possible biosignature gases (e.g. on K2-18 b) have so far not held up to scrutiny; the hunt for oxygen plus methane together goes on.</p></div></div>
+    </div>
+  </section>
+
+  <section id="gquiz" role="tabpanel" aria-labelledby="tab-gquiz" class="panel" hidden>
+    <div class="panel-intro"><h2>Quiz</h2><p>Test what you've learned. Each answer explains the why.</p></div>
+    <div id="gQuiz" class="quiz"></div>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>Models are simplified and sized from published measurements.</p>
+  <p class="site-foot-links"><a href="../sources.html">Sources &amp; simplifications</a><a href="../stars/index.html">← Life of a Star</a></p>
+</footer>
+
+<script src="js/gx-core.js"></script>
+<script src="js/gx-merger.js"></script>
+<script src="js/gx-cosmo.js"></script>
+<script src="js/gx-life.js"></script>
+<script src="js/gx-app.js"></script>
+</body>
+</html>

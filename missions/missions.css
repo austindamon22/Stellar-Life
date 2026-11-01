@@ -2,13 +2,45 @@
 .ms-page .ms-edge { margin-top: 2px; }
 .ms-page .ms-callout { margin-top: 18px; }
 .ms-page .ms-foot { margin-top: 8px; }
-.ms-page .ms-table tr.ms-out td { color: var(--faint); opacity: 0.6; }
+.ms-page .ms-table tr.ms-out td { color: var(--muted); opacity: 0.7; }
 .ms-page .ms-table .ms-outtxt { font-family: var(--font-sans, inherit); font-style: italic; }
 .ms-page .ms-when { display: inline-block; margin-right: 8px; padding: 0 7px; border: 1px solid var(--line); border-radius: 999px; font: 500 0.68rem var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); vertical-align: 1px; }
 .ms-page #msAtmo .ms-hit { outline: none; }
 .ms-page #msAtmo .ms-hit:focus-visible { stroke: var(--accent); stroke-width: 2; }
+/* Narrow screens: the detail panel is moved into the grid right after the chosen card's row. */
+.ms-page .ms-grid > .ms-slot { grid-column: 1 / -1; }
+.ms-page .ms-grid > li { scroll-margin-top: 12px; }
+.ms-page .ms-table tr.ms-sub td { padding-top: 12px; color: var(--faint); font: 500 0.7rem var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; }
 /* Phones: the four tabs wrap onto two lines instead of hiding "Detectors" off-screen. */
 @media (max-width: 420px) {
   .ms-page main .tabs { flex-wrap: wrap; overflow-x: visible; -webkit-mask-image: none; mask-image: none; padding-right: 0; }
   .ms-page main .tabs button { padding: 8px 10px; }
+}
+/* Gravitational waves: a mid-tone that reads on both themes (timeline bar, band dots, tags). */
+:root { --ms-gw: #b9c0d8; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --ms-gw: #6b7290; } }
+:root[data-theme="light"] { --ms-gw: #6b7290; }
+:root[data-theme="dark"] { --ms-gw: #b9c0d8; }
+/* A current facility that is between observing runs: not green "operating". */
+.ms-page .ms-st.pause { color: var(--warn); }
+/* Wide figures: "swipe" hint on phones only (the figures scroll sideways there). */
+.ms-page .ms-swipe { display: none; margin: 4px 0 0; text-align: right; font-size: 0.78rem; color: var(--faint); }
+@media (max-width: 640px) { .ms-page .ms-swipe { display: block; } }
+
+@media (max-width: 600px) { .ms-page .ms-detail .facts div { flex-direction: column; align-items: flex-start; gap: 2px; } .ms-page .ms-detail .facts dd { text-align: left; } }
+
+/* Band colours on the light theme: darker variants of the pale ones so bars, dots and tags read on white (dark theme uses data.js colours). */
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --ms-b-radio: #9440d6; --ms-b-micro: #5d50d8; --ms-b-ir: #d9482b; --ms-b-vis: #b98a00; --ms-b-uv: #2f86c9; --ms-b-xray: #138f7c; --ms-b-gamma: #4e9419; --ms-b-insitu: #6c7496; } }
+:root[data-theme="light"] { --ms-b-radio: #9440d6; --ms-b-micro: #5d50d8; --ms-b-ir: #d9482b; --ms-b-vis: #b98a00; --ms-b-uv: #2f86c9; --ms-b-xray: #138f7c; --ms-b-gamma: #4e9419; --ms-b-insitu: #6c7496; }
+
+/* Resolution table: "—" for out-of-band cells and its legend appear on phones only. */
+.ms-page .ms-table .ms-dash, .ms-page .ms-legend { display: none; }
+@media (max-width: 560px) {
+  .ms-page #msMirTable { font-size: 0.8rem; }
+  .ms-page #msMirTable th, .ms-page #msMirTable td { padding: 6px 6px; }
+  .ms-page #msMirTable th:nth-child(3), .ms-page #msMirTable td:nth-child(3) { display: none; }   /* "Light vs Hubble": explained in the legend */
+  .ms-page #msMirTable tr:not(.ms-sub) td:last-child, .ms-page #msMirTable th:last-child { white-space: nowrap; }
+  .ms-page #msMirTable .ms-outtxt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }   /* kept for screen readers */
+  .ms-page #msMirTable .ms-dash { display: inline; }
+  .ms-page .ms-legend { display: block; margin-top: 8px; }
 }

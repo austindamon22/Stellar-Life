@@ -16,22 +16,23 @@ Work happens in blocks. A block is one deliverable plus at most two quality roun
 ## Status
 | Page | Passing rounds | Notes |
 |---|---|---|
-| Life of a Star | 2 of 3 | round 8 passed, issues fixed; round 9 running |
-| Galaxies & Cosmology | 2 of 3 | round 4 passed, issues fixed; round 5 running |
-| Tools of Astronomy | 0 of 3 | round 1 failed (quiz RNG, calculator state, physics notes); fixes in progress |
-| Missions & Telescopes | 0 of 3 | built; round 1 running |
-| Earth | — | being built (6 tabs) |
+| Life of a Star | 3 of 3 ✅ | done (round 9 issues fixed) |
+| Galaxies & Cosmology | 3 of 3 ✅ | done (round 5 issues fixed) |
+| Tools of Astronomy | 3 of 3 ✅ | done (round 4 issues fixed) |
+| Missions & Telescopes | 3 of 3 ✅ | done (round 5 issues fixed) |
+| Earth | 0 of 3 | round 3 failed (visual); fixed; round 4 running |
 
 ## Blocks
 - [x] Public cleanup (course wording, meta tags), folder restructure, hub page, sources page
-- [ ] Quality rounds until both existing pages have 3 passes
+- [x] Quality rounds until both existing pages have 3 passes
 - [ ] Split Life of a Star into 3 pages (life cycle · extremes · measuring) and Galaxies into 3–4 pages, with a shared quiz engine
 - [x] Tools of Astronomy (built): spectrograph (prism vs grating, emission/absorption, element fingerprints, Doppler) and telescopes (refractor vs reflector ray-trace, chromatic aberration, light-gathering ∝ D², resolution 1.22λ/D, "what can my telescope see?")
 - [x] Missions & Telescopes (built): space telescopes, probes and rovers, ground giants; instruments and detector types; discoveries; spectrum filter, mirror sizes to scale, orbit map, launch timeline
-- [ ] Solar System · Earth: interior cutaway, plate tectonics, rock cycle, volcanoes, water cycle and erosion, atmosphere and magnetosphere, the Moon and tides
+- [x] Solar System · Earth (built; in review): interior cutaway, plate tectonics, rock cycle, volcanoes, water cycle and erosion, atmosphere and magnetosphere, the Moon and tides
 - [ ] Solar System · small bodies: asteroid belt, Kuiper belt, Oort cloud, comets, impact craters
 - [ ] Solar System · one block per planet and its moons
 
 ## Handoff notes
 - 2026-10-30: restructure done. Next block: quality rounds on both pages (Life of a Star round 8, Galaxies round 4).
 - 2026-10-31: Tools + Missions pages built; Earth page in progress (solar-system/earth/). Repo layout changes from flat files to folders on next push.
+- 2026-11-01: four pages at 3/3. Earth in review. Next: Earth to 3/3, then small bodies (asteroids, comets, Kuiper belt), then split Stars/Galaxies pages. Push blocked until the Claude GitHub App is installed on the repo.
