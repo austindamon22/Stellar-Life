@@ -1,0 +1,93 @@
+/* Stellar Life — Black holes: basics, feeding, mergers, quantum, frontiers */
+:root {
+  --bk-hor: #000000; --bk-ph: #ffb454; --bk-isco: #5ad1c8; --bk-ergo: #b49bff; --bk-hot: #7fc8ff;
+  --bk-disk: #ffcf6e; --bk-cor: #8fd0ff; --bk-blr: #ff8ab0; --bk-tor: #d99a5b; --bk-jet: #b8a6ff;
+  --bk-wave: #7fd4ff; --bk-env: #ffb454; --bk-good: #5ee6a8; --bk-bad: #ff6b5e; --bk-cmb: #ff8a4c;
+  --bk-stellar: #5ad1c8; --bk-imbh: #b49bff; --bk-smbh: #ffb454;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+  --bk-hor: #0b0d18; --bk-ph: #b5650a; --bk-isco: #0f8a80; --bk-ergo: #6a4fd0; --bk-hot: #1f6fb8;
+  --bk-disk: #a87400; --bk-cor: #1f6fb8; --bk-blr: #c2335f; --bk-tor: #9a5a1c; --bk-jet: #6a4fd0;
+  --bk-wave: #1f6fb8; --bk-env: #b5650a; --bk-good: #138a5a; --bk-bad: #c43a2e; --bk-cmb: #c2491a;
+  --bk-stellar: #0f8a80; --bk-imbh: #6a4fd0; --bk-smbh: #b5650a;
+} }
+:root[data-theme="light"] {
+  --bk-hor: #0b0d18; --bk-ph: #b5650a; --bk-isco: #0f8a80; --bk-ergo: #6a4fd0; --bk-hot: #1f6fb8;
+  --bk-disk: #a87400; --bk-cor: #1f6fb8; --bk-blr: #c2335f; --bk-tor: #9a5a1c; --bk-jet: #6a4fd0;
+  --bk-wave: #1f6fb8; --bk-env: #b5650a; --bk-good: #138a5a; --bk-bad: #c43a2e; --bk-cmb: #c2491a;
+  --bk-stellar: #0f8a80; --bk-imbh: #6a4fd0; --bk-smbh: #b5650a;
+}
+:root[data-theme="dark"] {
+  --bk-hor: #000000; --bk-ph: #ffb454; --bk-isco: #5ad1c8; --bk-ergo: #b49bff; --bk-hot: #7fc8ff;
+  --bk-disk: #ffcf6e; --bk-cor: #8fd0ff; --bk-blr: #ff8ab0; --bk-tor: #d99a5b; --bk-jet: #b8a6ff;
+  --bk-wave: #7fd4ff; --bk-env: #ffb454; --bk-good: #5ee6a8; --bk-bad: #ff6b5e; --bk-cmb: #ff8a4c;
+  --bk-stellar: #5ad1c8; --bk-imbh: #b49bff; --bk-smbh: #ffb454;
+}
+
+/* SVG text and marks: sizes are set in px by the scripts (1 viewBox unit = 1 CSS px) */
+.gx-svgbox svg { user-select: none; -webkit-user-select: none; overflow: hidden; }
+.bk-t { fill: var(--fg); font-family: var(--font-body); }
+.bk-m { fill: var(--muted); font-family: var(--font-body); }
+.bk-mono { font-family: var(--font-mono); }
+.bk-halo { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.bk-axis { stroke: var(--line); fill: none; }
+.bk-grid { stroke: var(--line-soft); fill: none; }
+.bk-hit { cursor: pointer; }
+.bk-hit:focus { outline: none; }
+.bk-hit:focus-visible .bk-focus { stroke: var(--accent); stroke-width: 3; }
+.bk-orbbox svg { max-width: 520px; margin: 0 auto; }
+#bkRings, #bkTide, #bkEngine, #bkHawk, #bkPage, #bkShadow { display: block; }
+.bk-mode svg { touch-action: pan-y; }
+.bk-even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin-top: 4px; }
+.bk-sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: 0; box-shadow: 0 0 0 1px var(--line); }
+.seg button[aria-pressed="true"] .bk-sw { box-shadow: 0 0 0 1px var(--accent-ink); }
+
+/* evidence tags */
+.bk-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.bk-tag { display: inline-block; padding: 1px 9px; border-radius: 999px; border: 1px solid var(--c); color: var(--fg); font: 500 0.72rem var(--font-mono); letter-spacing: 0.02em; vertical-align: 3px; box-shadow: inset 4px 0 0 var(--c); white-space: nowrap; }
+h3 .bk-tag { margin-left: 6px; }
+.bk-tag.obs { --c: var(--bk-good); }
+.bk-tag.thy { --c: var(--bk-ph); }
+.bk-tag.spec { --c: var(--bk-ergo); }
+.bk-tag.next { --c: var(--bk-hot); }
+
+/* board */
+.bk-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 10px; }
+.bk-board .bh-feat { font: inherit; font-size: 0.86rem; line-height: 1.45; color: var(--muted); }
+.bk-board .bh-feat b { color: var(--fg); }
+.bk-board .bh-feat .bk-tag { justify-self: start; margin-bottom: 2px; }
+.bk-board .bh-feat[hidden] { display: none; }
+.bk-why { border-left: 3px solid var(--line); padding-left: 10px; color: var(--muted); }
+.bk-why b { color: var(--fg); }
+
+/* wide figures scroll sideways on phones instead of shrinking their labels */
+@media (max-width: 640px) {
+  .bk-wide { overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+  .bk-wide > svg { min-width: 720px; }
+  .bk-wide.fade-r { -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+  .bk-wide.fade-l { -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%); mask-image: linear-gradient(90deg, transparent, #000 12%); }
+  .bk-wide.fade-l.fade-r { -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
+}
+.bk-swipe { margin: -6px 4px 0; text-align: right; font-size: 0.8rem; }
+.bk-swipe[hidden] { display: none; }
+
+/* phone tab bar: a fade and chevron on each side that has more tabs (classes set by bk-tabs.js) */
+@media (max-width: 699px) {
+  .tabs { -webkit-mask-image: none; mask-image: none; padding-right: 0; scroll-padding-inline: 40px; }
+  .tabs::before, .tabs::after { content: '‹'; position: sticky; z-index: 1; flex: 0 0 34px; display: flex; align-items: center; font-size: 1.35rem; line-height: 1; color: var(--muted); pointer-events: none; opacity: 0; transition: opacity .2s; }
+  .tabs::before { left: 0; margin-right: -34px; justify-content: flex-start; background: linear-gradient(90deg, var(--bg) 45%, transparent); }
+  .tabs::after { content: '›'; right: 0; margin-left: -34px; justify-content: flex-end; background: linear-gradient(270deg, var(--bg) 45%, transparent); }
+  .tabs.fade-l::before, .tabs.fade-r::after { opacity: 1; }
+}
+@media (max-width: 980px) { .bk-even { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 600px) { #basics .facts div, #feeding .facts div, #mergers .facts div, #quantum .facts div, #frontiers .facts div { flex-wrap: wrap; } }
+/* fact rows whose value is words (class set by BK.facts): body font; on phones the value sits under its label, left-aligned */
+.facts .bk-prose dd { font-family: var(--font-body); font-variant-numeric: normal; min-width: 0; }
+@media (max-width: 600px) { .facts .bk-prose { flex-direction: column; gap: 2px; } .facts .bk-prose dd { text-align: left; } }
+.bh-feats > .bk-span { grid-column: 1 / -1; }
+.facts .bk-invalid dd .bk-off { opacity: 0.5; }
+.facts .bk-invalid dt { color: var(--muted); }
+@media (min-width: 981px) { #basics > .gx-two > .gx-svgbox:first-child { align-self: center; } }
+/* charts in two-column rows sit at the top of their column; on desktop they stay in view while the controls scroll */
+.gx-two > .gx-svgbox { align-self: start; }
+@media (min-width: 981px) { .gx-two > .gx-svgbox { position: sticky; top: 1rem; } }

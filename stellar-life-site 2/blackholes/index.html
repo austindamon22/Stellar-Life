@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Black holes · Stellar Life</title>
+<meta name="description" content="Black holes from the event horizon to Hawking radiation: sizes, spin, feeding quasars, merging black holes and gravitational waves, quantum effects, and what has and has not been tested. Interactive.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../shared/style.css">
+<link rel="stylesheet" href="blackholes.css">
+</head>
+<body>
+<header class="masthead">
+<nav class="site-nav wrap" aria-label="Site">
+  <a class="site-brand" href="../index.html">Stellar Life</a>
+  <div class="site-links">
+    <a href="../stars/index.html">Stars</a>
+    <a href="index.html" aria-current="page">Black holes</a>
+    <a href="../galaxies/index.html">Galaxies &amp; cosmology</a>
+    <a href="../solar-system/earth/index.html">Earth</a>
+    <a href="../solar-system/small-bodies/index.html">Small bodies</a>
+    <a href="../tools/index.html">Tools</a>
+    <a href="../missions/index.html">Missions</a>
+    <a href="../sources.html">Sources</a>
+  </div>
+</nav>
+  <div class="wrap masthead-inner">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="16" r="6.5" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="16" cy="16" r="2.6" fill="currentColor"/></svg>
+      <div>
+        <h1>Black holes</h1>
+        <p class="tagline">Places where gravity wins completely. How big they are, how they feed and merge, what quantum physics says happens at their edge, and which of these ideas have actually been tested.</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="tabs" role="tablist" aria-label="Topics">
+    <button role="tab" id="bkTabBasics" aria-controls="basics" aria-selected="true">What they are</button>
+    <button role="tab" id="bkTabFeeding" aria-controls="feeding" aria-selected="false">Feeding: AGN &amp; quasars</button>
+    <button role="tab" id="bkTabMergers" aria-controls="mergers" aria-selected="false">Mergers &amp; gravitational waves</button>
+    <button role="tab" id="bkTabQuantum" aria-controls="quantum" aria-selected="false">Quantum black holes</button>
+    <button role="tab" id="bkTabFrontiers" aria-controls="frontiers" aria-selected="false">Frontiers &amp; tests</button>
+  </nav>
+
+  <!-- ===================== WHAT THEY ARE ===================== -->
+  <section id="basics" role="tabpanel" aria-labelledby="bkTabBasics" class="panel">
+    <div class="panel-intro">
+      <h2>A region light cannot leave</h2>
+      <p>Squeeze any mass into a small enough ball and the speed needed to escape from its surface exceeds the speed of light. The boundary of no return is the event horizon. For a black hole that does not spin, its radius is the Schwarzschild radius, r<sub>s</sub> = 2GM/c²: about 3 km for each mass of the Sun. Double the mass and the size doubles. For the view up close, ray-traced, see the <a href="../stars/index.html#blackhole">black hole camera</a> on the Stars page.</p>
+    </div>
+
+    <div class="gx-two">
+      <div class="gx-svgbox"><svg id="bkRings" role="img" aria-label="Rings around a black hole, drawn to scale in units of GM/c²: the event horizon, the ergosphere at the equator, the innermost circular orbits of light and the innermost stable orbits of matter, for orbits going with and against the spin"></svg></div>
+      <div class="gx-ctrl">
+        <label for="bkMass" class="probe-label">Mass <output id="bkMassOut"></output></label>
+        <input id="bkMass" type="range" min="0" max="11" step="0.001" value="1.326">
+        <div class="seg" role="group" aria-label="Real black holes" id="bkPresets"></div>
+        <label for="bkSpin" class="probe-label">Spin a* <output id="bkSpinOut"></output></label>
+        <input id="bkSpin" type="range" min="0" max="0.998" step="0.001" value="0">
+        <div class="gx-btns"><button type="button" class="btn btn-primary" id="bkOrbPlay" aria-pressed="true">Pause orbits</button></div>
+        <dl class="facts" id="bkBasicFacts" aria-live="polite"></dl>
+        <p class="note">Spin a* = cJ/(GM²) runs from 0 (not spinning) to 1 (the fastest a horizon can turn); the slider stops at 0.998, about the most that gas falling in can spin a hole up (Thorne 1974). Radii are Boyer–Lindquist radii for a Kerr black hole, from Bardeen, Press &amp; Teukolsky (1972). Gas spiralling in gets as close as the innermost stable orbit before it plunges, so a spinning hole lets it release more energy.</p>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>From stellar to supermassive</h3><p class="sub">Known black holes span ten powers of ten in mass. The scale is logarithmic: each tick is ten times the last. Choose a black hole to load it into the calculator above.</p></div>
+      <div class="gx-svgbox bk-wide"><svg id="bkLadder" role="img" aria-label="Logarithmic mass scale from 1 to 100 billion solar masses with three bands: stellar-mass, intermediate-mass and supermassive black holes, and markers for Cygnus X-1, Gaia BH3, GW150914's remnant, GW190521's remnant, Sagittarius A*, M87* and TON 618"></svg></div>
+      <div class="agn-class" id="bkLadderOut" aria-live="polite"></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Spaghettification</h3><p class="sub">Gravity pulls harder on the part of you that is closer. Falling feet first, your feet are pulled more than your head, and the difference (the tidal stretch) grows as 1/r³. At the horizon it scales as 1/M²: the <i>bigger</i> the black hole, the gentler its edge.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox"><svg id="bkTide" role="img" aria-label="A 2 metre person falling feet first toward a black hole, with arrows showing the stretch between head and feet, and a logarithmic gauge of that stretch in multiples of Earth's gravity"></svg></div>
+        <div class="gx-ctrl">
+          <div class="seg" role="group" aria-label="Black hole mass for the fall" id="bkTideSeg"></div>
+          <label for="bkTideR" class="probe-label">Distance from the centre <output id="bkTideROut"></output></label>
+          <input id="bkTideR" type="range" min="1" max="20" step="0.001" value="1">
+          <dl class="facts" id="bkTideFacts" aria-live="polite"></dl>
+          <p class="note">Stretch between head and feet: Δa ≈ 2GM·L/r³ for a body of length L = 2 m, Newtonian estimate (close to the exact value for a radial fall). The drawing exaggerates the stretch so you can see it. "Torn apart" here means above about 100 m/s² (10 g) of stretch, a rough line; bodies differ.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>Close encounters</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Tidal disruption: a star torn apart</b><span>A star that strays too close to a supermassive black hole is stretched into a stream. About half of it is flung away; the rest falls back and lights up a flare that outshines its galaxy for months, then fades. ASASSN-14li (2014, about 290 million light-years away) is a well-studied example; AT2018hyz launched a radio outflow years after its flare. Each galaxy has one roughly every 10,000 to 100,000 years. Above about 100 million M☉, a Sun-like star crosses the horizon before tides can rip it, so it is swallowed whole with no flare.</span></div>
+        <div class="bh-feat gx-card"><b>Watching someone fall in</b><span>Seen from far away, a falling probe slows as it nears the horizon, its light stretched redder and dimmer until it fades from view. It seems to freeze at the edge. That is an effect on the light, not on the probe: its own clock shows it crossing the horizon, and reaching the centre, in a finite time (for a 10 M☉ hole, well under a millisecond from the horizon).</span></div>
+        <div class="bh-feat gx-card"><b>Frame dragging and the Penrose process</b><span>A spinning hole drags space around with it. Inside the ergosphere, which reaches 2 GM/c² at the equator, nothing can stay still relative to distant stars: everything is swept along with the spin. There, a particle can split so that one piece falls in with negative energy and the other escapes with more than it brought (Penrose 1969). Up to 29% of a maximally spinning hole's mass is rotational energy that can be taken out this way. Magnetic fields threading the horizon can tap the same energy (Blandford &amp; Znajek 1977), the leading explanation for the most powerful jets.</span></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>How black holes form, and what they keep</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Collapse of a massive star</b><span>When a star of more than roughly 20 solar masses runs out of fuel, its iron core (about 1.5 Sun masses, the size of Earth) collapses in under a second. If too much falls back for a neutron star to hold up, a stellar-mass black hole forms, sometimes with no visible supernova at all.</span></div>
+        <div class="bh-feat gx-card"><b>Direct collapse, and mergers</b><span>In the early universe, a cloud of pristine gas may have collapsed straight into a black hole of 10,000 to 100,000 Sun masses, a head start for supermassive ones (a hypothesis with some supporting hints, such as the X-ray quasar UHZ1). Black holes also grow by merging, as LIGO hears.</span></div>
+        <div class="bh-feat gx-card"><b>Primordial black holes (hypothesis)</b><span>Dense patches in the first second after the Big Bang might have collapsed into black holes of almost any mass (proposed by Zel'dovich and Novikov in 1967, and Hawking in 1971). None has been found. Searches with lensing and the cosmic background rule them out as all of dark matter over most mass ranges.</span></div>
+        <div class="bh-feat gx-card"><b>The no-hair theorem</b><span>Once it settles, a black hole in general relativity is described by just three numbers: mass, spin and electric charge (which is near zero in nature). Every other detail of what fell in is radiated away or hidden. "Black holes have no hair," as John Wheeler put it.</span></div>
+        <div class="bh-feat gx-card"><b>Dark, but not invisible</b><span>We find black holes by what they do: stars orbiting nothing visible (Sgr A*, Gaia BH3), X-rays from gas swallowed in a binary (Cygnus X-1, identified in the early 1970s), radio rings (EHT) and gravitational waves.</span></div>
+        <div class="bh-feat gx-card"><b>The singularity</b><span>General relativity predicts that matter inside ends at a point of infinite density. Most physicists read this as the theory breaking down, not as a real infinity. A quantum theory of gravity is needed to say what is really there. See <a class="tab-link" href="#quantum">Quantum black holes</a>.</span></div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"Black holes suck everything in."</b> Far from it, a black hole pulls exactly like any other object of the same mass at the same distance. If the Sun were replaced by a 1 M☉ black hole, Earth would keep the same orbit (and freeze). Gas only falls in after losing its orbital motion, which is why it piles up in a disk first.</p></div><div><p class="h">Why it matters</p><p>What is special is how close you can get. A black hole is so compact that its gravity near the horizon is strong enough to bend light into orbits (at 1.5 r<sub>s</sub> for no spin) and to make circular orbits unstable (inside 3 r<sub>s</sub>).</p></div></div>
+    </div>
+  </section>
+
+  <!-- ===================== FEEDING ===================== -->
+  <section id="feeding" role="tabpanel" aria-labelledby="bkTabFeeding" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Feeding: the brightest things in the universe</h2>
+      <p>A black hole emits no light of its own. But gas spiralling toward it rubs against itself, heats to millions of degrees and glows, outshining every star in its galaxy. A supermassive black hole caught doing this is an active galactic nucleus (AGN); the brightest of them are quasars. Viewing angle explains much of the zoo of names; play with that on the Galaxies page's <a href="../galaxies/index.html#agn">active galaxies</a> tab. Here we go inside the engine.</p>
+    </div>
+
+    <div class="gx-block" style="margin-top:0">
+      <div class="hr-head"><h3>What contains what</h3><p class="sub">Every quasar is an AGN, every AGN is a supermassive black hole, but not the other way round. Choose a box.</p></div>
+      <div class="gx-svgbox bk-wide"><svg id="bkNest" role="img" aria-label="Nested boxes: all black holes contain supermassive black holes, which contain active galactic nuclei, which include quasars, Seyfert galaxies, blazars, radio galaxies and LINERs"></svg></div>
+      <div class="seg" role="group" aria-label="Kinds" id="bkNestSeg"></div>
+      <div class="agn-class" id="bkNestOut" aria-live="polite"></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Inside the engine</h3><p class="sub">Each part of an AGN shines in its own band of the spectrum, for its own physical reason. Choose a part.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox"><svg id="bkEngine" role="img" aria-label="Cross-section of an active galactic nucleus, not to scale: the black hole, its accretion disk, a hot corona above the inner disk, broad-line clouds, a dusty torus, and two jets"></svg></div>
+        <div class="gx-ctrl">
+          <div class="seg" role="group" aria-label="Parts of the engine" id="bkPartSeg"></div>
+          <div class="agn-class" id="bkPartOut" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="gx-svgbox bk-wide"><svg id="bkSed" role="img" aria-label="Schematic spectrum of an AGN from radio to gamma rays, showing which band each part emits in"></svg></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>How fast can it eat?</h3><p class="sub">Light pushes on the infalling gas. At the Eddington luminosity, L<sub>Edd</sub> = 4πGMm<sub>p</sub>c/σ<sub>T</sub> ≈ 1.26 × 10<sup>31</sup> W × (M/M☉), that push balances gravity on ionised hydrogen. Pick a mass, a brightness and a spin.</p></div>
+      <div class="gx-two">
+        <div class="gx-ctrl">
+          <label for="bkEM" class="probe-label">Black hole mass <output id="bkEMOut"></output></label>
+          <input id="bkEM" type="range" min="0" max="10.7" step="0.001" value="8">
+          <label for="bkEL" class="probe-label">Luminosity <output id="bkELOut"></output></label>
+          <input id="bkEL" type="range" min="28" max="41.5" step="0.001" value="38">
+          <label for="bkEA" class="probe-label">Spin a* (sets the efficiency) <output id="bkEAOut"></output></label>
+          <input id="bkEA" type="range" min="0" max="0.998" step="0.001" value="0">
+          <dl class="facts" id="bkEFacts" aria-live="polite"></dl>
+        </div>
+        <div class="gx-ctrl">
+          <div class="gx-svgbox"><svg id="bkEff" role="img" aria-label="Bar chart of how much of a fuel's rest-mass energy each process releases: fission, hydrogen fusion, accretion at the chosen spin, accretion onto a maximally spinning black hole, and matter-antimatter annihilation"></svg></div>
+          <p class="note">Efficiency η = 1 − E<sub>ISCO</sub>: the share of rest-mass energy gas has lost by the time it reaches the innermost stable orbit; 5.7% at no spin, 32% at a* = 0.998 (where radiation from the disk is thought to cap spin up, Thorne 1974) and 42% in the limit a* = 1. Mass needed: Ṁ = L/(ηc²). Disk temperature from the thin-disk model (Shakura &amp; Sunyaev 1973), a rough guide. Growth time at the Eddington limit: the mass grows e-fold every (η/(1−η)) × 450 million years.</p>
+        </div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"The light comes from the black hole."</b> Nothing escapes the horizon. The light comes from gas <i>outside</i> it, heated as it falls: most from the inner disk, a few times r<sub>s</sub> out, and the rest from the corona, clouds, dust and jets, light-hours to light-years away.</p></div><div><p class="h">Why it matters</p><p>Falling into a black hole is the most efficient way known to turn mass into light: up to 60 times better than the fusion that powers stars (0.7%). That is how a region the size of the Solar System can outshine a galaxy.</p></div></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>The quasar era, and black holes that grew too fast</h3><p class="sub">Bright quasars were most common about 10.5 to 11.5 billion years ago (z ≈ 2–3), when galaxies had the most gas. JWST now finds black holes much earlier than expected. Choose one to test it: could a black hole born at z ≈ 30 grow that big in time, eating at the Eddington limit with η = 10%?</p></div>
+      <div class="gx-svgbox bk-wide"><svg id="bkEra" role="img" aria-label="Cosmic time from the Big Bang to today with a schematic curve of how common bright quasars were, peaking about 10.5 to 11.5 billion years ago, and markers for early black holes found by JWST and other telescopes"></svg></div>
+      <div class="seg" role="group" aria-label="Early black holes" id="bkEraSeg"></div>
+      <div class="gx-two bk-even">
+        <div class="agn-class" id="bkEraOut" aria-live="polite"></div>
+        <dl class="facts" id="bkEraFacts"></dl>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"A quasar is a jet."</b> Most quasars have no strong jet: only about one in ten is radio-loud. A quasar is defined by its disk-powered brightness. A jet pointed at us makes a blazar, which can be a quasar or a much weaker AGN.</p></div><div><p class="h">What we know now</p><p>The "little red dots" JWST finds in the first billion years show broad hydrogen lines like AGN, but are weak in X-rays and barely flicker. As of late 2026 there is no consensus: dust-hidden black holes, or black holes inside a dense gas envelope ("black hole stars"), with masses possibly much lower than first estimated.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ===================== MERGERS ===================== -->
+  <section id="mergers" role="tabpanel" aria-labelledby="bkTabMergers" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>When black holes collide</h2>
+      <p>Two black holes in orbit stir spacetime and send out gravitational waves, which carry away energy. The orbit shrinks, the holes speed up, and the waves rise in pitch and loudness: a "chirp". Then they merge, and the new black hole rings like a struck bell before going quiet. On 14 September 2015, LIGO heard one for the first time.</p>
+    </div>
+
+    <div class="gx-block" style="margin-top:0">
+      <div class="hr-head"><h3>Chirp generator</h3><p class="sub">Choose two masses. The inspiral uses the leading-order (Newtonian quadrupole) formula, which depends only on the chirp mass. Merger and ringdown are sketched with fits to numerical relativity, for black holes that did not spin before merging.</p></div>
+      <div class="gx-two">
+        <div class="gx-ctrl">
+          <div class="seg" role="group" aria-label="Real events and examples" id="bkGwSeg"></div>
+          <label for="bkM1" class="probe-label">Mass 1 <output id="bkM1Out"></output></label>
+          <input id="bkM1" type="range" min="0" max="10" step="0.001" value="1.556">
+          <label for="bkM2" class="probe-label">Mass 2 <output id="bkM2Out"></output></label>
+          <input id="bkM2" type="range" min="0" max="10" step="0.001" value="1.462">
+          <div class="gx-btns"><button type="button" class="btn btn-primary" id="bkGwPlay" aria-pressed="false">Play</button><button type="button" class="btn" id="bkGwListen" aria-pressed="false">Listen</button></div>
+          <p class="note" id="bkGwAudioNote"></p>
+          <dl class="facts" id="bkGwFacts" aria-live="polite"></dl>
+          <p class="note">Masses and frequencies are in the source frame; detectors see f/(1 + z), with times stretched by (1 + z). The ground-band time and cycles use each event's published redshift z (your own pair: z = 0).</p>
+        </div>
+        <div class="gx-ctrl">
+          <div class="gx-svgbox bk-orbbox"><svg id="bkOrbit" role="img" aria-label="Two black holes orbiting each other, drawing closer as the wave plays, then merging into one"></svg></div>
+          <div class="agn-class" id="bkGwNote" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="gx-svgbox bk-wide"><svg id="bkWave" role="img" aria-label="Sketch of the gravitational-wave strain over the last cycles before merger, with the inspiral, merger and ringdown labelled"></svg></div>
+      <div class="gx-svgbox bk-wide"><svg id="bkBands" role="img" aria-label="Logarithmic frequency axis from a billionth of a hertz to ten thousand hertz showing the bands of pulsar timing arrays, LISA and ground detectors, and the frequency track of the chosen binary in its last years, days and seconds"></svg></div>
+      <p class="note">Formulas: chirp mass ℳ = (m₁m₂)<sup>3/5</sup>/(m₁+m₂)<sup>1/5</sup>; time left before merger from wave frequency f: τ = (5/256)(Gℳ/c³)<sup>−5/3</sup>(πf)<sup>−8/3</sup>; the wave frequency at the innermost stable orbit, f<sub>ISCO</sub> = c³/(6<sup>3/2</sup>πGM) ≈ 4400 Hz × (M☉/M). Final spin from Rezzolla et al. (2008), radiated energy from Barausse, Morozova &amp; Rezzolla (2012), ringdown tone from Berti, Cardoso &amp; Will (2006). Real waveforms come from far more detailed models.</p>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Hawking's area theorem, heard</h3><p class="sub">In 1971 Hawking proved that, in classical general relativity, the total horizon area can never shrink. A merger is the test: the new hole is lighter than the two together (energy left as waves), yet its horizon must be bigger. For a Kerr black hole, A = 8π(GM/c²)²(1 + √(1 − a*²)).</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox"><svg id="bkArea" role="img" aria-label="Bars comparing the total horizon area before and after the merger"></svg></div>
+        <div class="gx-ctrl">
+          <dl class="facts" id="bkAreaFacts" aria-live="polite"></dl>
+          <p class="note">Computed for the masses chosen above, assuming the two holes did not spin. GW250114 (detected 14 January 2025, signal-to-noise ratio about 80, the clearest yet) confirmed the area increase at up to about 4.4σ, depending on the analysis, and its ringdown showed two tones that both match one Kerr black hole of 62.7 M☉ and spin 0.68 (LIGO–Virgo–KAGRA 2025).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>Three ways to listen</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>LIGO, Virgo, KAGRA: 10 Hz to a few kHz</b><span>Laser interferometers with arms 3 to 4 km long, sensitive to stellar-mass mergers. The fourth observing run (O4) ended on 18 November 2025 with about 250 candidate signals, on top of 90 from earlier runs. A six-month run (IR1) is planned to begin in late October or mid-November 2026, not yet confirmed as started (checked 12 Nov 2026); dates for O5 are being reassessed.</span></div>
+        <div class="bh-feat gx-card"><b>LISA: 0.1 mHz to about 1 Hz</b><span>Three spacecraft 2.5 million km apart, adopted by ESA (with NASA) in January 2024 for launch around 2035. It will hear supermassive black holes of 10<sup>4</sup> to 10<sup>7</sup> M☉ merging anywhere in the universe, and small objects spiralling into big black holes, mapping spacetime around them.</span></div>
+        <div class="bh-feat gx-card"><b>Pulsar timing arrays: nanohertz</b><span>Pulsars are precise clocks. A wave lasting years makes them run fast and slow in a pattern that depends on the angle between them (the Hellings–Downs curve). In June 2023, NANOGrav, EPTA, PPTA and CPTA reported evidence for this background hum, most likely from pairs of supermassive black holes. Not yet a 5σ detection.</span></div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"Merging black holes make a huge explosion of light."</b> Two black holes in empty space merge in the dark. GW150914 radiated about 3 Sun masses of energy, more power at its peak than all the stars in the visible universe, but all of it as gravitational waves. Light came with GW170817 because neutron stars have matter to throw out (a kilonova).</p></div><div><p class="h">Why it matters</p><p>The ringdown is the cleanest test of the no-hair theorem: every tone of the ringing must match the same mass and spin. So far they do.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ===================== QUANTUM ===================== -->
+  <section id="quantum" role="tabpanel" aria-labelledby="bkTabQuantum" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Quantum black holes: not quite black</h2>
+      <p>In 1974 Stephen Hawking combined quantum field theory with the curved spacetime of a black hole and found that it should glow, with a temperature inversely proportional to its mass. This is a firm prediction of the theory, but it has never been observed: for real black holes it is far too faint. Tags on this tab say how sure each idea is.</p>
+      <p class="bk-tags"><span class="bk-tag obs">Observed</span><span class="bk-tag thy">Theory, not observed</span><span class="bk-tag spec">Untested idea</span></p>
+    </div>
+
+    <div class="gx-block" style="margin-top:0">
+      <div class="hr-head"><h3>Hawking temperature and lifetime <span class="bk-tag thy">Theory, not observed</span></h3><p class="sub">T<sub>H</sub> = ħc³/(8πGMk<sub>B</sub>) ≈ 6.17 × 10<sup>−8</sup> K × (M☉/M). The cosmic microwave background bathes everything at 2.725 K, so any black hole colder than that absorbs more than it emits and grows. Choose a mass.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox"><svg id="bkHawk" role="img" aria-label="Two log-log charts against black hole mass: Hawking temperature, crossing the 2.725 kelvin background at about 4.5 times 10 to the 22 kilograms, and evaporation time, crossing the age of the universe near 10 to the 11 kilograms"></svg></div>
+        <div class="gx-ctrl">
+          <label for="bkHM" class="probe-label">Mass <output id="bkHMOut"></output></label>
+          <input id="bkHM" type="range" min="8" max="41" step="0.001" value="30.299">
+          <div class="seg" role="group" aria-label="Example masses" id="bkHSeg"></div>
+          <dl class="facts" id="bkHFacts" aria-live="polite"></dl>
+          <p class="note" id="bkHNow" hidden></p>
+          <p class="note"><b>Blackbody estimate (photons, no greybody factors)</b>: lifetime t ≈ 5120πG²M³/(ħc⁴) ≈ 2.1 × 10<sup>67</sup> years × (M/M☉)³ and power P = ħc⁶/(15360πG²M²) treat the hole as a perfect blackbody sphere of radius r<sub>s</sub> radiating photons only. The full calculation (Page 1976) differs in two ways: greybody factors (part of each wave is reflected back in by the curved spacetime, which lowers the output) and extra particle species (gravitons, neutrinos and, for hot holes, electrons, quarks and gluons, which raise it a lot). Together they make small holes die faster: one evaporating about now started near 5 × 10<sup>11</sup> kg, not the blackbody figure (Carr et al. 2010). Entropy S = k<sub>B</sub>A/(4ℓ<sub>P</sub>²) with ℓ<sub>P</sub> = √(ħG/c³) = 1.6 × 10<sup>−35</sup> m (Bekenstein 1973, Hawking 1975).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>The vacuum depends on who is looking</h3><p class="sub">In quantum field theory, "particle" means a wave of a definite frequency, and "frequency" needs a clock. In flat spacetime everyone agrees on the clock, so everyone agrees on the empty vacuum. When spacetime changes, the waves that meant "no particles" before mean "some particles" after. Leonard Parker found this for the expanding universe in 1968; Hawking's 1974 result is the same effect for a collapsing star.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox bk-mode"><svg id="bkMode" role="img" aria-label="Top: a spacetime factor that changes smoothly from one value to another. Bottom: a field wave passing through the change; afterwards its envelope beats when particles have been created"></svg></div>
+        <div class="gx-ctrl">
+          <label for="bkRho" class="probe-label">How fast spacetime changes <output id="bkRhoOut"></output></label>
+          <input id="bkRho" type="range" min="-0.5" max="1.3" step="0.01" value="0.3">
+          <label for="bkK" class="probe-label">Wavenumber of the mode k <output id="bkKOut"></output></label>
+          <input id="bkK" type="range" min="0" max="3" step="0.01" value="0.5">
+          <dl class="facts" id="bkModeFacts" aria-live="polite"></dl>
+          <div class="gx-svgbox"><svg id="bkBeta" role="img" aria-label="Number of particles created per mode, |beta|², against wavenumber k, for the chosen speed of change"></svg></div>
+        </div>
+      </div>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Bogoliubov coefficients, in words</b><span>Write the "after" wave as a mix: α parts of a positive-frequency wave plus β parts of a negative-frequency one. If you started with no particles, you now find |β|² particles in that mode, created in pairs. A sudden change makes many; a slow, gentle change makes exponentially few. The bottom wave shows it: when β ≠ 0, the two parts beat and its envelope wobbles.</span></div>
+        <div class="bh-feat gx-card"><b>The model used here</b><span>A massive field in a two-dimensional universe whose size changes as C(η) = 5 + 4 tanh(ρη), one of the few cases solved exactly (Bernard &amp; Duncan 1977; Birrell &amp; Davies 1982). The wave is integrated step by step; the exact |β|² is shown alongside as a check.</span></div>
+        <div class="bh-feat gx-card"><b>Why changing spacetimes are a research frontier</b><span>Hawking's calculation uses a collapse, but then idealises it. What a real, messy, time-dependent spacetime produces (a collapsing star, two holes merging, a ringing remnant, the hole shrinking as it radiates) is still worked out case by case, often numerically. These are open problems where a careful calculation can still be new.</span></div>
+        <div class="bh-feat gx-card bk-span"><b>From this toy |β|² to Hawking's thermal glow</b><span>Here the change is a smooth step, so |β|² falls off quickly with frequency. Near a forming horizon the change never stops: a wave leaving from just outside the horizon is stretched (redshifted) by a factor that grows <i>exponentially</i> in time, e<sup>κt</sup>, where κ = c³/(4GM) is the surface gravity. Tracing a late outgoing mode back to the collapse squeezes it into an exponentially short wavelength. That exponential mixing gives exactly |β|² = 1/(e<sup>ħω/kT</sup> − 1) with kT = ħκ/(2π): the Planck spectrum at the Hawking temperature (Hawking 1975). Try it in the <a href="#bkHawk">Hawking calculator</a> above.</span></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Acceleration has a temperature too <span class="bk-tag thy">Theory, not observed</span></h3><p class="sub">An observer accelerating through empty space should feel a warm bath of particles at T = ħa/(2πck<sub>B</sub>) (Unruh 1976; Fulling 1973, Davies 1975). An inertial observer sees nothing. Same vacuum, different clocks.</p></div>
+      <div class="gx-two bk-even">
+        <div class="gx-ctrl">
+          <label for="bkUa" class="probe-label">Acceleration <output id="bkUaOut"></output></label>
+          <input id="bkUa" type="range" min="0" max="26" step="0.001" value="0.9915">
+          <div class="seg" role="group" aria-label="Example accelerations" id="bkUSeg"></div>
+        </div>
+        <dl class="facts" id="bkUFacts" aria-live="polite"></dl>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>The information paradox and the Page curve <span class="bk-tag spec">Untested idea</span></h3><p class="sub">Hawking radiation is thermal: it seems to carry no memory of what fell in. If a black hole evaporates completely, the information would be destroyed, which quantum mechanics forbids. Don Page (1993) showed what the entanglement entropy of the radiation must do if information escapes: rise, then fall back to zero. Move through the black hole's life.</p></div>
+      <div class="gx-two">
+        <div class="gx-svgbox"><svg id="bkPage" role="img" aria-label="Entanglement entropy of the radiation against time: Hawking's calculation rises until the end, while the Page curve rises and then falls, turning over at the Page time, following the shrinking black hole entropy"></svg></div>
+        <div class="gx-ctrl">
+          <label for="bkPt" class="probe-label">Time, as a share of the lifetime <output id="bkPtOut"></output></label>
+          <input id="bkPt" type="range" min="0" max="1" step="0.001" value="0.3">
+          <dl class="facts" id="bkPFacts" aria-live="polite"></dl>
+          <p class="note">Simplified: entropy of the radiation counted as equal to the black hole entropy lost (the real ratio, for photons and gravitons, is about 1.48: Page 1976, 1983), and the hole's entropy falls as (1 − t/t<sub>life</sub>)<sup>2/3</sup>.</p>
+        </div>
+      </div>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Islands and replica wormholes (2019)</b><span>Two groups (Penington; Almheiri, Engelhardt, Marolf &amp; Maxfield) showed that a careful semiclassical calculation of the radiation's entropy finds an extra contribution, an "island" inside the horizon, after the Page time. It gives the Page curve. "Replica wormholes" in the gravity path integral explain why. A major result, but in simplified models.</span></div>
+        <div class="bh-feat gx-card"><b>What is settled, what is not</b><span>Most theorists now expect information to come out. How it is encoded in the radiation, and what an infalling observer sees, is not settled. Nothing here has been tested by experiment; the evidence is mathematical consistency.</span></div>
+        <div class="bh-feat gx-card"><b>Bekenstein–Hawking entropy</b><span>A black hole's entropy is a quarter of its horizon area in Planck units: about 10<sup>77</sup> k<sub>B</sub> for one solar mass, far more than the star that made it. Area, not volume, suggests that gravity stores information on boundaries, an idea called holography.</span></div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"Hawking radiation is a particle–antiparticle pair split at the horizon."</b> That is Hawking's own cartoon, not his calculation. The calculation compares field modes before and after the collapse (Bogoliubov coefficients, as above). The radiation emerges from a zone a few r<sub>s</sub> across around the hole, and its typical wavelength is about 10 to 20 times the hole's size (the Wien peak sits near 16 r<sub>s</sub>), far too long to come from a pair split at one point.</p></div><div><p class="h">Why it matters</p><p>It is the one place where gravity, quantum theory and thermodynamics meet in a single formula, T<sub>H</sub> = ħc³/(8πGMk<sub>B</sub>). Any quantum theory of gravity must reproduce it, and the entropy A/4.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ===================== FRONTIERS ===================== -->
+  <section id="frontiers" role="tabpanel" aria-labelledby="bkTabFrontiers" class="panel" hidden>
+    <div class="panel-intro">
+      <h2>Frontiers: what has been tested, and what has not</h2>
+      <p>Black hole physics mixes measurements accurate to a few percent with ideas that may never be tested directly. Here is an honest scoreboard, with what would change our minds about each.</p>
+    </div>
+
+    <div class="gx-block" style="margin-top:0">
+      <div class="hr-head"><h3>Tested, untested, coming</h3><p class="sub">Filter the board, then choose a card for details.</p></div>
+      <div class="seg" role="group" aria-label="Filter" id="bkBoardSeg"></div>
+      <div class="bk-board" id="bkBoard"></div>
+      <div class="agn-class" id="bkBoardOut" aria-live="polite"></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>How big does a shadow look?</h3><p class="sub">For a non-spinning black hole, the shadow is √27 GM/c² in radius, about 2.6 times the horizon. Its angular size is that diameter over the distance. An Earth-sized radio telescope at 1.3 mm wavelength resolves about 20 μas (microarcseconds). For M87*, the bright ring the EHT images is about 10% larger than the shadow edge computed here, a factor calibrated with simulations; for Sgr A* the two agree within the errors.</p></div>
+      <div class="gx-two">
+        <div class="gx-ctrl">
+          <div class="seg" role="group" aria-label="Black holes" id="bkShSeg"></div>
+          <label for="bkShM" class="probe-label">Mass <output id="bkShMOut"></output></label>
+          <input id="bkShM" type="range" min="5" max="10.7" step="0.001" value="9.813">
+          <label for="bkShD" class="probe-label">Distance <output id="bkShDOut"></output></label>
+          <input id="bkShD" type="range" min="-2.5" max="2" step="0.001" value="1.225">
+          <dl class="facts" id="bkShFacts" aria-live="polite"></dl>
+        </div>
+        <div class="gx-svgbox"><svg id="bkShadow" role="img" aria-label="Bar chart of the shadow sizes of known black holes in microarcseconds, compared with the resolution of the Event Horizon Telescope"></svg></div>
+      </div>
+      <div class="tr-callout"><div><p class="h">Classic picture</p><p>Black holes were a mathematical curiosity: Schwarzschild's 1916 solution, which Einstein himself doubted described anything real.</p></div><div><p class="h">What we know now</p><p>We have photographed two, tracked stars around one for 30 years, and heard hundreds collide. Everything measured so far fits general relativity's Kerr black holes. The surprises, if any, are expected at the quantum scale, far below what we can see.</p></div></div>
+    </div>
+
+    <div class="gx-block">
+      <div class="hr-head"><h3>Quiz</h3><p class="sub">Ten questions on the whole page. Answer, check, and read why.</p></div>
+      <div id="bkQuiz" class="quiz"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>Built from published measurements and papers (LIGO–Virgo–KAGRA, EHT, GRAVITY, NANOGrav, ESA, NASA and peer-reviewed theory). Diagrams are drawn by this site; where something is not to scale or is schematic, it says so.</p>
+  <p class="site-foot-links"><a href="../sources.html">Sources &amp; simplifications</a><a href="../stars/index.html#blackhole">Black hole camera →</a></p>
+</footer>
+<script src="js/bk-tabs.js"></script>
+<script src="js/bk-core.js"></script>
+<script src="js/bk-basics.js"></script>
+<script src="js/bk-feeding.js"></script>
+<script src="js/bk-mergers.js"></script>
+<script src="js/bk-quantum.js"></script>
+<script src="js/bk-frontiers.js"></script>
+</body>
+</html>

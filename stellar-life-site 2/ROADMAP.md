@@ -1,0 +1,41 @@
+# Roadmap
+
+Work happens in blocks. A block is one deliverable plus at most two quality rounds, sized to stay under ~90% of a 5-hour usage window. Each block ends with everything saved and a short handoff note at the bottom of this file.
+
+## Quality bar (every page)
+- Independent check scores 1–10 in: physics accuracy, coverage, teaching, visual quality, interaction, performance.
+- A page is done after **three consecutive rounds with every score ≥ 8**. Every issue raised is fixed, even on a passing round.
+- Rounds check only the pages that changed. Routine rounds use the lighter model; the final round uses the full model. One check at a time.
+- Facts about real missions, objects and numbers are checked against primary sources (agency pages, papers) before they go in.
+
+## Public-site rules
+- No course or textbook framing; callouts are "Classic picture / What we know now".
+- No logos, insignia or copied images; all visuals are drawn by code. Agency and mission names only to identify them.
+- Every number traceable on `sources.html`.
+
+## Status
+| Page | Passing rounds | Notes |
+|---|---|---|
+| Life of a Star | 3 of 3 ✅ | done |
+| Galaxies & Cosmology | 3 of 3 ✅ | done |
+| Tools of Astronomy | 3 of 3 ✅ | done |
+| Missions & Telescopes | 3 of 3 ✅ | done |
+| Earth | 3 of 3 ✅ | done (rounds 9–11) |
+| Small bodies | 3 of 3 ✅ | done (rounds 3–5) |
+| Black holes | 3 of 3 ✅ | done (rounds 2–4) |
+
+## Blocks
+- [x] Public cleanup (course wording, meta tags), folder restructure, hub page, sources page
+- [x] Quality rounds until both existing pages have 3 passes
+- [ ] Split Life of a Star into 3 pages (life cycle · extremes · measuring) and Galaxies into 3–4 pages, with a shared quiz engine
+- [x] Tools of Astronomy (built): spectrograph (prism vs grating, emission/absorption, element fingerprints, Doppler) and telescopes (refractor vs reflector ray-trace, chromatic aberration, light-gathering ∝ D², resolution 1.22λ/D, "what can my telescope see?")
+- [x] Missions & Telescopes (built): space telescopes, probes and rovers, ground giants; instruments and detector types; discoveries; spectrum filter, mirror sizes to scale, orbit map, launch timeline
+- [x] Solar System · Earth (built; in review): interior cutaway, plate tectonics, rock cycle, volcanoes, water cycle and erosion, atmosphere and magnetosphere, the Moon and tides
+- [x] Solar System · small bodies: asteroid belt, Kuiper belt, Oort cloud, comets, impact craters
+- [ ] Solar System · one block per planet and its moons
+
+## Handoff notes
+- 2026-10-30: restructure done. Next block: quality rounds on both pages (Life of a Star round 8, Galaxies round 4).
+- 2026-10-31: Tools + Missions pages built; Earth page in progress (solar-system/earth/). Repo layout changes from flat files to folders on next push.
+- 2026-11-01: four pages at 3/3. Earth in review. Next: Earth to 3/3, then small bodies (asteroids, comets, Kuiper belt), then split Stars/Galaxies pages. Push blocked until the Claude GitHub App is installed on the repo.
+- 2026-11-13: all seven pages at 3/3. Added Black holes page. Next: one page per planet and its moons; split Stars/Galaxies into smaller pages; known leftover: 'inner Oort cloud' label overlap on phone (small bodies).
