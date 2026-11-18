@@ -14,10 +14,14 @@
   const PH = () => phoneMQ.matches;
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
   const lerp = (a, b, u) => a + (b - a) * u;
-  const n0 = (x) => Math.round(x).toLocaleString('en-US');
-  const fx = (x, d) => x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  // number formats are built once per digit count (toLocaleString with options builds a new one on every call)
+  const NF = [];
+  const nf = (d) => NF[d] || (NF[d] = new Intl.NumberFormat('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }));
+  const n0 = (x) => nf(0).format(Math.round(x));
+  const fx = (x, d) => nf(d).format(x); // displayed text (grouped thousands)
+  const fc = (x, d) => x.toFixed(d); // SVG coordinates and attributes
   // label halo, same rule as the other half: the card colour, 0.28 × the font size, round joins, painted under the text
-  const halo = (w, c) => ` stroke="${c || T.surface}" stroke-width="${fx(w, 2)}" stroke-linejoin="round" paint-order="stroke"`;
+  const halo = (w, c) => ` stroke="${c || T.surface}" stroke-width="${fc(w, 2)}" stroke-linejoin="round" paint-order="stroke"`;
   /* SVG text: K scales the font sizes below (written for ~18 units) so labels render near 16 px on
      desktop and 12.3 px on phones, matching the other half of the page (13-unit labels there → 15 / 12 px). own: the drawing sizes its own phone text. */
   let K = 1;
@@ -27,7 +31,7 @@
   }
   function tx(x, y, s, o) {
     o = o || {};
-    return `<text x="${fx(x, 1)}" y="${fx(y, 1)}" font-size="${fx((o.fs || 20) * K, 1)}" fill="${o.fill || T.fg}"${o.anchor ? ` text-anchor="${o.anchor}"` : ''}${o.weight ? ` font-weight="${o.weight}"` : ''}${o.halo === false ? '' : halo(o.hw || 0.28 * (o.fs || 20) * K, o.hc)}>${s}</text>`;
+    return `<text x="${fc(x, 1)}" y="${fc(y, 1)}" font-size="${fc((o.fs || 20) * K, 1)}" fill="${o.fill || T.fg}"${o.anchor ? ` text-anchor="${o.anchor}"` : ''}${o.weight ? ` font-weight="${o.weight}"` : ''}${o.halo === false ? '' : halo(o.hw || 0.28 * (o.fs || 20) * K, o.hc)}>${s}</text>`;
   }
   function seg(box, items, cur, onPick) {
     box.innerHTML = items.map(([k, label]) => `<button type="button" data-k="${k}" aria-pressed="${k === cur}">${label}</button>`).join('');
@@ -38,7 +42,7 @@
   function arrow(x1, y1, x2, y2, col, w) {
     const a = Math.atan2(y2 - y1, x2 - x1), h = 12, c = Math.cos(a), s = Math.sin(a);
     const bx = x2 - h * c, by = y2 - h * s;
-    return `<line x1="${fx(x1, 1)}" y1="${fx(y1, 1)}" x2="${fx(bx, 1)}" y2="${fx(by, 1)}" stroke="${col}" stroke-width="${w || 4}" stroke-linecap="round"/><polygon points="${fx(x2, 1)},${fx(y2, 1)} ${fx(bx - 7 * s, 1)},${fx(by + 7 * c, 1)} ${fx(bx + 7 * s, 1)},${fx(by - 7 * c, 1)}" fill="${col}"/>`;
+    return `<line x1="${fc(x1, 1)}" y1="${fc(y1, 1)}" x2="${fc(bx, 1)}" y2="${fc(by, 1)}" stroke="${col}" stroke-width="${w || 4}" stroke-linecap="round"/><polygon points="${fc(x2, 1)},${fc(y2, 1)} ${fc(bx - 7 * s, 1)},${fc(by + 7 * c, 1)} ${fc(bx + 7 * s, 1)},${fc(by - 7 * c, 1)}" fill="${col}"/>`;
   }
   /* Moving parts of an animated scene: the first draw builds the markup (each moving node tagged data-d);
      later frames run the same scene code in patch mode, which only updates those nodes' attributes. */
@@ -51,7 +55,7 @@
     if (patch && svg.__dy) { DY.patch = true; DY.nodes = svg.__dy; DY.i = 0; try { build(); } finally { DY.patch = false; } return; }
     svg.innerHTML = build(); svg.__dy = svg.querySelectorAll('[data-d]');
   }
-  const poly = (pts) => pts.map((p) => fx(p[0], 1) + ',' + fx(p[1], 1)).join(' ');
+  const poly = (pts) => pts.map((p) => fc(p[0], 1) + ',' + fc(p[1], 1)).join(' ');
 
   /* ---------- animation loops: run only while their tab is shown, on screen and playing ---------- */
   let curTab = null;
@@ -115,7 +119,7 @@
   const pAt = (r) => pg().P[clamp(Math.round(r), 0, RE)] / 1e9;
 
   const LAY = [
-    { k: 'crust', name: 'Crust', r0: 6336, r1: 6371, col: '#a3825a', depth: '0 to ~7 km (oceans), ~35 km (continents, up to ~70)', state: 'Solid rock', rho: '2.7 – 3.0', T: '~290 K at the surface; ~700 – 1,100 K at its base', comp: 'Continents: granite-like rock rich in silicon, aluminium and potassium. Ocean floor: basalt and gabbro', v: 'P 5.8 – 6.8, S 3.2 – 3.9 km/s', blurb: 'A thin skin of light rock. If Earth were an apple, the crust would be thinner than its peel. The deepest hole ever drilled, Kola in Russia, reached 12.3 km.' },
+    { k: 'crust', name: 'Crust', r0: 6336, r1: 6371, col: '#a3825a', depth: '0 to ~7 km (oceans), ~35 km (continents, up to ~70)', state: 'Solid rock', rho: '2.6 – 2.9', T: '~290 K at the surface; ~700 – 1,100 K at its base', comp: 'Continents: granite-like rock rich in silicon, aluminium and potassium. Ocean floor: basalt and gabbro', v: 'P 5.8 – 6.8, S 3.2 – 3.9 km/s', blurb: 'A thin skin of light rock. If Earth were an apple, the crust would be thinner than its peel. The deepest hole ever drilled, Kola in Russia, reached 12.3 km.' },
     { k: 'upper', name: 'Upper mantle', r0: 5961, r1: 6336, col: '#b9643c', depth: 'base of crust to 410 km', state: 'Solid, but creeps slowly. Its cold top is welded to the crust as the rigid plates', rho: '3.4 – 3.5', T: '~1,600 K under the plates; ~1,800 K at 410 km', comp: 'Peridotite: mostly olivine, plus pyroxene and garnet', v: 'P 8.0 – 8.9, S 4.4 – 4.8 km/s', blurb: 'Below the plates is the asthenosphere, a layer that is hot enough to be soft. It is still solid: S waves cross it, just a little slower.' },
     { k: 'tz', name: 'Transition zone', r0: 5711, r1: 5961, col: '#a5502e', depth: '410 – 660 km', state: 'Solid', rho: '3.7 – 4.0', T: '~1,800 – 2,000 K', comp: 'The same rock, squeezed: olivine repacks into denser wadsleyite, then ringwoodite, which can hold water in its crystals', v: 'P 9.1 – 10.3, S 4.9 – 5.6 km/s', blurb: 'Wave speeds jump at 410 and 660 km. The chemistry barely changes; the atoms rearrange into tighter crystals as pressure rises.' },
     { k: 'lower', name: 'Lower mantle', r0: 3480, r1: 5711, col: '#8a3d22', depth: '660 – 2,891 km', state: 'Solid; flows very slowly (cm per year)', rho: '4.4 – 5.6', T: '~2,000 K at the top; ~4,000 K at the base', comp: 'Bridgmanite (the most common mineral in Earth) with ferropericlase', v: 'P 10.8 – 13.7, S 5.9 – 7.3 km/s', blurb: 'The biggest layer by volume. Slabs of old ocean floor sink through it, and hot material rises from its base.' },
@@ -127,7 +131,7 @@
   if (!LBY[IN.layer]) IN.layer = 'outer';
 
   function annulus(cx, cy, r0, r1) {
-    const c = (r) => `M${fx(cx - r, 2)},${cy} A${r},${r} 0 1,0 ${fx(cx + r, 2)},${cy} A${r},${r} 0 1,0 ${fx(cx - r, 2)},${cy} Z`;
+    const c = (r) => `M${fc(cx - r, 2)},${cy} A${r},${r} 0 1,0 ${fc(cx + r, 2)},${cy} A${r},${r} 0 1,0 ${fc(cx - r, 2)},${cy} Z`;
     return r0 > 0 ? c(r1) + ' ' + c(r0) : c(r1);
   }
 
@@ -143,7 +147,7 @@
     const L = ph ? [['crust', 62, 6360, 72], ['upper', 44, 6150, 128], ['tz', 27, 5836, 184], ['lower', 0, 4600, 252], ['outer', -26, 2350, 330], ['inner', -62, 650, 408]] : [['crust', 62, 6360, 42], ['upper', 44, 6150, 98], ['tz', 27, 5836, 152], ['lower', 0, 4600, 240], ['outer', -26, 2350, 330], ['inner', -62, 650, 420]];
     L.forEach(([k, a, rr, ly]) => {
       const l = LBY[k], on = k === IN.layer, ar = a * Math.PI / 180, px = cx + rr * s * Math.cos(ar), py = cy - rr * s * Math.sin(ar);
-      h += `<g class="ea-hit" data-k="${k}"><polyline points="${fx(px, 1)},${fx(py, 1)} ${LX},${ly - 8} ${LX + 8},${ly - 8}" fill="none" stroke="${on ? T.accent : T.muted}" stroke-width="${on ? 2.2 : 1.3}"/><circle cx="${fx(px, 1)}" cy="${fx(py, 1)}" r="3.5" fill="${on ? T.accent : T.fg}"/>`;
+      h += `<g class="ea-hit" data-k="${k}"><polyline points="${fc(px, 1)},${fc(py, 1)} ${LX},${ly - 8} ${LX + 8},${ly - 8}" fill="none" stroke="${on ? T.accent : T.muted}" stroke-width="${on ? 2.2 : 1.3}"/><circle cx="${fc(px, 1)}" cy="${fc(py, 1)}" r="3.5" fill="${on ? T.accent : T.fg}"/>`;
       h += tx(LX + 12, ly, l.name, { fs: FS, fill: on ? T.accent : T.fg, weight: on ? 700 : 500 }) + '</g>';
     });
     h += tx(8, 472, 'True scale', { fs: ph ? 26 : 18, fill: T.muted });
@@ -184,7 +188,7 @@
       ['Depth', l.depth], ['State', l.state], ['Density (PREM)', l.rho + ' g/cm³'],
       ['Pressure', l.k === 'crust' ? 'up to ~1 GPa' : fx(pAt(l.r1), 0) + ' – ' + fx(pAt(l.r0), 0) + ' GPa'],
       ['Temperature (estimate)', l.T], ['Wave speeds', l.v], ['Made of', l.comp],
-      ['Share of Earth', l.k === 'crust' ? 'about 1% of volume, about 0.5% of mass' : `${share < 1.5 ? fx(share, 1) : n0(share)}% of volume, ${mass < 1.5 ? fx(mass, 1) : n0(mass)}% of mass`]
+      ['Share of Earth', l.k === 'crust' ? 'about 1% of volume, about 0.5% of mass' : `${share < 1.5 ? fx(share, 1) : n0(share)}% of volume, ${l.k === 'inner' ? fx(1.7, 1) : mass < 1.5 ? fx(mass, 1) : n0(mass)}% of mass`] // inner core: the 1 km PREM grid gives 1.65%, which fx would round down; quoted as the usual 1.7%
     ]);
     press($('#eaLayers'), IN.layer);
   }
@@ -196,7 +200,7 @@
     const F = PH() ? 1.5 : 1, f = (n) => Math.round(n * F);
     svg.setAttribute('viewBox', '0 0 640 ' + (PH() ? 336 : 312));
     let h = '';
-    LAY.forEach((l, i) => { h += `<rect x="${fx(xd(RE - l.r1), 1)}" y="${Y0}" width="${fx(xd(RE - l.r0) - xd(RE - l.r1), 1)}" height="${Y1 - Y0}" fill="${l.col}" opacity="${i % 2 ? 0.16 : 0.1}"/>`; });
+    LAY.forEach((l, i) => { h += `<rect x="${fc(xd(RE - l.r1), 1)}" y="${Y0}" width="${fc(xd(RE - l.r0) - xd(RE - l.r1), 1)}" height="${Y1 - Y0}" fill="${l.col}" opacity="${i % 2 ? 0.16 : 0.1}"/>`; });
     for (let v = 0; v <= 14; v += 2) { h += `<line x1="${X0}" x2="${X1}" y1="${yv(v)}" y2="${yv(v)}" stroke="${T.line}" stroke-width="${v % 4 ? 0.6 : 1}"/>`; if (v % 4 === 0) h += tx(X0 - 8, yv(v) + f(7), v, { fs: f(18), anchor: 'end', fill: T.muted, halo: false }); }
     [0, 2000, 4000, 6000].forEach((d) => { h += tx(xd(d), Y1 + f(24), n0(d), { fs: f(18), anchor: d ? 'middle' : 'start', fill: T.muted, halo: false }); });
     h += tx(X1, Y1 + f(52), 'Depth (km)', { fs: f(18), anchor: 'end', fill: T.muted, halo: false });
@@ -206,7 +210,7 @@
     for (let r = 0; r <= RE; r += 10) rs.push(r);
     B.forEach((b) => { rs.push(b - 0.01, b + 0.01); });
     rs.sort((a, b) => b - a);
-    const line = (j, col, w) => `<polyline points="${rs.map((r) => fx(xd(RE - r), 1) + ',' + fx(yv(prem(r)[j]), 1)).join(' ')}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linejoin="round"/>`;
+    const line = (j, col, w) => `<polyline points="${rs.map((r) => fc(xd(RE - r), 1) + ',' + fc(yv(prem(r)[j]), 1)).join(' ')}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linejoin="round"/>`;
     h += line(0, T.rho, 2.6) + line(2, T.s, 2.6) + line(1, T.p, 2.6);
     h += tx(xd(1200), yv(prem(RE - 1200)[1]) - 12, 'P waves', { fs: f(19), fill: T.p, weight: 600, anchor: 'middle' });
     h += tx(xd(4300), yv(0) - 8, PH() ? 'S = 0 in the liquid' : 'S waves: zero in the liquid', { fs: f(19), fill: T.s, weight: 600, anchor: 'middle' });
@@ -219,8 +223,8 @@
     IN.hover = d = clamp(d, 0, RE);
     const X0 = 62, X1 = 626, Y0 = 18, Y1 = 250, x = X0 + d / RE * (X1 - X0), r = RE - d, m = prem(Math.max(0, r - 0.001)), G = pg();
     const yv = (v) => Y1 - v / 14 * (Y1 - Y0);
-    let h = `<line x1="${fx(x, 1)}" x2="${fx(x, 1)}" y1="${Y0}" y2="${Y1}" stroke="${T.fg}" stroke-width="1.4" stroke-dasharray="4 4"/>`;
-    [[0, T.rho], [1, T.p], [2, T.s]].forEach(([j, c]) => { h += `<circle cx="${fx(x, 1)}" cy="${fx(yv(m[j]), 1)}" r="5" fill="${c}" stroke="${T.bg}" stroke-width="2"/>`; });
+    let h = `<line x1="${fc(x, 1)}" x2="${fc(x, 1)}" y1="${Y0}" y2="${Y1}" stroke="${T.fg}" stroke-width="1.4" stroke-dasharray="4 4"/>`;
+    [[0, T.rho], [1, T.p], [2, T.s]].forEach(([j, c]) => { h += `<circle cx="${fc(x, 1)}" cy="${fc(yv(m[j]), 1)}" r="5" fill="${c}" stroke="${T.bg}" stroke-width="2"/>`; });
     $('#eaProfX').innerHTML = h;
     const layer = LAY.find((l) => r >= l.r0 && r <= l.r1) || LAY[0];
     facts($('#eaProfOut'), [['Depth', n0(d) + ' km'], ['Layer', layer.name], ['Density', fx(m[0], 2) + ' g/cm³'], ['P-wave speed', fx(m[1], 2) + ' km/s'], ['S-wave speed', m[2] ? fx(m[2], 2) + ' km/s' : 'none (liquid)'], ['Pressure', n0(G.P[Math.round(r)] / 1e9) + ' GPa'], ['Gravity', fx(G.g[Math.round(r)], 2) + ' m/s²'], ['Temperature', tempAt(d)]]);
@@ -284,24 +288,56 @@
       const v = vel(rs, w);
       for (let a = 0; a <= 90.01; a += 2.5) out[w].push(trace(rs * Math.sin(a * Math.PI / 180) / v, w, rs));
     });
-    // shadow-zone edges from a dense sweep
-    let maxP = 0, minK = 180, maxS = 0;
-    const vp = vel(rs, 'P'), vs = vel(rs, 'S');
-    for (let k = 0; k <= 400; k++) {
-      const a = k / 400 * 90, rp = trace(rs * Math.sin(a * Math.PI / 180) / vp, 'P', rs);
-      if (rp.ph === 'P') maxP = Math.max(maxP, rp.D); else if (rp.ph === 'PKP') minK = Math.min(minK, rp.D);
-      if (k % 2 === 0) { const r2 = trace(rs * Math.sin(a * Math.PI / 180) / vs, 'S', rs); if (!r2.stop) maxS = Math.max(maxS, r2.D); }
-    }
-    out.maxP = maxP; out.minK = minK; out.maxS = maxS;
+    Object.assign(out, shadowEdges(rs));
     return (fanCache[qk] = out);
+  }
+  /* Dense mantle-ray sweep (take-off 0.2° apart, from the core-grazing ray to horizontal) per quake and
+     wave, built once on first use: the first-arrival time at any distance, for the "a deeper ray gets
+     there first" note. */
+  const sweepCache = {};
+  function sweep(qk, w) {
+    const key = qk + w; if (sweepCache[key]) return sweepCache[key];
+    const rs = RE - QUAKES[qk].d, v = vel(rs, w), a0 = Math.asin(clamp(3482 / vel(3482, w) * v / rs, 0, 1)) * 180 / Math.PI, out = [];
+    for (let a = Math.floor(a0 * 5) / 5; a <= 90.001; a += 0.2) { const ry = trace(rs * Math.sin(a * Math.PI / 180) / v, w, rs); if (!ry.stop && (ry.ph === 'P' || ry.ph === 'S')) out.push([ry.D, ry.T, ry.p]); }
+    return (sweepCache[key] = out);
+  }
+  function firstArr(qk, w, X) {
+    const s = sweep(qk, w); let best = Infinity;
+    for (let i = 0; i < s.length; i++) {
+      const [D, T, p] = s[i];
+      if (Math.abs(D - X) <= 0.5) best = Math.min(best, T + p * (X - D) * Math.PI / 180); // dT/dΔ = p
+      if (i && (s[i - 1][0] - X) * (D - X) <= 0 && s[i - 1][0] !== D) { const u = (X - s[i - 1][0]) / (D - s[i - 1][0]); best = Math.min(best, lerp(s[i - 1][1], T, u)); }
+    }
+    return best;
+  }
+  /* Shadow-zone edges on the take-off grid a = k/400 × 90° (S on every other k). The phase changes
+     monotonically with k (PKIKP → PKiKP → PKP → P; S stops at the core until it grazes past), so the
+     phase boundaries come from bisection; the last P and S edges are the largest Δ just past those
+     boundaries, and the PKP minimum (a slightly noisy caustic) from a ternary search widened by ±8
+     samples. About 45 traces instead of 600, same values as the dense sweep. */
+  function shadowEdges(rs) {
+    const vp = vel(rs, 'P'), vs = vel(rs, 'S'), rad = (k) => k / 400 * 90 * Math.PI / 180;
+    const Pm = {}, Sm = {}, P = (k) => Pm[k] || (Pm[k] = trace(rs * Math.sin(rad(k)) / vp, 'P', rs)), S = (j) => Sm[j] || (Sm[j] = trace(rs * Math.sin(rad(2 * j)) / vs, 'S', rs));
+    const first = (lo, hi, ok) => { while (hi - lo > 1) { const m = (lo + hi) >> 1; if (ok(m)) hi = m; else lo = m; } return hi; }; // ok(lo) false, ok(hi) true
+    const kP = first(0, 400, (k) => P(k).ph === 'P');
+    let maxP = 0; for (let k = kP; k <= 400 && P(k).ph === 'P' && P(k).D >= maxP; k++) maxP = P(k).D;
+    const kK = first(0, kP, (k) => P(k).ph === 'PKP' || P(k).ph === 'P');
+    let lo = kK, hi = kP - 1, minK = 180;
+    while (hi - lo > 2) { const m1 = lo + ((hi - lo) / 3 | 0), m2 = hi - ((hi - lo) / 3 | 0); if (P(m1).D <= P(m2).D) hi = m2; else lo = m1; }
+    for (let k = Math.max(kK, lo - 8); k <= Math.min(kP - 1, hi + 8); k++) minK = Math.min(minK, P(k).D);
+    const jS = S(0).stop ? first(0, 200, (j) => !S(j).stop) : 0;
+    let maxS = 0; for (let j = jS; j <= 200 && !S(j).stop && S(j).D >= maxS; j++) maxS = S(j).D;
+    return { maxP, minK, maxS };
   }
   const RC = { cx: 320, cy: 322, R: 268 };
   function rxy(r, th) { const s = RC.R / RE; return [RC.cx + s * r * Math.sin(th), RC.cy - s * r * Math.cos(th)]; }
-  function rayD(path, sgn) { return 'M' + path.map(([r, th]) => { const [x, y] = rxy(r, sgn * th); return fx(x, 1) + ',' + fx(y, 1); }).join('L'); }
+  // fan rays are drawn from ~150 evenly spaced points of the traced path (the dots still move along the full path)
+  function thin(ry) { if (ry.thin) return ry.thin; const P = ry.path, n = P.length, m = 150; return (ry.thin = n <= m ? P : Array.from({ length: m }, (_, j) => P[Math.round(j * (n - 1) / (m - 1))])); }
+  function rayD(path, sgn) { return 'M' + path.map(([r, th]) => { const [x, y] = rxy(r, sgn * th); return fc(x, 1) + ',' + fc(y, 1); }).join('L'); }
   function arcD(r, a0, a1, sgn) { // degrees from the top, clockwise for sgn = 1
     const n = 40, pts = [];
     for (let i = 0; i <= n; i++) { const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; pts.push(RC.cx + sgn * r * Math.sin(a), RC.cy - r * Math.cos(a)); }
-    let d = ''; for (let i = 0; i < pts.length; i += 2) d += (i ? 'L' : 'M') + fx(pts[i], 1) + ',' + fx(pts[i + 1], 1); return d;
+    let d = ''; for (let i = 0; i < pts.length; i += 2) d += (i ? 'L' : 'M') + fc(pts[i], 1) + ',' + fc(pts[i + 1], 1); return d;
   }
   const PHN = { P: 'P: mantle only', PKP: 'PKP: bent through the liquid outer core', PKiKP: 'PKiKP: bounced off the inner core', PKIKP: 'PKIKP: straight through the inner core', S: 'S: mantle only', Sstop: 'S: stopped by the liquid core' };
   const mmss = (s) => `${Math.floor(s / 60)} min ${String(Math.round(s % 60)).padStart(2, '0')} s`;
@@ -310,25 +346,22 @@
     let h = '', lab = ''; // lab: text, drawn last so moving dots pass underneath
     LAY.forEach((l) => { h += `<path d="${annulus(RC.cx, RC.cy, l.r0 * s, l.r1 * s)}" fill="${l.col}" fill-rule="evenodd" opacity="0.32"/>`; });
     h += `<circle cx="${RC.cx}" cy="${RC.cy}" r="${RC.R}" fill="none" stroke="${T.muted}" stroke-width="1.4"/>`;
-    [1221.5, 3480].forEach((r) => { h += `<circle cx="${RC.cx}" cy="${RC.cy}" r="${fx(r * s, 1)}" fill="none" stroke="${T.muted}" stroke-width="1"/>`; });
+    [1221.5, 3480].forEach((r) => { h += `<circle cx="${RC.cx}" cy="${RC.cy}" r="${fc(r * s, 1)}" fill="none" stroke="${T.muted}" stroke-width="1"/>`; });
     const waves = IN.wave === 'both' ? ['S', 'P'] : [IN.wave];
+    waves.forEach((w) => sweep(IN.quake, w)); // precompute here so take-off slider input stays cheap
     // shadow zones
     const sh = (a0, a1, col, r) => [1, -1].map((g) => `<path d="${arcD(r, a0, a1, g)}" fill="none" stroke="${col}" stroke-width="7" stroke-linecap="butt" opacity="0.85"/>`).join('');
     if (waves.includes('S')) h += sh(F.maxS, 180, T.s, RC.R + 10);
     if (waves.includes('P')) h += sh(F.maxP, F.minK, T.p, RC.R + (waves.length > 1 ? 19 : 10));
     // degree ticks
     for (let a = 0; a <= 180; a += 30) {
-      [1, -1].forEach((g) => { if (a === 0 && g < 0) return; if (a === 180 && g < 0) return; const ar = a * Math.PI / 180, x1 = RC.cx + g * RC.R * Math.sin(ar), y1 = RC.cy - RC.R * Math.cos(ar), x2 = RC.cx + g * (RC.R - 9) * Math.sin(ar), y2 = RC.cy - (RC.R - 9) * Math.cos(ar); h += `<line x1="${fx(x1, 1)}" y1="${fx(y1, 1)}" x2="${fx(x2, 1)}" y2="${fx(y2, 1)}" stroke="${T.fg}" stroke-width="1.4"/>`; });
+      [1, -1].forEach((g) => { if (a === 0 && g < 0) return; if (a === 180 && g < 0) return; const ar = a * Math.PI / 180, x1 = RC.cx + g * RC.R * Math.sin(ar), y1 = RC.cy - RC.R * Math.cos(ar), x2 = RC.cx + g * (RC.R - 9) * Math.sin(ar), y2 = RC.cy - (RC.R - 9) * Math.cos(ar); h += `<line x1="${fc(x1, 1)}" y1="${fc(y1, 1)}" x2="${fc(x2, 1)}" y2="${fc(y2, 1)}" stroke="${T.fg}" stroke-width="1.4"/>`; });
       if (a > 0 && a < 180) { const ar = a * Math.PI / 180, lr = RC.R - 26; lab += tx(RC.cx + lr * Math.sin(ar), RC.cy - lr * Math.cos(ar) + 7, a + '°', { fs: 18, anchor: 'middle', fill: T.muted }); }
     }
     // rays
-    if (IN.fan) waves.forEach((w) => F[w].forEach((ry) => { const col = w === 'S' ? T.s : T.p; [1, -1].forEach((g) => { h += `<path d="${rayD(ry.path, g)}" fill="none" stroke="${col}" stroke-width="1.2" opacity="0.55"/>`; }); if (ry.stop) { const [x, y] = rxy(3480, ry.cmb * Math.PI / 180); const [x2, y2] = rxy(3480, -ry.cmb * Math.PI / 180); h += `<circle cx="${fx(x, 1)}" cy="${fx(y, 1)}" r="2.2" fill="${col}"/><circle cx="${fx(x2, 1)}" cy="${fx(y2, 1)}" r="2.2" fill="${col}"/>`; } }));
-    const rs = RE - QUAKES[IN.quake].d, sel = waves.map((w) => trace(rs * Math.sin(IN.tk * Math.PI / 180) / vel(rs, w), w, rs));
-    sel.forEach((ry) => {
-      const col = ry.w === 'S' ? T.s : T.p;
-      h += `<path d="${rayD(ry.path, 1)}" fill="none" stroke="${T.bg}" stroke-width="7" opacity="0.8"/><path d="${rayD(ry.path, 1)}" fill="none" stroke="${col}" stroke-width="3.6"/>`;
-      if (ry.stop) { const [x, y] = rxy(3480, ry.cmb * Math.PI / 180); h += `<path d="M${fx(x - 7, 1)},${fx(y - 7, 1)}L${fx(x + 7, 1)},${fx(y + 7, 1)}M${fx(x + 7, 1)},${fx(y - 7, 1)}L${fx(x - 7, 1)},${fx(y + 7, 1)}" stroke="${col}" stroke-width="3.5"/>`; } else { const [x, y] = rxy(RE, ry.D * Math.PI / 180); h += `<circle cx="${fx(x, 1)}" cy="${fx(y, 1)}" r="7" fill="${col}" stroke="${T.bg}" stroke-width="2.5"/>`; }
-    });
+    if (IN.fan) waves.forEach((w) => F[w].forEach((ry) => { const col = w === 'S' ? T.s : T.p; [1, -1].forEach((g) => { h += `<path d="${rayD(thin(ry), g)}" fill="none" stroke="${col}" stroke-width="1.2" opacity="0.55"/>`; }); if (ry.stop) { const [x, y] = rxy(3480, ry.cmb * Math.PI / 180); const [x2, y2] = rxy(3480, -ry.cmb * Math.PI / 180); h += `<circle cx="${fc(x, 1)}" cy="${fc(y, 1)}" r="2.2" fill="${col}"/><circle cx="${fc(x2, 1)}" cy="${fc(y2, 1)}" r="2.2" fill="${col}"/>`; } }));
+    h = `<g id="eaStat">${h}</g><g id="eaSel"></g>`; // static part: rebuilt only for a new quake, wave set, fan toggle, theme or size
+    const rs = RE - QUAKES[IN.quake].d;
     // quake marker
     const [qx, qy] = rxy(rs, 0);
     h += `<polygon points="${star(qx, qy, 11, 5)}" fill="#ffd23f" stroke="#5a3d00" stroke-width="1.5"/>`;
@@ -340,6 +373,21 @@
     h += `<g id="eaRayDots"></g><g id="eaRayLab">${lab}</g>`;
     svg.innerHTML = h;
     rayDots();
+    drawSel();
+  }
+  // the highlighted ray, its end marker and the readout: all that a take-off angle change redraws
+  function drawSel() {
+    const g = $('#eaSel'); if (!g) return;
+    const F = fan(IN.quake), waves = IN.wave === 'both' ? ['S', 'P'] : [IN.wave];
+    const rs = RE - QUAKES[IN.quake].d, sel = waves.map((w) => trace(rs * Math.sin(IN.tk * Math.PI / 180) / vel(rs, w), w, rs));
+    let h = '';
+    sel.forEach((ry) => {
+      const col = ry.w === 'S' ? T.s : T.p;
+      const d = rayD(ry.path, 1);
+      h += `<path d="${d}" fill="none" stroke="${T.bg}" stroke-width="7" opacity="0.8"/><path d="${d}" fill="none" stroke="${col}" stroke-width="3.6"/>`;
+      if (ry.stop) { const [x, y] = rxy(3480, ry.cmb * Math.PI / 180); h += `<path d="M${fc(x - 7, 1)},${fc(y - 7, 1)}L${fc(x + 7, 1)},${fc(y + 7, 1)}M${fc(x + 7, 1)},${fc(y - 7, 1)}L${fc(x - 7, 1)},${fc(y + 7, 1)}" stroke="${col}" stroke-width="3.5"/>`; } else { const [x, y] = rxy(RE, ry.D * Math.PI / 180); h += `<circle cx="${fc(x, 1)}" cy="${fc(y, 1)}" r="7" fill="${col}" stroke="${T.bg}" stroke-width="2.5"/>`; }
+    });
+    g.innerHTML = h;
     // readout
     const rows = [];
     sel.forEach((ry) => {
@@ -348,10 +396,11 @@
       if (ry.stop) rows.push([nm + ' ends', `hits the core at ${fx(ry.cmb, 1)}° and cannot continue as S`]);
       else rows.push([nm + ' arrives', `${fx(ry.D, 1)}° away (${n0(ry.D * 111.19)} km), after ${mmss(ry.T)}`]);
       rows.push([nm + ' deepest point', n0(RE - ry.rt) + ' km']);
+      if (!ry.stop && RE - ry.rt < 250 && ry.D > 25) { const fa = firstArr(IN.quake, ry.w, ry.D); if (fa < ry.T - 3) rows.push([nm + ' first arrival', `a deeper ray reaches this distance first (~${mmss(fa).replace(/ /g, "\u00a0")})`]); }
     });
     const shadow = [];
-    if (waves.includes('P')) shadow.push(`P: ${fx(F.maxP, 0)}° – ${fx(F.minK, 0)}°`);
-    if (waves.includes('S')) shadow.push(`S: beyond ${fx(F.maxS, 0)}°`);
+    if (waves.includes('P')) shadow.push(`P: ${fx(F.maxP, 0)}° – ${fx(F.minK, 0)}° (commonly quoted 103°–142°)`);
+    if (waves.includes('S')) shadow.push(`S: beyond ${fx(F.maxS, 0)}° (commonly quoted ~104°)`);
     rows.push(['Shadow zones (this model)', shadow.join('; ')]);
     facts($('#eaRayOut'), rows);
     $('#eaTkOut').textContent = fx(IN.tk, 1) + '°';
@@ -379,7 +428,7 @@
     }
     rays.forEach((ry, i) => {
       const q = posAt(ry.path, IN.t);
-      [1, -1].forEach((sg, j) => { const c = g.__c[2 * i + j]; if (!q) { c.setAttribute('visibility', 'hidden'); return; } const [x, y] = rxy(q[0], sg * q[1]); c.setAttribute('cx', fx(x, 1)); c.setAttribute('cy', fx(y, 1)); c.setAttribute('visibility', 'visible'); });
+      [1, -1].forEach((sg, j) => { const c = g.__c[2 * i + j]; if (!q) { c.setAttribute('visibility', 'hidden'); return; } const [x, y] = rxy(q[0], sg * q[1]); c.setAttribute('cx', fc(x, 1)); c.setAttribute('cy', fc(y, 1)); c.setAttribute('visibility', 'visible'); });
     });
     g.__t.textContent = 't = ' + mmss(IN.t);
   }
@@ -399,7 +448,8 @@
     // rays
     seg($('#eaQuake'), Object.entries(QUAKES).map(([k, q]) => [k, `${q.label} · ${q.note}`]), IN.quake, (k) => { IN.quake = k; IN.t = 0; drawRays(); });
     seg($('#eaWave'), [['P', 'P waves'], ['S', 'S waves'], ['both', 'Both']], IN.wave, (k) => { IN.wave = k; drawRays(); });
-    const tk = $('#eaTk'); tk.value = IN.tk; tk.addEventListener('input', () => { IN.tk = +tk.value; drawRays(); });
+    const tk = $('#eaTk'); tk.value = IN.tk; let tkRaf = 0;
+    tk.addEventListener('input', () => { IN.tk = +tk.value; if (!tkRaf) tkRaf = requestAnimationFrame(() => { tkRaf = 0; drawSel(); }); }); // at most one redraw per frame
     const fn = $('#eaFan'); fn.checked = IN.fan; fn.addEventListener('change', () => { IN.fan = fn.checked; drawRays(); });
     const btn = $('#eaPlay');
     const loop = makeLoop('inside', $('#eaRay'), (dt) => { IN.t += dt * 140; if (IN.t > 1500) { IN.t = 0; IN.play = false; loop.play = false; loop.sync(); btn.textContent = 'Play animation'; btn.setAttribute('aria-pressed', 'false'); } rayDots(); });
@@ -435,13 +485,13 @@
     const s0 = ((phase % sp) + sp) % sp, N = Math.floor(tot / sp) + 1;
     for (let j = 0; j < N; j++) {
       const s = s0 + j * sp, q = at(pts, c, Math.min(s, tot)), th = q[4];
-      h += dy('line', { x1: fx(q[0] + side * q[2] * th * 0.18, 1), y1: fx(q[1] + side * q[3] * th * 0.18, 1), x2: fx(q[0] + side * q[2] * th * 0.82, 1), y2: fx(q[1] + side * q[3] * th * 0.82, 1), stroke: tick, 'stroke-width': 2.2, opacity: 0.8, visibility: s < tot ? 'visible' : 'hidden' });
+      h += dy('line', { x1: fc(q[0] + side * q[2] * th * 0.18, 1), y1: fc(q[1] + side * q[3] * th * 0.18, 1), x2: fc(q[0] + side * q[2] * th * 0.82, 1), y2: fc(q[1] + side * q[3] * th * 0.82, 1), stroke: tick, 'stroke-width': 2.2, opacity: 0.8, visibility: s < tot ? 'visible' : 'hidden' });
     }
     return h;
   }
   const rnd = (i) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
-  function quakes(list, t) { return list.map(([x, y], i) => { const o = reduce || !PL.play ? 0.9 : 0.25 + 0.75 * Math.pow(Math.max(0, Math.sin(t * (1.3 + rnd(i) * 1.7) + rnd(i + 9) * 6.3)), 6); return dy('circle', { cx: fx(x, 1), cy: fx(y, 1), r: 4, fill: C.quake, stroke: '#5a4300', 'stroke-width': 1.2, opacity: fx(o, 2) }); }).join(''); }
-  function bubblesUp(x0, y0, x1, y1, t, n, rate) { let h = ''; for (let i = 0; i < n; i++) { const u = ((t * rate + i / n) % 1 + 1) % 1, x = lerp(x0, x1, u) + Math.sin(u * 9 + i) * 5, y = lerp(y0, y1, u); h += dy('circle', { cx: fx(x, 1), cy: fx(y, 1), r: fx(4 + 2 * Math.sin(i), 1), fill: C.magma, opacity: fx(0.9 - 0.5 * u, 2) }); } return h; }
+  function quakes(list, t) { return list.map(([x, y], i) => { const o = reduce || !PL.play ? 0.9 : 0.25 + 0.75 * Math.pow(Math.max(0, Math.sin(t * (1.3 + rnd(i) * 1.7) + rnd(i + 9) * 6.3)), 6); return dy('circle', { cx: fc(x, 1), cy: fc(y, 1), r: 4, fill: C.quake, stroke: '#5a4300', 'stroke-width': 1.2, opacity: fc(o, 2) }); }).join(''); }
+  function bubblesUp(x0, y0, x1, y1, t, n, rate) { let h = ''; for (let i = 0; i < n; i++) { const u = ((t * rate + i / n) % 1 + 1) % 1, x = lerp(x0, x1, u) + Math.sin(u * 9 + i) * 5, y = lerp(y0, y1, u); h += dy('circle', { cx: fc(x, 1), cy: fc(y, 1), r: fc(4 + 2 * Math.sin(i), 1), fill: C.magma, opacity: fc(0.9 - 0.5 * u, 2) }); } return h; }
   const asth = () => `<defs><linearGradient id="eaAst" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d77a4c" stop-opacity="0.45"/><stop offset="1" stop-color="#a8391f" stop-opacity="0.7"/></linearGradient><linearGradient id="eaMg" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${C.magma}" stop-opacity="0.15"/><stop offset="0.6" stop-color="${C.magma}" stop-opacity="0.85"/><stop offset="1" stop-color="${C.magma2}"/></linearGradient></defs><rect x="0" y="100" width="640" height="240" fill="url(#eaAst)"/>`;
   const slab = [[-20, 150, 36], [200, 152, 36], [280, 158, 36], [300, 166, 36], [340, 186, 36], [390, 218, 36], [440, 258, 36], [480, 298, 36], [512, 345, 36]];
   const slabQuakes = (() => { const c = cum(slab), out = []; for (let i = 0; i < 15; i++) { const s = c[3] + (c[c.length - 1] - c[3]) * (i + 0.5) / 15, q = at(slab, c, s), f = 0.25 + 0.5 * rnd(i + 3); out.push([q[0] + q[2] * 36 * f, q[1] + q[3] * 36 * f]); } return out; })();
@@ -472,7 +522,7 @@
       const top = [[306, 168], [330, 140], [350, 106], [366, 90], [384, 80], [410, 58], [432, 38], [445, 25], [458, 36], [480, 52], [510, 70], [560, 80], [640, 82]];
       const bot = [[640, 170], [560, 176], [500, 190], [440, 204], [380, 186], [340, 177], [316, 172]];
       h += `<polygon points="${poly(top.concat(bot))}" fill="${C.cont}" stroke="rgba(0,0,0,.35)"/>`;
-      for (let j = 0, x0 = 400 + ((-t * 3) % 30 + 30) % 30; j < 9; j++) { const x = x0 + j * 30; h += dy('line', { x1: fx(x, 1), y1: 110, x2: fx(x, 1), y2: 150, stroke: C.contTk, 'stroke-width': 2, opacity: 0.7, visibility: x < 640 ? 'visible' : 'hidden' }); }
+      for (let j = 0, x0 = 400 + ((-t * 3) % 30 + 30) % 30; j < 9; j++) { const x = x0 + j * 30; h += dy('line', { x1: fc(x, 1), y1: 110, x2: fc(x, 1), y2: 150, stroke: C.contTk, 'stroke-width': 2, opacity: 0.7, visibility: x < 640 ? 'visible' : 'hidden' }); }
       h += `<ellipse cx="447" cy="160" rx="18" ry="9" fill="${C.magma}"/><line x1="446" y1="152" x2="445" y2="28" stroke="${C.magma}" stroke-width="4"/>`;
       h += bubblesUp(452, 258, 447, 172, t, 5, 0.18);
       h += plume(445, 24, t, 0.6);
@@ -523,16 +573,16 @@
     tf(t) {
       const off = reduce || !PL.play ? 90 : (t * 18) % 200, x0 = 330;
       let h = `<rect x="0" y="0" width="640" height="170" fill="#b59c6c"/><rect x="0" y="170" width="640" height="170" fill="#8f8a5c"/>`;
-      [[34, -1], [108, -1], [236, 1], [306, 1]].forEach(([y, dir]) => { for (let j = 0, xs = ((dir * t * 16) % 40 + 40) % 40 - 40; j < 18; j++) { const x = xs + j * 40; h += dy('line', { x1: fx(x, 1), y1: y, x2: fx(x + 18, 1), y2: y, stroke: 'rgba(30,20,0,.35)', 'stroke-width': 3, 'stroke-linecap': 'round', visibility: x < 660 ? 'visible' : 'hidden' }); } });
-      const a = fx(x0 - off / 2, 1), b = fx(x0 + off / 2, 1);
-      h += dy('path', { d: `M${a},0 C${fx(x0 - off / 2 - 20, 1)},60 ${fx(x0 - off / 2 + 18, 1)},120 ${a},170 L${b},170 C${fx(x0 + off / 2 - 16, 1)},220 ${fx(x0 + off / 2 + 22, 1)},290 ${b},340`, fill: 'none', stroke: '#2f78c4', 'stroke-width': 6, 'stroke-linejoin': 'round' });
+      [[34, -1], [108, -1], [236, 1], [306, 1]].forEach(([y, dir]) => { for (let j = 0, xs = ((dir * t * 16) % 40 + 40) % 40 - 40; j < 18; j++) { const x = xs + j * 40; h += dy('line', { x1: fc(x, 1), y1: y, x2: fc(x + 18, 1), y2: y, stroke: 'rgba(30,20,0,.35)', 'stroke-width': 3, 'stroke-linecap': 'round', visibility: x < 660 ? 'visible' : 'hidden' }); } });
+      const a = fc(x0 - off / 2, 1), b = fc(x0 + off / 2, 1);
+      h += dy('path', { d: `M${a},0 C${fc(x0 - off / 2 - 20, 1)},60 ${fc(x0 - off / 2 + 18, 1)},120 ${a},170 L${b},170 C${fc(x0 + off / 2 - 16, 1)},220 ${fc(x0 + off / 2 + 22, 1)},290 ${b},340`, fill: 'none', stroke: '#2f78c4', 'stroke-width': 6, 'stroke-linejoin': 'round' });
       h += `<path d="M0,171 L120,168 L240,172 L400,169 L520,172 L640,169" fill="none" stroke="#3a1d0a" stroke-width="3.5"/>`;
       h += quakes([[60, 170], [170, 170], [260, 171], [380, 169], [470, 171], [590, 170]], t);
       h += arrow(250, 140, 130, 140, '#1d1408') + arrow(390, 200, 510, 200, '#1d1408');
       h += tx(20, 72, 'North American plate', { fill: '#1d1408', halo: false, weight: 600 });
       h += tx(20, 278, 'Pacific plate', { fill: '#f6f1e1', halo: false, weight: 600 });
       h += tx(632, 158, 'San Andreas Fault', { anchor: 'end', fill: '#1d1408', halo: false, weight: 600 });
-      h += dy('g', { transform: `translate(${fx(off / 2, 1)},0)` }, true) + tx(x0 + 26, 258, PH() ? 'Offset stream' : 'Stream offset by the fault', { fill: '#f6f1e1', halo: false, fs: 19 }) + '</g>';
+      h += dy('g', { transform: `translate(${fc(off / 2, 1)},0)` }, true) + tx(x0 + 26, 258, PH() ? 'Offset stream' : 'Stream offset by the fault', { fill: '#f6f1e1', halo: false, fs: 19 }) + '</g>';
       h += tx(632, 330, 'Map view, from above', { anchor: 'end', fill: '#f6f1e1', halo: false, fs: 18 });
       return h;
     }
@@ -540,7 +590,7 @@
   function plume(x, y, t, k) {
     if (reduce || !PL.play) return `<circle cx="${x}" cy="${y - 14}" r="9" fill="#9aa0a6" opacity="0.7"/>`;
     let h = '';
-    for (let i = 0; i < 6; i++) { const u = ((t * 0.25 + i / 6) % 1), r = 5 + 16 * u * k; h += dy('circle', { cx: fx(x + 12 * u + Math.sin(i * 2) * 4, 1), cy: fx(y - 6 - 60 * u * k, 1), r: fx(r, 1), fill: '#9aa0a6', opacity: fx(0.75 * (1 - u), 2) }); }
+    for (let i = 0; i < 6; i++) { const u = ((t * 0.25 + i / 6) % 1), r = 5 + 16 * u * k; h += dy('circle', { cx: fc(x + 12 * u + Math.sin(i * 2) * 4, 1), cy: fc(y - 6 - 60 * u * k, 1), r: fc(r, 1), fill: '#9aa0a6', opacity: fc(0.75 * (1 - u), 2) }); }
     return h;
   }
   const BND = {
@@ -587,34 +637,43 @@
     const A = anomaly(v), yA = (z) => 82 - z / 0.42 * 46;
     h += `<line x1="20" x2="620" y1="82" y2="82" stroke="${T.line}" stroke-width="1"/>`;
     const lim = MG.ship === null ? KM : MG.ship;
-    const pts = A.filter(([x]) => x <= lim).map(([x, z]) => fx(mx(x), 1) + ',' + fx(yA(clamp(z, -0.6, 0.6)), 1)).join(' ');
+    const pts = A.filter(([x]) => x <= lim).map(([x, z]) => fc(mx(x), 1) + ',' + fc(yA(clamp(z, -0.6, 0.6)), 1)).join(' ');
     if (pts) h += `<polyline points="${pts}" fill="none" stroke="${T.fg}" stroke-width="2.2" stroke-linejoin="round"/>`;
     h += tx(20, 24, 'Ship\'s magnetometer', { fs: 18, fill: T.muted });
     h += tx(620, 24, 'stronger ↑  weaker ↓', { fs: 18, fill: T.muted, anchor: 'end' });
     // sea and ship
     h += `<rect x="20" y="148" width="600" height="38" fill="${C.water}" opacity="0.5"/>`;
     const sx = mx(MG.ship === null ? -KM * 0.82 : MG.ship);
-    h += `<path d="M${fx(sx - 18, 1)},140 L${fx(sx + 18, 1)},140 L${fx(sx + 12, 1)},149 L${fx(sx - 12, 1)},149 Z M${fx(sx - 4, 1)},140 L${fx(sx - 4, 1)},128 L${fx(sx + 6, 1)},128 L${fx(sx + 6, 1)},140 Z" fill="${T.fg}"/>`;
-    h += `<line x1="${fx(sx - 18, 1)}" y1="145" x2="${fx(sx - 40, 1)}" y2="152" stroke="${T.fg}" stroke-width="1.2"/>`;
+    h += `<path d="M${fc(sx - 18, 1)},140 L${fc(sx + 18, 1)},140 L${fc(sx + 12, 1)},149 L${fc(sx - 12, 1)},149 Z M${fc(sx - 4, 1)},140 L${fc(sx - 4, 1)},128 L${fc(sx + 6, 1)},128 L${fc(sx + 6, 1)},140 Z" fill="${T.fg}"/>`;
+    h += `<line x1="${fc(sx - 18, 1)}" y1="145" x2="${fc(sx - 40, 1)}" y2="152" stroke="${T.fg}" stroke-width="1.2"/>`;
     // stripes
     GPTS.forEach(([a, b, m]) => {
-      [1, -1].forEach((g) => { let x1 = g * a * km, x2 = g * b * km; if (x1 > x2) [x1, x2] = [x2, x1]; x1 = clamp(x1, -KM, KM); x2 = clamp(x2, -KM, KM); if (x2 > x1) h += `<rect x="${fx(mx(x1), 2)}" y="186" width="${fx(mx(x2) - mx(x1), 2)}" height="28" fill="${m > 0 ? nCol : rCol}"/>`; });
+      [1, -1].forEach((g) => { let x1 = g * a * km, x2 = g * b * km; if (x1 > x2) [x1, x2] = [x2, x1]; x1 = clamp(x1, -KM, KM); x2 = clamp(x2, -KM, KM); if (x2 > x1) h += `<rect x="${fc(mx(x1), 2)}" y="186" width="${fc(mx(x2) - mx(x1), 2)}" height="28" fill="${m > 0 ? nCol : rCol}"/>`; });
     });
-    if (edge < KM) [1, -1].forEach((g) => { const a = mx(g * edge), b = mx(g * KM); h += `<rect x="${fx(Math.min(a, b), 1)}" y="186" width="${fx(Math.abs(b - a), 1)}" height="28" fill="url(#eaHatch)"/>`; });
+    if (edge < KM) [1, -1].forEach((g) => { const a = mx(g * edge), b = mx(g * KM); h += `<rect x="${fc(Math.min(a, b), 1)}" y="186" width="${fc(Math.abs(b - a), 1)}" height="28" fill="url(#eaHatch)"/>`; });
     h = `<defs><pattern id="eaHatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="${T.surface}"/><line x1="0" y1="0" x2="0" y2="8" stroke="${T.line}" stroke-width="3"/></pattern></defs>` + h;
     h += `<rect x="20" y="186" width="600" height="28" fill="none" stroke="${T.line}"/>`;
     h += `<rect x="20" y="214" width="600" height="18" fill="#b9643c" opacity="0.45"/><path d="M308,232 L320,190 L332,232 Z" fill="${C.magma}"/>`;
     // axes
     [-200, -100, 0, 100, 200].forEach((d) => { h += `<line x1="${mx(d)}" x2="${mx(d)}" y1="232" y2="238" stroke="${T.muted}"/>` + tx(d === -200 ? 20 : d === 200 ? 620 : mx(d), 258, (d > 0 ? '+' : d < 0 ? '−' : '') + Math.abs(d) + (Math.abs(d) === 200 ? ' km' : ''), { fs: 18, anchor: d === -200 ? 'start' : d === 200 ? 'end' : 'middle', fill: T.muted, halo: false }); });
-    // chron labels on the right side, only where they fit
-    CHRONS.forEach(([nm, a, b]) => {
-      const x1 = mx(a * km), x2 = mx(Math.min(b * km, KM));
-      if (x1 >= 620) return;
-      h += `<path d="M${fx(x1 + 1, 1)},272 v6 H${fx(x2 - 1, 1)} v-6" fill="none" stroke="${T.muted}" stroke-width="1.3"/>`;
-      if (x2 - x1 > nm.length * 10.5 * K) h += tx((x1 + x2) / 2, 300, nm, { fs: 18, anchor: 'middle', fill: T.fg, halo: false });
+    // chron brackets on the right side, each with its name. Narrow chrons get their name pushed right along the row
+    // with a thin leader to the bracket; Brunhes and Matuyama always get one, Gauss and Gilbert only when they fit.
+    // A bracket is drawn only when its name is.
+    const yN = 284 + 20 * K; // name row baseline
+    const ch = CHRONS.map(([nm, a, b]) => { const x1 = mx(a * km), x2 = mx(Math.min(b * km, KM)), w = nm.length * 10.5 * K; return { nm, x1, x2, w, m: (x1 + x2) / 2 }; }).filter((c) => c.x1 < 620);
+    let prev = 100; ch.forEach((c) => { c.l = Math.max(c.m - c.w / 2, prev); prev = c.l + c.w + 12 * K; });
+    const over = (n) => ch[n - 1].l + ch[n - 1].w - 620;
+    let n = ch.length;
+    while (n > 2 && over(n) > 0 && ch[0].l - over(n) < 100) n--; // drop Gilbert, then Gauss, if shifting left cannot make room
+    if (over(n) > 0) { const sft = over(n); ch.slice(0, n).forEach((c) => { c.l -= sft; }); }
+    ch.slice(0, n).forEach((c) => {
+      h += `<path d="M${fc(c.x1 + 1, 1)},272 v6 H${fc(Math.max(c.x2 - 1, c.x1 + 2), 1)} v-6" fill="none" stroke="${T.muted}" stroke-width="1.3"/>`;
+      const lc = c.l + c.w / 2;
+      if (Math.abs(lc - c.m) > 4) h += `<line x1="${fc(c.m, 1)}" y1="279" x2="${fc(lc, 1)}" y2="${fc(yN - 16 * K, 1)}" stroke="${T.muted}" stroke-width="1"/>`;
+      h += tx(lc, yN, c.nm, { fs: 18, anchor: 'middle', fill: T.fg, halo: false });
     });
-    h += tx(20, 300, 'Age →', { fs: 18, fill: T.muted, halo: false });
-    const yL = 300 + Math.max(22, 25 * K);
+    h += tx(20, yN, 'Age →', { fs: 18, fill: T.muted, halo: false });
+    const yL = yN + Math.max(22, 25 * K);
     svg.setAttribute('viewBox', '0 0 640 ' + Math.max(330, Math.ceil(yL + 8)));
     h += tx(320, yL, 'Ridge axis at 0. Each side is a mirror image.', { fs: 18, anchor: 'middle', fill: T.muted, halo: false });
     svg.innerHTML = h;
@@ -659,7 +718,7 @@
      VOLCANOES
      ===================================================================== */
   // log10 viscosity (Pa·s) at typical eruption temperature vs silica wt% — rough trend after Giordano et al. (2008)
-  const VIS = [[45, 1], [52, 2.5], [60, 5], [66, 7.5], [72, 10], [77, 11.5]];
+  const VIS = [[45, 1.6], [52, 2.5], [60, 5], [63, 6.6], [68, 8.3], [69, 8.7], [72, 10], [77, 11.5]]; // dacite (63–68%) reads 10^7–10^8; rhyolite (69%+) 10^9 and up
   const logVis = (si) => { for (let i = 1; i < VIS.length; i++) if (si <= VIS[i][0]) return lerp(VIS[i - 1][1], VIS[i][1], (si - VIS[i - 1][0]) / (VIS[i][0] - VIS[i - 1][0])); return VIS[VIS.length - 1][1]; };
   const ROCKS = [
     { max: 52, name: 'Basalt', T: '1,100 – 1,250 °C', gas: 'Low (well under 1–2% water)', style: 'Effusive: lava fountains and long, fast flows', shape: 'Shield volcano: wide, gentle slopes', ex: 'Mauna Loa and Kīlauea (Hawaiʻi), Iceland', esc: 'Bubbles rise and escape easily, so the gas leaves gently.' },
@@ -691,24 +750,24 @@
     // magma column with bubbles
     h += `<rect x="30" y="40" width="130" height="232" rx="10" fill="${mcol}"/><rect x="30" y="40" width="130" height="232" rx="10" fill="none" stroke="${T.line}" stroke-width="2"/>`;
     const gas = lerp(0.35, 1, hot);
-    VO.bub.forEach((b, i) => { if (i / VO.bub.length > gas) return; const grow = 1 + (272 - b.y) / 140 * (lv > 6 ? 1.6 : 0.7); h += dy('circle', { cx: fx(b.x, 1), cy: fx(b.y, 1), r: fx(b.r0 * grow, 1), fill: 'rgba(255,240,220,.55)', stroke: 'rgba(255,255,255,.75)', 'stroke-width': 1 }); });
+    VO.bub.forEach((b, i) => { if (i / VO.bub.length > gas) return; const grow = 1 + (272 - b.y) / 140 * (lv > 6 ? 1.6 : 0.7); h += dy('circle', { cx: fc(b.x, 1), cy: fc(b.y, 1), r: fc(b.r0 * grow, 1), fill: 'rgba(255,240,220,.55)', stroke: 'rgba(255,255,255,.75)', 'stroke-width': 1 }); });
     h += tx(95, 28, 'Gas bubbles', { fs: 18, anchor: 'middle' });
     // ground, chamber, edifice
     const prof = volProfile(si);
-    h += `<rect x="200" y="250" width="440" height="50" fill="#6d5a48"/><ellipse cx="420" cy="283" rx="${fx(lerp(46, 110, hot), 1)}" ry="13" fill="${mcol}"/>`;
+    h += `<rect x="200" y="250" width="440" height="50" fill="#6d5a48"/><ellipse cx="420" cy="283" rx="${fc(lerp(46, 110, hot), 1)}" ry="13" fill="${mcol}"/>`;
     const sumY = Math.min(...prof.filter(([x]) => Math.abs(x - 420) < 20).map((p) => p[1]));
-    h += `<line x1="420" y1="272" x2="420" y2="${fx(sumY + 4, 1)}" stroke="${mcol}" stroke-width="5"/>`;
+    h += `<line x1="420" y1="272" x2="420" y2="${fc(sumY + 4, 1)}" stroke="${mcol}" stroke-width="5"/>`;
     h += `<polygon points="200,250 ${poly(prof)} 640,250" fill="#77685a" stroke="#3b3128" stroke-width="1.5"/>`;
     // eruption: lava flows for runny magma, ash column for sticky magma
     const eff = clamp((58 - si) / 8, 0, 1), exp = clamp((si - 54) / 14, 0, 1), anim = VO.play;
     if (eff > 0.05) {
-      [1, -1].forEach((g) => { const fl = prof.filter(([x]) => g * (x - 420) >= 0 && Math.abs(x - 420) < 40 + 150 * eff); const d = 'M' + (g > 0 ? fl : fl.slice().reverse()).map((p) => fx(p[0], 1) + ',' + fx(p[1] - 2, 1)).join('L'); h += dy('path', { d, fill: 'none', stroke: '#ff7a1a', 'stroke-width': fx(3 + 3 * eff, 1), 'stroke-linecap': 'round', opacity: fx(0.5 + 0.5 * eff, 2), 'stroke-dasharray': '14 8', 'stroke-dashoffset': anim ? fx(-t * 30, 1) : 0 }); });
-      for (let i = 0; i < 5; i++) { const u = anim ? ((t * 1.3 + i / 5) % 1) : i / 5; const hgt = 30 * eff; h += dy('circle', { cx: fx(420 + Math.sin(i * 2.1) * 10 * u, 1), cy: fx(sumY - hgt * Math.sin(Math.PI * u), 1), r: 3.5, fill: '#ffb347' }); }
+      [1, -1].forEach((g) => { const fl = prof.filter(([x]) => g * (x - 420) >= 0 && Math.abs(x - 420) < 40 + 150 * eff); const d = 'M' + (g > 0 ? fl : fl.slice().reverse()).map((p) => fc(p[0], 1) + ',' + fc(p[1] - 2, 1)).join('L'); h += dy('path', { d, fill: 'none', stroke: '#ff7a1a', 'stroke-width': fc(3 + 3 * eff, 1), 'stroke-linecap': 'round', opacity: fc(0.5 + 0.5 * eff, 2), 'stroke-dasharray': '14 8', 'stroke-dashoffset': anim ? fc(-t * 30, 1) : 0 }); });
+      for (let i = 0; i < 5; i++) { const u = anim ? ((t * 1.3 + i / 5) % 1) : i / 5; const hgt = 30 * eff; h += dy('circle', { cx: fc(420 + Math.sin(i * 2.1) * 10 * u, 1), cy: fc(sumY - hgt * Math.sin(Math.PI * u), 1), r: 3.5, fill: '#ffb347' }); }
     }
     if (exp > 0.05) {
       const top = lerp(sumY - 30, 22, exp);
-      for (let i = 0; i < 12; i++) { const u = anim ? ((t * 0.18 + i / 12) % 1) : i / 12; const y = lerp(sumY - 6, top, u), r = lerp(8, 18 + 36 * exp, u) * (0.6 + 0.4 * exp); h += dy('circle', { cx: fx(420 + Math.sin(i * 1.7) * 10 * u + 26 * u * u, 1), cy: fx(y, 1), r: fx(r, 1), fill: '#8f949b', opacity: fx((0.25 + 0.5 * exp) * (1 - 0.5 * u), 2) }); }
-      if (si > 60 && si < 72) { for (let i = 0; i < 6; i++) { const u = anim ? ((t * 0.3 + i / 6) % 1) : i / 6, fl = prof[Math.round(lerp(42, 66, u))]; h += dy('circle', { cx: fx(fl[0], 1), cy: fx(fl[1] - 8, 1), r: fx(8 + 8 * u, 1), fill: '#a3a7ad', opacity: fx(0.6 * (1 - u), 2) }); } }
+      for (let i = 0; i < 12; i++) { const u = anim ? ((t * 0.18 + i / 12) % 1) : i / 12; const y = lerp(sumY - 6, top, u), r = lerp(8, 18 + 36 * exp, u) * (0.6 + 0.4 * exp); h += dy('circle', { cx: fc(420 + Math.sin(i * 1.7) * 10 * u + 26 * u * u, 1), cy: fc(y, 1), r: fc(r, 1), fill: '#8f949b', opacity: fc((0.25 + 0.5 * exp) * (1 - 0.5 * u), 2) }); }
+      if (si > 60 && si < 72) { for (let i = 0; i < 6; i++) { const u = anim ? ((t * 0.3 + i / 6) % 1) : i / 6, fl = prof[Math.round(lerp(42, 66, u))]; h += dy('circle', { cx: fc(fl[0], 1), cy: fc(fl[1] - 8, 1), r: fc(8 + 8 * u, 1), fill: '#a3a7ad', opacity: fc(0.6 * (1 - u), 2) }); } }
     }
     h += tx(630, 290, 'Not to scale', { fs: 18, anchor: 'end', fill: '#fffaf2', hc: '#2a1d14' });
     h += tx(420, 296, 'Magma chamber', { fs: 18, anchor: 'middle', fill: '#fffaf2', hc: '#2a1d14' });
@@ -719,7 +778,7 @@
     $('#eaSiOut').textContent = fx(si, 0) + '% silica';
     $('#eaVolHead').innerHTML = `<p class="h">Magma</p><p class="nm">${rk.name}</p><p>${rk.esc}</p>`;
     const sup = (n) => '10<sup>' + Math.round(n) + '</sup>';
-    facts($('#eaVolFacts'), [['Silica (SiO₂)', fx(si, 0) + '% by weight'], ['Eruption temperature', rk.T], ['Viscosity (rough)', `~${sup(lv)} Pa·s · ${lv < 2.2 ? 'about like honey' : lv < 4 ? 'like peanut butter or stiffer' : 'stiffer than any household goo'}`], ['Dissolved gas', rk.gas], ['Eruption style', rk.style], ['Volcano shape', rk.shape], ['Examples', rk.ex]]);
+    facts($('#eaVolFacts'), [['Silica (SiO₂)', fx(si, 0) + '% by weight'], ['Eruption temperature', rk.T], ['Viscosity (rough)', `${si >= 70 && si <= 75 ? '~10<sup>8</sup>–10<sup>11</sup> Pa·s (lower when wet)' : '~' + sup(lv) + ' Pa·s'} ·${Math.round(lv) <= 1 ? 'about like honey' : Math.round(lv) === 2 ? 'about like peanut butter or ketchup' : lv < 4 ? 'stiffer than peanut butter' : 'stiffer than any household goo'}`], ['Dissolved gas', rk.gas], ['Eruption style', rk.style], ['Volcano shape', rk.shape], ['Examples', rk.ex]]);
     $('#eaVisMark').style.left = clamp(lv / 12 * 100, 0, 100) + '%';
     $('#eaVisMark').setAttribute('aria-label', 'Viscosity about 10 to the ' + Math.round(lv) + ' pascal seconds');
   }
@@ -752,7 +811,7 @@
     press($('#eaVeiBtns'), String(VO.vei));
   }
   /* Hawaiian hotspot track: oldest shield-lava K–Ar ages and distances from Kīlauea (Clague & Dalrymple 1987) */
-  const HAW = [['Kīlauea', 0, 0, 12, 24, 'start'], ['Kohala', 0.43, 100, 12, 6, 'start'], ['W. Maui', 1.32, 221, -12, -6, 'end'], ['E. Molokaʻi', 1.76, 256, 12, 22, 'start'], ['W. Molokaʻi', 1.90, 280, -12, -10, 'end'], ['Koʻolau', 2.6, 339, -12, -8, 'end'], ['Waiʻanae', 3.7, 374, 12, 22, 'start'], ['Kauaʻi', 5.1, 519, -12, -8, 'end']];
+  const HAW = [['Kīlauea', 0, 0, 12, 24, 'start'], ['Kohala', 0.43, 100, 12, 6, 'start'], ['W. Maui', 1.32, 221, -12, -6, 'end'], ['E. Molokaʻi', 1.76, 256, 12, 22, 'start'], ['W. Molokaʻi', 1.90, 280, -12, -10, 'end'], ['Koʻolau', 2.6, 339, -12, -8, 'end', [0, -15, 'middle']], ['Waiʻanae', 3.7, 374, 12, 22, 'start'], ['Kauaʻi', 5.1, 519, -12, -8, 'end']];
   const HS = { v: +(store.get('hspd') || 6), fit: null };
   const hx = (a) => 70 + a / 6 * 550, hy = (d) => 300 - d / 600 * 270;
   function bestFit() { const n = HAW.length, ma = HAW.reduce((s, p) => s + p[1], 0) / n, md = HAW.reduce((s, p) => s + p[2], 0) / n; let sxy = 0, sxx = 0; HAW.forEach((p) => { sxy += (p[1] - ma) * (p[2] - md); sxx += (p[1] - ma) * (p[1] - ma); }); const b = sxy / sxx; return { b, a: md - b * ma }; }
@@ -766,18 +825,19 @@
     h += tx(8, top + 4 + 15 * K, 'Distance from Kīlauea (km)', { fs: 18, fill: T.muted, halo: false });
     // the user's line through the hotspot (origin)
     const aEnd = Math.min(6, 600 / kmMyr);
-    h += `<line x1="${hx(0)}" y1="${hy(0)}" x2="${fx(hx(aEnd), 1)}" y2="${fx(hy(aEnd * kmMyr), 1)}" stroke="${T.accent}" stroke-width="3"/>`;
-    h += `<circle cx="${fx(hx(aEnd), 1)}" cy="${fx(hy(aEnd * kmMyr), 1)}" r="9" fill="${T.accent}" stroke="${T.bg}" stroke-width="2.5"/>`;
-    if (HS.fit) { const { a, b } = HS.fit; h += `<line x1="${hx(0)}" y1="${fx(hy(a), 1)}" x2="${hx(6)}" y2="${fx(hy(a + 6 * b), 1)}" stroke="${T.fg}" stroke-width="2" stroke-dasharray="7 6"/>`; }
-    HAW.forEach(([n, a, d, dx, dy, an]) => { h += `<circle cx="${fx(hx(a), 1)}" cy="${fx(hy(d), 1)}" r="6.5" fill="${T.p}" stroke="${T.bg}" stroke-width="2"/>` + tx(hx(a) + dx, hy(d) + dy, n, { fs: 18, anchor: an }); });
+    h += `<line x1="${hx(0)}" y1="${hy(0)}" x2="${fc(hx(aEnd), 1)}" y2="${fc(hy(aEnd * kmMyr), 1)}" stroke="${T.accent}" stroke-width="3"/>`;
+    h += `<circle cx="${fc(hx(aEnd), 1)}" cy="${fc(hy(aEnd * kmMyr), 1)}" r="9" fill="${T.accent}" stroke="${T.bg}" stroke-width="2.5"/>`;
+    if (HS.fit) { const { a, b } = HS.fit; h += `<line x1="${hx(0)}" y1="${fc(hy(a), 1)}" x2="${hx(6)}" y2="${fc(hy(a + 6 * b), 1)}" stroke="${T.fg}" stroke-width="2" stroke-dasharray="7 6"/>`; }
+    // phones: the bigger text would run Koʻolau into W. Molokaʻi, so Koʻolau goes above its dot (the 7th entry)
+    HAW.forEach(([n, a, d, dx, dy, an, ph]) => { if (ph && PH()) [dx, dy, an] = ph; h += `<circle cx="${fc(hx(a), 1)}" cy="${fc(hy(d), 1)}" r="6.5" fill="${T.p}" stroke="${T.bg}" stroke-width="2"/>` + tx(hx(a) + dx, hy(d) + dy, n, { fs: 18, anchor: an }); });
     svg.innerHTML = h;
     // the Kīlauea label sits in the tick row just right of 0: drop any tick number it would cover (the 1 on phones)
     try { const kl = Array.from(svg.querySelectorAll('text')).find((t) => t.textContent === 'Kīlauea').getBBox();
       svg.querySelectorAll('[data-tick]').forEach((t) => { const b = t.getBBox(); if (t.dataset.tick !== '0' && b.x < kl.x + kl.width + 4) t.remove(); }); } catch (e) { /* not rendered */ }
     const rms = Math.sqrt(HAW.reduce((s, p) => s + Math.pow(p[2] - kmMyr * p[1], 2), 0) / HAW.length);
     $('#eaSpdOut').textContent = fx(HS.v, 1) + ' cm/yr';
-    const rows = [['Your line', `${fx(HS.v, 1)} cm/yr = ${n0(kmMyr)} km per million years`], ['Your line\'s average miss', `${n0(rms)} km`]];
-    if (HS.fit) { const { a, b } = HS.fit, fr = Math.sqrt(HAW.reduce((s, p) => s + Math.pow(p[2] - a - b * p[1], 2), 0) / HAW.length); rows.push(['Best fit (dashed)', `${fx(b / 10, 1)} cm/yr`], ['Dashed line\'s average miss', `${n0(fr)} km`]); }
+    const rows = [['Your line', `${fx(HS.v, 1)} cm/yr = ${n0(kmMyr)} km per million years`], ['Your line\'s typical miss (rms, incl. Kīlauea)', `${n0(rms)} km`]];
+    if (HS.fit) { const { a, b } = HS.fit, fr = Math.sqrt(HAW.reduce((s, p) => s + Math.pow(p[2] - a - b * p[1], 2), 0) / HAW.length); rows.push(['Best fit (dashed)', `${fx(b / 10, 1)} cm/yr`], ['Dashed line\'s typical miss (rms)', `${n0(fr)} km`]); }
     facts($('#eaHotOut'), rows);
   }
 

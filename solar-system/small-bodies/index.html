@@ -17,6 +17,7 @@
   <a class="site-brand" href="../../index.html">Stellar Life</a>
   <div class="site-links">
     <a href="../../stars/index.html">Stars</a>
+    <a href="../../blackholes/index.html">Black holes</a>
     <a href="../../galaxies/index.html">Galaxies &amp; cosmology</a>
     <a href="../earth/index.html">Earth</a>
     <a href="index.html" aria-current="page">Small bodies</a>
@@ -68,8 +69,9 @@
     </div>
 
     <div class="gx-block">
-      <div class="hr-head"><h3>The Kirkwood gaps</h3><p class="sub">Count asteroids by the size of their orbit (semi-major axis) and gaps appear. They sit where an asteroid would go round the Sun a whole number of times while Jupiter goes round a smaller whole number: 3 laps to Jupiter's 1, for example. Pick a distance on the chart, or a resonance below.</p></div>
+      <div class="hr-head"><h3>The Kirkwood gaps</h3><p class="sub">Count asteroids by the size of their orbit (semi-major axis) and gaps appear. They sit where an asteroid would go round the Sun a whole number of times while Jupiter goes round a smaller whole number: 3 laps to Jupiter's 1, for example. The belt's inner edge, near 2.1 AU, is set by the 4:1 resonance together with the ν6 secular resonance, where the slow turning of an asteroid's orbit keeps pace with Saturn's. Pick a distance on the chart, or a resonance below.</p></div>
       <div class="gx-svgbox sb-wide"><svg id="sbHist" viewBox="0 0 900 360" role="img" aria-label="Histogram of asteroid semi-major axes from 2.0 to 3.5 AU. Deep gaps appear at the 4:1, 3:1, 5:2, 7:3 and 2:1 resonances with Jupiter, at 2.06, 2.50, 2.82, 2.96 and 3.28 AU"></svg></div>
+      <p class="note">Bar heights follow a smooth model shaped like the JPL Small-Body Database distribution; gap positions are exact.</p>
       <div class="gx-two sb-two-even">
         <div class="gx-ctrl">
           <label for="sbHistA" class="probe-label">Orbit size (semi-major axis) <output id="sbHistAOut"></output></label>
@@ -85,6 +87,17 @@
         <div class="bh-feat gx-card"><b>Resonances can also protect</b><span>Not every resonance clears space. The Hilda asteroids gather at the 3:2 resonance (3.97 AU), and the Trojans share Jupiter's orbit (1:1), clustered 60° ahead of and behind it at the L4 and L5 points. Both are kept safely away from Jupiter by the same timing. NASA's Lucy probe is on its way to visit Trojans from 2027.</span></div>
       </div>
       <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"You can see the gaps in a picture of the belt."</b> Not in a snapshot. Asteroid orbits are stretched (eccentric), so an asteroid with a 2.5 AU orbit spends time well inside and outside 2.5 AU. Turn on the resonance rings in the top view: no empty lanes. The gaps only show when you sort asteroids by orbit size.</p></div><div><p class="h">Why it matters</p><p>Resonances act as escape hatches. They feed a steady trickle of asteroid pieces into orbits that cross Earth's, which is why we have meteorites from the belt at all, and where most near-Earth asteroids come from.</p></div></div>
+    </div>
+
+    <div class="gx-block">
+      <h3>From the belt to Earth's neighbourhood</h3>
+      <div class="bh-feats sb-feats2">
+        <div class="bh-feat gx-card"><b>Pushed by sunlight: Yarkovsky and YORP</b><span>An asteroid warmed by the Sun gives off the heat a few hours later, from its afternoon side. That faint recoil (the Yarkovsky effect) slowly drags small asteroids inward or outward; Bennu's orbit shrinks by about 280 m a year. A related effect, YORP, changes how they spin. Over millions of years this drift carries fragments into the Kirkwood resonances, the "escape hatches" that send them toward Earth.</span></div>
+        <div class="bh-feat gx-card"><b>NEO and PHA, defined</b><span>A near-Earth object (NEO) is an asteroid or comet whose closest approach to the Sun is under 1.3 AU. It is called potentially hazardous (PHA) if its orbit comes within 0.05 AU of Earth's (about 7.5 million km, 19 times the Moon's distance) and it is bright enough to be roughly 140 m or larger (absolute magnitude H ≤ 22). "Hazardous" means worth watching, not on its way.</span></div>
+        <div class="bh-feat gx-card"><b>Rubin Observatory: millions more</b><span>The Vera C. Rubin Observatory in Chile is starting a 10-year survey of the whole southern sky, the Legacy Survey of Space and Time (LSST). Its first test images, released in June 2025, already held 2,104 new asteroids. Within a few years it should raise the number of known asteroids from about 1 million to roughly 5 million.</span></div>
+        <div class="bh-feat gx-card"><b>Families: pieces of broken asteroids</b><span>In 1918 Kiyotsugu Hirayama noticed that some asteroids share almost the same orbit size, tilt and stretch, once Jupiter's slow tugs are averaged out (their "proper elements"). He named the Koronis, Eos and Themis families: each is the debris of one collision. Hundreds of families are now known; the Vesta family was chipped out of Vesta's Rheasilvia basin.</span></div>
+        <div class="bh-feat gx-card"><b>Rubble piles and comets in the belt</b><span>Most asteroids under about 10 km across (and bigger than a few hundred metres) are not solid rock but loose rubble held together by weak gravity, as the probes found at Itokawa, Ryugu and Bennu. About 15% of near-Earth asteroids have a moon of their own, like Didymos and Dimorphos. And a few main-belt bodies grow comet-like tails: 133P/Elst–Pizarro was seen with one in 1996, and in 2006 it and others were named a new class, the main-belt comets.</span></div>
+      </div>
     </div>
 
     <div class="gx-block">
@@ -133,9 +146,9 @@
         <input id="sbCoT" type="range" min="-1" max="1" step="0.001" value="-0.2">
         <div class="gx-btns"><button type="button" class="btn btn-primary" id="sbCoPlay" aria-pressed="false">Play</button></div>
         <label class="toggle" for="sbCoAreas"><input id="sbCoAreas" type="checkbox"><span class="track" aria-hidden="true"></span>Show equal times (Kepler's second law)</label>
-        <dl class="facts" id="sbCoFacts" aria-live="polite"></dl>
       </div>
     </div>
+    <dl class="facts sb-cofacts" id="sbCoFacts" aria-live="polite"></dl>
     <p class="note">Position from Kepler's equation, E − e sin E = M, solved by Newton's method; speed from the vis-viva equation. Each comet runs through one orbit in the same time here, so Hale–Bopp's 2,400 years pass as quickly as Encke's 3.3. Orbits are drawn flat, ignoring their tilt.</p>
 
     <div class="gx-block">
@@ -163,13 +176,22 @@
     </div>
 
     <div class="gx-block">
+      <div class="hr-head"><h3>Comet families</h3><p class="sub">Comets are sorted by period and by the Tisserand parameter, T<sub>J</sub> = a<sub>J</sub>/a + 2 cos i √((a/a<sub>J</sub>)(1 − e²)), built from the orbit's size a, stretch e and tilt i, with a<sub>J</sub> = 5.2 AU for Jupiter. It stays nearly the same through a close pass by Jupiter, so it tags a comet's family even after Jupiter reshapes its orbit. Most asteroids have T<sub>J</sub> above 3.</p></div>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Jupiter-family: under ~20 years</b><span>T<sub>J</sub> between 2 and 3, low tilts, all going round the same way as the planets. Their orbits are controlled by Jupiter. Most came from the scattered disc beyond Neptune, by way of the Centaurs. Examples: 67P, Tempel 1, Wild 2.</span></div>
+        <div class="bh-feat gx-card"><b>Halley-type: 20 to 200 years</b><span>T<sub>J</sub> below 2, tilted at any angle, some going round backwards (retrograde). They probably came in from the Oort cloud and were trapped on shorter orbits. Examples: Halley (76 years, retrograde), Swift–Tuttle (133 years), Tempel–Tuttle (33 years).</span></div>
+        <div class="bh-feat gx-card"><b>Long-period: over 200 years</b><span>Fresh from the Oort cloud, arriving from every direction. Some are on their first trip in ("dynamically new") and brighten early as their most volatile ices boil off. Example: Hale–Bopp, about 2,400 years.</span></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
       <h3>What visiting comets taught us</h3>
       <div class="bh-feats">
         <div class="bh-feat gx-card"><b>1986 · Giotto at Halley</b><span>ESA's probe flew 596 km from Halley's nucleus on 14 March 1986, taking the first pictures of a comet's core. It showed a dark, peanut-shaped body with jets of gas from a few active spots, not a clean snowball.</span></div>
         <div class="bh-feat gx-card"><b>2005–2006 · Deep Impact and Stardust</b><span>Deep Impact fired a 370 kg copper block into comet Tempel 1, revealing fine powdery material under the crust. Stardust brought dust from comet Wild 2 to Earth, and it held minerals that formed at high temperatures close to the young Sun, then travelled out to the comet region.</span></div>
         <div class="bh-feat gx-card"><b>2014–2016 · Rosetta at 67P</b><span>ESA's Rosetta orbited comet 67P/Churyumov–Gerasimenko for two years, and its lander Philae touched down on 12 November 2014. Its water has about three times the heavy-hydrogen (D/H) ratio of Earth's oceans, so comets like it probably did not supply most of Earth's water. It also found molecular oxygen and the amino acid glycine.</span></div>
       </div>
-      <div class="tr-callout"><div><p class="h">Classic picture</p><p>Fred Whipple's 1950 "dirty snowball": a ball of ice with some dust mixed in.</p></div><div><p class="h">What we know now</p><p>Spacecraft found more dust than ice: an "icy dirtball". 67P's nucleus is very porous, about 70% empty space, with a density close to half that of water ice (about 0.53 g/cm³). It is two lobes stuck together, like many small bodies.</p></div></div>
+      <div class="tr-callout"><div><p class="h">Classic picture</p><p>Fred Whipple's 1950 "dirty snowball": a ball of ice with some dust mixed in.</p></div><div><p class="h">What we know now</p><p>Spacecraft found more dust than ice: an "icy dirtball". 67P's nucleus is very porous, about 70% empty space, with a density about half that of water (about 0.53 g/cm³). It is two lobes stuck together, like many small bodies.</p></div></div>
     </div>
   </section>
 
@@ -182,7 +204,7 @@
 
     <div class="gx-block" style="margin-top:0">
       <div class="hr-head"><h3>How far is far?</h3><p class="sub">Each step along the scale is ten times farther than the last. Drag the marker, use the slider, or jump to a landmark.</p></div>
-      <div class="gx-svgbox sb-wide"><svg id="sbLog" viewBox="0 0 960 300" role="img" aria-label="Logarithmic distance scale from 1 AU to 300,000 AU: Earth, Jupiter, Neptune at 30 AU, the Kuiper belt from 30 to 50 AU, Pluto, Sedna's closest approach at 76 AU, Eris, the heliopause, Voyager 1 at about 173 AU, the Oort cloud from about 2,000 to 100,000 AU, and Proxima Centauri at 268,000 AU. A second axis shows light-travel time."></svg></div>
+      <div class="gx-svgbox sb-wide"><svg id="sbLog" viewBox="0 0 960 300" role="img" aria-label="Logarithmic distance scale from 1 AU to 300,000 AU: Earth, Jupiter, Neptune at 30 AU, the Kuiper belt from 30 to 50 AU, Pluto, Sedna's closest approach at 76 AU, Eris, the heliopause, Voyager 1 at about 173 AU, the Oort cloud from perhaps 1,000–2,000 AU out to 100,000 AU with its denser inner part (the Hills cloud) to about 20,000 AU, and Proxima Centauri at 268,000 AU. A second axis shows light-travel time."></svg></div>
       <div class="gx-two sb-two-even">
         <div class="gx-ctrl">
           <label for="sbLogX" class="probe-label">Distance from the Sun <output id="sbLogXOut"></output></label>
@@ -191,7 +213,7 @@
         </div>
         <dl class="facts" id="sbLogOut" aria-live="polite"></dl>
       </div>
-      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"Voyager 1 has left the Solar System."</b> In August 2012, at about 122 AU, it left the heliosphere, the bubble blown by the solar wind, and entered interstellar space. But the Sun's gravity still rules far beyond: Voyager will take about 300 years to reach the inner edge of the Oort cloud and perhaps 30,000 years to pass through it.</p></div><div><p class="h">A milestone this month</p><p>Around 18 November 2026, Voyager 1 becomes the first spacecraft one light-day from Earth, about 173 AU or 25.9 billion km. A command sent from Earth then takes a full day to arrive, and the reply another day to come back.</p></div></div>
+      <div class="tr-callout"><div><p class="h">Common mistake</p><p><b>"Voyager 1 has left the Solar System."</b> In August 2012, at about 122 AU, it left the heliosphere, the bubble blown by the solar wind, and entered interstellar space. But the Sun's gravity still rules far beyond: Voyager will reach the inner edge of the Oort cloud, perhaps 1,000–2,000 AU, 300–560 years after its 1977 launch, and take perhaps 30,000 years to pass through it.</p></div><div><p class="h">One light-day: 18 November 2026</p><p>On about 18 November 2026, Voyager 1 reaches one light-day from Earth, the first spacecraft ever that far, about 173 AU or 25.9 billion km. A command sent from Earth then takes a full day to arrive, and the reply another day to come back.</p></div></div>
     </div>
 
     <div class="gx-block">
@@ -203,7 +225,7 @@
           <div class="seg" role="group" aria-label="Frame of view" id="sbPNFrame"></div>
           <div class="gx-btns"><button type="button" class="btn btn-primary" id="sbPNPlay" aria-pressed="true">Pause</button></div>
           <dl class="facts" id="sbPNFacts" aria-live="off"></dl>
-          <p class="note">Flat model: Neptune on a circle at 30.07 AU, Pluto on an ellipse with a = 39.5 AU and e = 0.249, with the period ratio set to exactly 3:2 and the timing at the centre of its slow swing (libration). In reality Pluto's orbit is also tilted 17°, which adds to the separation. The small dot marks Pluto's perihelion, just inside Neptune's orbit; it was last there in 1989.</p>
+          <p class="note">Flat model: Neptune on a circle at 30.07 AU, Pluto on an ellipse with a = 39.5 AU and e = 0.249, with the period ratio set to exactly 3:2 and the timing at the centre of its slow swing (libration). In reality Pluto's orbit is also tilted 17°, which adds to the separation. The small dot marks Pluto's perihelion, just inside Neptune's orbit; it was last there in 1989. The resonance angle swings back and forth over about 20,000 years, so the real closest approach is about 17 AU: still far apart.</p>
         </div>
       </div>
       <div class="bh-feats">
@@ -217,13 +239,22 @@
       <div class="hr-head"><h3>The dwarf planets</h3><p class="sub">The five the International Astronomical Union recognises, drawn to scale beside our Moon. Choose one to highlight it in the table.</p></div>
       <div class="gx-svgbox sb-wide"><svg id="sbDwarf" viewBox="0 0 900 290" role="img" aria-label="The Moon, Pluto, Eris, Haumea, Makemake and Ceres drawn to the same scale. Pluto and Eris are each about two thirds of the Moon's width; Haumea is egg-shaped; Ceres is about a quarter of the Moon's width"></svg></div>
       <div class="seg" role="group" aria-label="Dwarf planets" id="sbDwarfSeg"></div>
-      <div class="table-wrap scrolls"><table class="sb-table" id="sbDwarfTable"><thead><tr><th>Name</th><th>Size</th><th>Mass</th><th>Average distance</th><th>One orbit</th><th>Moons</th><th>Visited</th></tr></thead><tbody></tbody></table></div>
+      <div class="table-wrap scrolls"><table class="sb-table" id="sbDwarfTable"><thead><tr><th>Name</th><th>Size (km)</th><th>Mass (kg)</th><th>Avg. distance (AU)</th><th>One orbit (yr)</th><th>Moons</th><th>Visited</th></tr></thead><tbody></tbody></table></div>
       <div class="agn-class" id="sbDwarfOut" aria-live="polite"></div>
       <div class="tr-callout"><div><p class="h">Classic picture</p><p>Nine planets, with Pluto, found by Clyde Tombaugh in 1930, as the ninth. For decades it was thought to be about Earth's size; it turned out to be smaller than our Moon.</p></div><div><p class="h">What we know now</p><p>On 24 August 2006 the IAU defined a planet as a body that (1) orbits the Sun, (2) is massive enough for its gravity to pull it nearly round, and (3) has cleared the neighbourhood around its orbit. Pluto passes the first two but shares its zone with the rest of the Kuiper belt, so it became a dwarf planet. The trigger was Eris, found in 2005: about Pluto's size and 27% more massive.</p></div></div>
       <div class="bh-feats">
-        <div class="bh-feat gx-card"><b>Sedna</b><span>Its closest approach to the Sun is about 76 AU, well beyond Neptune's reach, and it swings out to around 900 AU. Something else must have shaped its orbit: perhaps a star passing near the young Sun. A few similar bodies are now known.</span></div>
+        <div class="bh-feat gx-card"><b>Sedna</b><span>Its closest approach to the Sun is about 76 AU, well beyond Neptune's reach, and it swings out to about 940 AU. Something else must have shaped its orbit: perhaps a star passing near the young Sun. A few similar bodies are now known.</span><span><span class="sb-tag" style="--c:var(--sb-heat)">Debated</span>Some astronomers argue that a few such orbits line up, hinting at an unseen planet several times Earth's mass (Planet Nine; Batygin &amp; Brown 2016); others put the pattern down to survey bias. Rubin's survey should settle it.</span></div>
         <div class="bh-feat gx-card"><b>The Oort cloud is inferred, not seen</b><span>No Oort cloud object has been observed out there; they are too small and faint. In 1950 Jan Oort noticed that long-period comets fall in from all directions and from distances of tens of thousands of AU, and deduced a huge round reservoir of maybe hundreds of billions of comets.</span></div>
         <div class="bh-feat gx-card"><b>Where it ends</b><span>Beyond roughly 100,000 to 200,000 AU, the pull of passing stars and the Milky Way's tides beats the Sun's. Those same nudges send Oort cloud comets falling inward, which is how we ever see them.</span></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>In between, and from beyond</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Centaurs</b><span>Icy bodies on orbits between Jupiter and Neptune, such as Chiron (found in 1977) and Chariklo, the first small body found with rings (2014). Their paths cross the giant planets' orbits, so they last only millions of years: most are Kuiper belt objects on their way to being thrown out, or to becoming Jupiter-family comets.</span></div>
+        <div class="bh-feat gx-card"><b>'Oumuamua and 2I/Borisov</b><span>The first known objects from another star. 'Oumuamua, found by Pan-STARRS in Hawaii on 19 October 2017, was an elongated body with no visible coma. 2I/Borisov, found by amateur astronomer Gennadiy Borisov on 30 August 2019, was plainly a comet. Both moved too fast to be bound to the Sun.</span></div>
+        <div class="bh-feat gx-card"><b>3I/ATLAS, 2025</b><span>The third interstellar visitor, found by the ATLAS survey telescope in Chile on 1 July 2025. An active comet on a strongly hyperbolic path (eccentricity about 6.1), it came in at about 58 km/s relative to the Sun and passed perihelion, 1.36 AU from the Sun, on 29 October 2025.</span></div>
       </div>
     </div>
   </section>
@@ -239,7 +270,7 @@
       <div class="hr-head"><h3>Impact calculator</h3><p class="sub">Choose an impactor, or start from a real event. The calculator follows it down through the air, then estimates the crater, using the method of the Earth Impact Effects Program (Collins, Melosh &amp; Marcus 2005).</p></div>
       <div class="gx-two">
         <div class="gx-svgbox"><svg id="sbImp" viewBox="0 0 600 380" role="img" aria-label="Chart of altitude against the impactor's speed and the energy it loses on the way down, marking where it breaks up and whether it explodes in the air or reaches the ground"></svg>
-          <svg id="sbCrater" viewBox="0 0 600 186" role="img" aria-label="Cross-section of the estimated crater with the impactor drawn to the same scale"></svg>
+          <svg id="sbCrater" viewBox="0 0 600 206" role="img" aria-label="Cross-section of the estimated crater with the impactor drawn to the same scale"></svg>
           <div class="sb-legend"><span><i class="sb-key" style="background:var(--sb-heat)"></i>Energy lost per km of height</span><span><i class="sb-key ln" style="border-color:var(--sb-ion)"></i>Speed</span></div>
         </div>
         <div class="gx-ctrl">
@@ -263,12 +294,21 @@
     </div>
 
     <div class="gx-block">
-      <div class="hr-head"><h3>How often?</h3><p class="sub">Small impacts are common and large ones rare. The line is a fit to flashes of bursting meteoroids seen by satellites (Brown et al. 2002), converted to sizes for stony bodies at 20 km/s; it is dashed where it is extended beyond the data. Points are other estimates. The marker follows the calculator's size.</p></div>
-      <div class="gx-svgbox"><svg id="sbFreq" viewBox="0 0 640 380" role="img" aria-label="Log-log chart of the average time between impacts against impactor diameter: about yearly for 4 m, every 50 to 100 years for 20 m, centuries to a millennium for 50 m, about every 500,000 years for 1 km and about every 100 million years for 10 km"></svg></div>
+      <div class="hr-head"><h3>How often?</h3><p class="sub">Small impacts are common and large ones rare. The solid line is a fit to flashes of bursting meteoroids seen by satellites (Brown et al. 2002), converted to sizes for stony bodies at 20 km/s, drawn up to 50 m. Points are other estimates. The dashed adopted estimate follows Brown's fit to 30 m, then runs through the 50 m, 1 km and 10 km points; the marker sits on this dashed curve at the calculator's size.</p></div>
+      <div class="gx-svgbox"><svg id="sbFreq" viewBox="0 0 640 380" role="img" aria-label="Log-log chart of the average time between impacts against impactor diameter: about yearly for 4 m, every 50 to 100 years for 20 m, about every 500 years (estimates 200 to 1,000) for 50 m, about every 500,000 years for 1 km and about every 100 million years for 10 km"></svg></div>
       <div class="bh-feats">
         <div class="bh-feat gx-card"><b>Chelyabinsk, 15 February 2013</b><span>A stony asteroid about 19 m across hit the air at 19 km/s and burst about 30 km above Chelyabinsk, Russia, with the energy of roughly half a megaton. The shock wave blew in windows across the city, and about 1,500 people were hurt, mostly by flying glass. Nobody saw it coming: it arrived from the direction of the Sun.</span></div>
         <div class="bh-feat gx-card"><b>Tunguska, 30 June 1908</b><span>An explosion a few kilometres above Siberia flattened about 2,000 km² of forest, some 80 million trees. No crater was found. Estimates of its energy range from about 3 to 15 Mt, from a body several tens of metres across.</span></div>
-        <div class="bh-feat gx-card"><b>Chicxulub, 66 million years ago</b><span>A body about 10 km wide hit what is now Mexico's Yucatán Peninsula, leaving a crater about 180 km across now buried under sediment. Dust, soot and sulfur blocked sunlight around the world, and about three quarters of species, including all non-bird dinosaurs, died out.</span></div>
+        <div class="bh-feat gx-card"><b>Chicxulub, 66 million years ago</b><span>A body roughly 10 to 15 km wide (estimates vary; the calculator above needs about 14.5 km at 20 km/s to make a crater about 180 km wide) hit what is now Mexico's Yucatán Peninsula, leaving a crater about 180 km across now buried under sediment. Dust, soot and sulfur blocked sunlight around the world, and about three quarters of species, including all non-bird dinosaurs, died out.</span></div>
+      </div>
+    </div>
+
+    <div class="gx-block">
+      <h3>Close calls and how the risk is rated</h3>
+      <div class="bh-feats">
+        <div class="bh-feat gx-card"><b>Apophis: 13 April 2029</b><span>An asteroid about 340–375 m wide will pass within about 32,000 km of Earth's surface, closer than geostationary satellites, bright enough to see without a telescope from Europe and Africa. A collision is ruled out. ESA's Ramses, approved in November 2025, is due to launch in April 2028 and meet it in February 2029; NASA's OSIRIS-APEX (the former OSIRIS-REx) arrives just after the pass to study what Earth's pull did to it.</span></div>
+        <div class="bh-feat gx-card"><b>2024 YR4: odds that rose, then vanished</b><span>Found on 27 December 2024, about 60 m wide. As more observations came in, its chance of hitting Earth on 22 December 2032 rose to about 3% (3.1% on 18 February 2025), then dropped to almost zero within days as the orbit was refined. Rising odds are normal: the zone of possible positions shrinks with Earth still inside it, until it slides off. Its chance of hitting the Moon reached 4.3%; Webb observations ruled that out too (NASA, 5 March 2026).</span></div>
+        <div class="bh-feat gx-card"><b>The Torino scale, 0 to 10</b><span>Rates a predicted impact by its probability and its energy together, adopted at a meeting in Turin in 1999. 0: no hazard. 1: normal, keep watching. 2–4: deserves astronomers' attention. 5–7: threatening. 8–10: certain collision. The highest ever were Apophis at 4 (December 2004) and 2024 YR4 at 3 (early 2025); both are now 0.</span></div>
       </div>
     </div>
 
@@ -281,12 +321,12 @@
           <input id="sbDartT" type="range" min="0" max="30" step="0.01" value="0">
           <div class="gx-btns"><button type="button" class="btn btn-primary" id="sbDartPlay" aria-pressed="false">Play</button></div>
           <dl class="facts" id="sbDartFacts" aria-live="polite"></dl>
-          <p class="note">Sizes and orbit to scale with each other: Didymos about 760 m wide, Dimorphos about 150 m, orbiting 1.2 km apart. The shrink of the orbit is worked out from the period change with Kepler's third law.</p>
+          <p class="note">Sizes and orbit to scale with each other: Didymos about 760 m wide, Dimorphos about 150 m, orbiting 1.2 km apart. The shrink of the orbit is worked out from the period change with Kepler's third law. Slowed at one point, Dimorphos keeps that point as the far end of a new, slightly oval orbit (e ≈ 0.03, close to the 0.027 measured), so both copies start together where DART hit.</p>
         </div>
       </div>
       <div class="bh-feats">
         <div class="bh-feat gx-card"><b>More push than the spacecraft</b><span>Rock thrown off by the impact recoiled like a rocket exhaust. It gave Dimorphos about 3.6 times the push of the spacecraft alone (Cheng et al. 2023), good news for using this method on a real threat.</span></div>
-        <div class="bh-feat gx-card"><b>Hera, arriving now</b><span>ESA's Hera, launched in October 2024, is due to reach Didymos in November 2026 to measure Dimorphos's mass and the shape of DART's crater, turning one experiment into a calibrated method.</span></div>
+        <div class="bh-feat gx-card"><b>Hera at Didymos</b><span>ESA's Hera, launched on 7 October 2024, arrived at Didymos in November 2026. Over about six months it will measure Dimorphos's mass and the shape of DART's crater, and release two cubesats, Milani and Juventas, turning one experiment into a calibrated method.</span></div>
         <div class="bh-feat gx-card"><b>Find them first</b><span>A nudge only works years ahead of an impact. Surveys have found well over 90% of near-Earth asteroids wider than 1 km, and none is on a collision course. Smaller ones, of a few hundred metres, are still largely undiscovered; NASA's NEO Surveyor telescope is being built to find them.</span></div>
       </div>
     </div>
@@ -321,6 +361,7 @@
           <div class="sb-meter" aria-hidden="true"><i id="sbMeterBar"></i></div>
           <p class="probe-label" id="sbRate" aria-live="polite"></p>
           <p class="note">Orbits are drawn flat and only the inner part of the comet's orbit is shown. The rate curve is a simple bell shape around the peak; real showers often have a sharp core with a broader base.</p>
+          <p class="note" id="sbStreamQ" hidden>The Quadrantids' parent, 2003 EH1, orbits steeply tilted, about 70° to Earth's orbit, with its closest point to the Sun at 1.19 AU. It meets Earth's path where it passes through the plane of Earth's orbit. Flattened onto one plane it would miss, so this view draws its perihelion smaller so that the stream meets Earth's orbit.</p>
         </div>
       </div>
     </div>

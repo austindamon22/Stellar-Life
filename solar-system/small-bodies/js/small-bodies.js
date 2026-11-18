@@ -16,7 +16,7 @@
   const PH = () => phoneMQ.matches;
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
   const DEG = Math.PI / 180, TAU = Math.PI * 2;
-  const fx = (x, d) => Number(x).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: false }); // also used for SVG coordinates: no thousands separators
+  const fx = (x, d) => { const v = Number(x).toFixed(d); return v.charCodeAt(0) === 45 && +v === 0 ? v.slice(1) : v; }; // fast, no thousands separators: used for SVG coordinates and plain numbers
   const n0 = (x) => Math.round(x).toLocaleString('en-US');
   const sigf = (x, n) => Number(Number(x).toPrecision(n)).toLocaleString('en-US', { maximumFractionDigits: 12 });
   const SUP = { '-': '⁻', 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' };
@@ -62,6 +62,14 @@
     ['pointerup', 'pointercancel'].forEach((n) => svg.addEventListener(n, () => { on = false; }));
   }
   const pts = (a) => a.map((p) => fx(p[0], 1) + ',' + fx(p[1], 1)).join(' ');
+  /* two layers per animated SVG: static geometry built only when its key changes (theme, size, settings), moving parts every frame */
+  const themeKey = () => T.fg + T.surface + T.accent;
+  function layered(svg, key, build) {
+    if (!svg.__dy || svg.__dy.parentNode !== svg) { svg.innerHTML = '<g></g><g></g>'; svg.__st = svg.firstChild; svg.__dy = svg.lastChild; svg.__key = null; }
+    key += '|' + themeKey() + '|' + fx(U(svg), 3);
+    if (svg.__key !== key) { svg.__key = key; svg.__st.innerHTML = build(); }
+    return svg.__dy;
+  }
   function playBtn(btn, L, labels) {
     const sync = () => { btn.setAttribute('aria-pressed', String(L.play)); btn.textContent = L.play ? labels[0] : labels[1]; };
     btn.addEventListener('click', () => { L.play = !L.play; sync(); L.sync(); });
@@ -129,6 +137,10 @@
     if (w.__hint) { w.__hint.hidden = !more; w.__hint.style.visibility = w.scrollLeft < max - 2 ? '' : 'hidden'; }
   }
   const wideAll = () => $$('.sb-wide').forEach(wideSync);
+  // the tab strip scrolls sideways on phones: fade whichever edge has tabs cut off
+  const tabNav = $('nav.tabs');
+  const tabSync = () => { const max = tabNav.scrollWidth - tabNav.clientWidth, more = max > 2; tabNav.classList.toggle('fade-l', more && tabNav.scrollLeft > 2); tabNav.classList.toggle('fade-r', more && tabNav.scrollLeft < max - 2); };
+  if (tabNav) { tabNav.addEventListener('scroll', tabSync, { passive: true }); addEventListener('resize', tabSync); requestAnimationFrame(tabSync); }
   document.addEventListener('sb:tab', (e) => {
     const id = e.detail.id;
     if (!drawn[id]) { drawn[id] = true; ({ belt: initBelt, comets: initComets, outer: initOuter, impacts: initImpacts, meteors: initMeteors })[id](); }
@@ -206,24 +218,39 @@
     ctx.globalAlpha = 1;
     if (BV.rings) {
       ctx.setLineDash([4, 4]); ctx.strokeStyle = T.accent; ctx.lineWidth = 1.2;
-      RES.forEach((q, i) => {
-        ctx.beginPath(); ctx.arc(c, c, q.a * s, 0, TAU); ctx.stroke();
-        if (!full) { const an = (22 + i * 15) * DEG; label(q.k, c + q.a * s * Math.cos(an) + 3, c - q.a * s * Math.sin(an) - 3, T.accent, 'left', 12.5); }
-      });
+      RES.forEach((q) => { ctx.beginPath(); ctx.arc(c, c, q.a * s, 0, TAU); ctx.stroke(); }); // all rings first: label() changes the stroke style
       ctx.setLineDash([]);
+      if (!full) RES.forEach((q, i) => { const an = (22 + i * 15) * DEG; label(q.k, c + q.a * s * Math.cos(an) + 3, c - q.a * s * Math.sin(an) - 3, T.accent, 'left', 12.5); });
     }
     // Sun and planets
     ctx.fillStyle = '#ffc94d'; ctx.beginPath(); ctx.arc(c, c, full ? 5 : 6.5, 0, TAU); ctx.fill();
+    const boxes = []; BV.boxes = boxes; // placed label boxes, so neighbours can step aside
+    const hit = (b) => boxes.some((o) => b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0);
     PLANETS.forEach((p) => {
       if (p.a > R) return;
       const l = p.l0 * DEG + TAU * t / Math.pow(p.a, 1.5), x = c + p.a * s * Math.cos(l), y = c - p.a * s * Math.sin(l);
       ctx.fillStyle = p.k === 'Jupiter' ? '#e0b98a' : p.k === 'Mars' ? '#d0643a' : p.k === 'Earth' ? '#4f9be8' : T.fg;
       ctx.beginPath(); ctx.arc(x, y, p.k === 'Jupiter' ? 5.5 : 3.6, 0, TAU); ctx.fill();
       if (full && (p.k === 'Mercury' || p.k === 'Venus')) return;
-      const ux = Math.cos(l), uy = -Math.sin(l);
-      label(p.k, x + ux * 10, y + uy * 10 + 4, T.fg, ux >= 0 ? 'left' : 'right', 13);
+      ctx.font = font(13); const tw = ctx.measureText(p.k).width, ux = Math.cos(l), uy = -Math.sin(l);
+      // try outward first, then the other side, then further out and up/down; keep the first box that is clear
+      const tries = [];
+      [10, 22, 36].forEach((d) => [1, -1].forEach((sg) => [0, -16, 16].forEach((dy) => tries.push([sg * d, dy]))));
+      let best = null;
+      for (const [d, dy] of tries) {
+        const lx = x + ux * d, ly = y + uy * Math.abs(d) * Math.sign(d) + 4 + dy, right = ux * Math.sign(d) >= 0;
+        const b = { x0: right ? lx - 2 : lx - tw - 2, x1: right ? lx + tw + 2 : lx + 2, y0: ly - 12, y1: ly + 4, lx, ly, al: right ? 'left' : 'right' };
+        if (b.x0 < 2 || b.x1 > W - 2 || b.y0 < 2 || b.y1 > W - 2) continue;
+        if (!best) best = b;
+        if (!hit(b)) { best = b; break; }
+      }
+      if (!best) return;
+      boxes.push(best); label(p.k, best.lx, best.ly, T.fg, best.al, 13);
     });
-    if (full) [[60, 'L4'], [-60, 'L5']].forEach(([d, k]) => { const l = lamJ + d * DEG, rr = AJ * s + 22; label(k, c + rr * Math.cos(l), c - rr * Math.sin(l) + 4, T.tro, 'center', 13); });
+    if (full) [[60, 'L4'], [-60, 'L5']].forEach(([d, k]) => { // kept inside the canvas whatever the angle
+      const l = lamJ + d * DEG, rr = AJ * s + 22; ctx.font = font(13); const hw = ctx.measureText(k).width / 2 + 3;
+      label(k, clamp(c + rr * Math.cos(l), hw, W - hw), clamp(c - rr * Math.sin(l) + 4, 15, W - 5), T.tro, 'center', 13);
+    });
     const P = (a) => fx(Math.pow(a, 1.5), 1);
     facts($('#sbBeltFacts'), [['Time passed', (t < 1000 ? fx(t, 1) : n0(t)) + ' years'], ['Jupiter orbits', fx(t / PJ, 2)], ['One lap at 2.2 / 3.2 AU', P(2.2) + ' / ' + P(3.2) + ' years'], ['Jupiter (5.20 AU)', fx(PJ, 2) + ' years']]);
   }
@@ -299,17 +326,20 @@
     { k: 'vesta', n: 'Vesta', m: 2.59e20, col: 'var(--sb-s)', d: '525 km', a: 2.36, type: 'V (basalt)', found: '1807, Heinrich Olbers', visit: 'Dawn, in orbit 2011–2012', txt: 'A melted, layered mini-planet with an iron core and a lava crust. A giant impact near its south pole dug the 500 km Rheasilvia basin; its debris reaches Earth as the HED meteorites.' },
     { k: 'pallas', n: 'Pallas', m: 2.04e20, col: 'var(--sb-m)', d: '512 km', a: 2.77, type: 'B (dark, bluish)', found: '1802, Heinrich Olbers', visit: 'Not yet visited', txt: 'Its orbit is tilted 35° to the planets\', so other asteroids hit it fast. Telescope images (VLT, 2020) show a surface battered with craters like a golf ball.' },
     { k: 'hygiea', n: 'Hygiea', m: 8.7e19, col: 'var(--sb-c)', d: '~434 km', a: 3.14, type: 'C (dark, carbon-rich)', found: '1849, Annibale de Gasparis', visit: 'Not yet visited', txt: 'Images from the VLT in 2019 showed it is nearly round, so it may qualify as a dwarf planet too.' },
-    { k: 'rest', n: 'Everything else', m: 0, col: 'var(--faint)', d: 'mostly under 300 km', a: null, type: 'all types', found: 'over 1 million wider than 1 km', visit: 'about a dozen visited or flown past', txt: 'More than a million bodies wider than 1 km (ESA estimates 1.1 to 1.9 million) and countless smaller ones. Most of this mass is in the few hundred largest.' }
+    { k: 'rest', n: 'Everything else', m: 0, col: 'var(--sb-rest)', d: 'mostly under 300 km', a: null, type: 'all types', found: 'over 1 million wider than 1 km', visit: 'about a dozen visited or flown past', txt: 'More than a million bodies wider than 1 km (ESA estimates 1.1 to 1.9 million) and countless smaller ones. Most of this mass is in the few hundred largest.' }
   ];
   BIG[4].m = MBELT - BIG.slice(0, 4).reduce((s, b) => s + b.m, 0);
+  // shares shown to one decimal; "Everything else" is 100 minus the rounded others so the chips add to exactly 100%
+  BIG.forEach((b, i) => { b.pct = i < 4 ? Math.round(b.m / MBELT * 1000) / 10 : 0; });
+  BIG[4].pct = Math.round((100 - BIG.slice(0, 4).reduce((s, b) => s + b.pct, 0)) * 10) / 10;
   function initMass() {
     const bar = $('#sbMassBar'), sel = store.get('big') || 'ceres';
     bar.innerHTML = BIG.map((b) => `<i data-k="${b.k}" style="width:${fx(b.m / MBELT * 100, 2)}%;background:${b.col}"></i>`).join('');
-    seg($('#sbMassSeg'), BIG.map((b) => [b.k, `<span class="sb-sw" style="background:${b.col}"></span>${b.n} ${fx(b.m / MBELT * 100, 0)}%`]), sel, pick);
+    seg($('#sbMassSeg'), BIG.map((b) => [b.k, `<span class="sb-sw" style="background:${b.col}"></span>${b.n} ${fx(b.pct, 1)}%`]), sel, pick);
     function pick(k) {
       const b = BIG.find((x) => x.k === k) || BIG[0]; store.set('big', b.k); press($('#sbMassSeg'), b.k);
       bar.classList.add('sel'); $$('i', bar).forEach((i) => i.classList.toggle('on', i.dataset.k === b.k));
-      $('#sbMassHead').innerHTML = `<p class="h">${fx(b.m / MBELT * 100, 1)}% of the belt's mass</p><p class="nm">${b.n}</p><p>${b.txt}</p>`;
+      $('#sbMassHead').innerHTML = `<p class="h">${fx(b.pct, 1)}% of the belt's mass</p><p class="nm">${b.n}</p><p>${b.txt}</p>`;
       facts($('#sbMassFacts'), [['Mass', sci(b.m, 2) + ' kg'], ['Size', b.d], ['Orbit', b.a ? fx(b.a, 2) + ' AU, ' + fx(Math.pow(b.a, 1.5), 1) + ' years' : '2.1 – 3.3 AU'], ['Type', b.type], ['Discovered', b.found], ['Spacecraft', b.visit]]);
     }
     pick(sel);
@@ -321,7 +351,7 @@
   const COMETS = {
     halley: { n: 'Halley', full: '1P/Halley', e: 0.96714, q: 0.586, nuc: '15 × 8 km', last: '9 February 1986', next: '28 July 2061', note: 'Seen at every return since at least 240 BCE. Edmond Halley predicted its 1758 return.' },
     encke: { n: 'Encke', full: '2P/Encke', e: 0.8483, q: 0.336, nuc: '~4.8 km', last: '22 October 2023', next: 'early 2027', note: 'The shortest known period of any bright comet. Its dust makes the Taurid meteors.' },
-    c67p: { n: '67P', full: '67P/Churyumov–Gerasimenko', e: 0.6405, q: 1.243, nuc: '4.1 × 3.3 × 1.8 km (big lobe)', last: '2 November 2021', next: 'spring 2028', note: 'A Jupiter-family comet: its orbit was reshaped by Jupiter, last in 1959.' },
+    c67p: { n: '67P', full: '67P/Churyumov–Gerasimenko', e: 0.6499, q: 1.210, nuc: '4.1 × 3.3 × 1.8 km (big lobe)', last: '2 November 2021', next: 'April 2028', note: 'A Jupiter-family comet: its orbit was reshaped by Jupiter, last in 1959.' },
     halebopp: { n: 'Hale–Bopp', full: 'C/1995 O1 (Hale–Bopp)', e: 1 - 0.914 / Math.pow(2400, 2 / 3), q: 0.914, nuc: '~60 km (uncertain)', last: '1 April 1997', next: 'around the year 4400', note: 'Visible to the naked eye for a record 18 months in 1996–97.' }
   };
   /* the time slider u (−1…1) maps to mean anomaly M = π u³: fine steps near perihelion, where a comet changes fastest */
@@ -344,40 +374,44 @@
   function drawOrb() {
     const svg = $('#sbOrb'), f = FS(svg, 13.5, 12), fs = FSs(svg), st = coState(CO.t), g = st.g, F = coFrame();
     const X = (x) => F.sx + x * F.s, Y = (y) => F.sy - y * F.s;
-    let h = `<defs><clipPath id="sbOrbClip"><rect x="2" y="2" width="596" height="436"/></clipPath></defs><g clip-path="url(#sbOrbClip)">`;
-    // planet orbits
-    let lastR = -1e9;
-    [['Earth', 1], ['Jupiter', 5.2], ['Saturn', 9.54], ['Neptune', 30.07]].forEach(([k, a]) => {
-      const R = a * F.s; if (R < 6 || R > 900) return;
-      h += `<circle cx="${fx(F.sx, 1)}" cy="${F.sy}" r="${fx(R, 1)}" fill="none" stroke="${T.muted}" stroke-width="1" stroke-dasharray="3 4" opacity="0.8"/>`;
-      const an = 118 * DEG, lx = F.sx + R * Math.cos(an), ly = F.sy - R * Math.sin(an) - 4;
-      if (R > 22 && R - lastR > 2.4 * f && ly > f + 4 && lx > 30) { h += tx(lx, ly, k, { fs, anchor: 'end', fill: T.muted }); lastR = R; }
-    });
-    // equal-time wedges
-    if (CO.areas) {
-      const K = 12;
-      for (let k = 0; k < K; k++) {
-        const p = [[X(0), Y(0)]];
-        for (let j = 0; j <= 24; j++) { const E = keplerE(TAU * (k + j / 24) / K, g.e); p.push([X(g.a * (Math.cos(E) - g.e)), Y(g.b * Math.sin(E))]); }
-        h += `<polygon points="${pts(p)}" fill="${T.accent}" opacity="${k % 2 ? 0.1 : 0.26}"/>`;
+    const px = X(g.q), py = F.sy, ax = X(-g.Q);
+    // when the Sun and perihelion sit within ~40 screen px (e.g. Halley, whole orbit, phone), drop the Jupiter/Saturn labels so they don't crowd "perihelion"
+    const crowd = (px - F.sx) * (svg.getBoundingClientRect().width || 600) / 600 < 40;
+    const dy = layered(svg, ['orb', CO.e, CO.q, CO.view, CO.areas, crowd].join(), () => {
+      let h = `<defs><clipPath id="sbOrbClip"><rect x="2" y="2" width="596" height="436"/></clipPath></defs><g clip-path="url(#sbOrbClip)">`;
+      // planet orbits
+      let lastR = -1e9;
+      [['Earth', 1], ['Jupiter', 5.2], ['Saturn', 9.54], ['Neptune', 30.07]].forEach(([k, a]) => {
+        const R = a * F.s; if (R < 6 || R > 900) return;
+        h += `<circle cx="${fx(F.sx, 1)}" cy="${F.sy}" r="${fx(R, 1)}" fill="none" stroke="${T.muted}" stroke-width="1" stroke-dasharray="3 4" opacity="0.8"/>`;
+        if (!(R > 22 && R - lastR > 2.4 * f) || (crowd && (k === 'Jupiter' || k === 'Saturn'))) return;
+        // label at 118°, or the first fallback angle where it stays inside the box (big orbits run off the top)
+        for (const d of [118, 140, 160, 180, 200, 220]) {
+          const an = d * DEG, lx = F.sx + R * Math.cos(an), ly = F.sy - R * Math.sin(an) - 4, wd = k.length * 0.56 * fs;
+          if (ly > f + 4 && ly < 410 && lx - wd > 8 && lx < 592) { h += tx(lx, ly, k, { fs, anchor: 'end', fill: T.muted }); lastR = R; break; }
+        }
+      });
+      // equal-time wedges
+      if (CO.areas) {
+        const K = 12;
+        for (let k = 0; k < K; k++) {
+          const p = [[X(0), Y(0)]];
+          for (let j = 0; j <= 24; j++) { const E = keplerE(TAU * (k + j / 24) / K, g.e); p.push([X(g.a * (Math.cos(E) - g.e)), Y(g.b * Math.sin(E))]); }
+          h += `<polygon points="${pts(p)}" fill="${T.accent}" opacity="${k % 2 ? 0.1 : 0.26}"/>`;
+        }
       }
-    }
-    // comet orbit
-    const op = []; for (let j = 0; j <= 360; j++) { const E = j * DEG; op.push([X(g.a * (Math.cos(E) - g.e)), Y(g.b * Math.sin(E))]); }
-    h += `<polyline points="${pts(op)}" fill="none" stroke="${T.fg}" stroke-width="1.6" opacity="0.75"/>`;
-    // perihelion and aphelion labels
-    const px = X(g.q), py = F.sy;
-    h += `<circle cx="${fx(px, 1)}" cy="${py}" r="2.5" fill="${T.fg}"/>`;
-    const near = px > 470;
-    h += tx(near ? px - 6 : px + 7, py + f + 10, 'perihelion', { fs, anchor: near ? 'end' : 'start', fill: T.muted });
-    const ax = X(-g.Q);
-    if (ax > 20 && g.e > 0.05) h += `<circle cx="${fx(ax, 1)}" cy="${py}" r="2.5" fill="${T.fg}"/>` + tx(ax + 6, py + f + 10, 'aphelion', { fs, fill: T.muted });
-    // Sun
-    h += `<circle cx="${fx(F.sx, 1)}" cy="${F.sy}" r="7" fill="#ffc94d"/>` + tx(F.sx, F.sy - 13, 'Sun', { fs, anchor: 'middle' });
+      // comet orbit
+      const op = []; for (let j = 0; j <= 360; j++) { const E = j * DEG; op.push([X(g.a * (Math.cos(E) - g.e)), Y(g.b * Math.sin(E))]); }
+      h += `<polyline points="${pts(op)}" fill="none" stroke="${T.fg}" stroke-width="1.6" opacity="0.75"/>`;
+      h += `<circle cx="${fx(px, 1)}" cy="${py}" r="2.5" fill="${T.fg}"/>`;
+      if (ax > 20 && g.e > 0.05) h += `<circle cx="${fx(ax, 1)}" cy="${py}" r="2.5" fill="${T.fg}"/>` + tx(ax + 6, py + f + 10, 'aphelion', { fs, fill: T.muted });
+      return h + `<circle cx="${fx(F.sx, 1)}" cy="${F.sy}" r="7" fill="#ffc94d"/></g>`;
+    });
+    let h = `<g clip-path="url(#sbOrbClip)">`;
     // comet with tails (lengths exaggerated)
     const cx = X(st.x), cy = Y(st.y), A = activity(st.r);
     if (A > 0) {
-      const Lt = clamp(24 * A, 10, 150), ux = st.x / st.r, uy = -st.y / st.r, vx = st.vx, vy = -st.vy; // screen units
+      const Lt = clamp(24 * A, CO.view === 'whole' ? 30 : 14, 150), ux = st.x / st.r, uy = -st.y / st.r, vx = st.vx, vy = -st.vy; // screen units
       const dot = vx * ux + vy * uy; let wx = -(vx - dot * ux), wy = -(vy - dot * uy); const wl = Math.hypot(wx, wy) || 1; wx /= wl; wy /= wl;
       h += `<defs><linearGradient id="sbIonG" gradientUnits="userSpaceOnUse" x1="${fx(cx, 1)}" y1="${fx(cy, 1)}" x2="${fx(cx + ux * Lt * 1.15, 1)}" y2="${fx(cy + uy * Lt * 1.15, 1)}"><stop offset="0" stop-color="${T.ion}"/><stop offset="1" stop-color="${T.ion}" stop-opacity="0"/></linearGradient>`;
       const ex = cx + Lt * (0.82 * ux + 0.5 * wx), ey = cy + Lt * (0.82 * uy + 0.5 * wy);
@@ -387,8 +421,13 @@
       h += `<circle cx="${fx(cx, 1)}" cy="${fx(cy, 1)}" r="${fx(3 + Math.min(8, 2 * A), 1)}" fill="${T.dust}" opacity="0.35"/>`;
     }
     h += `<circle cx="${fx(cx, 1)}" cy="${fx(cy, 1)}" r="3.6" fill="${T.fg}" stroke="${T.surface}" stroke-width="1.5"/></g>`;
-    h += tx(10, 430, CO.view === 'inner' ? 'Inner Solar System, to scale' : 'Whole orbit, to scale', { fs, fill: T.muted });
-    svg.innerHTML = h;
+    // perihelion and Sun labels go on the side away from the comet (its tail points away from the Sun); the perihelion label hides when the comet is on it
+    const below = cy < F.sy - 2, near = px > 470, sgn = below ? 1 : -1;
+    const ySun = below ? F.sy + 12 + f * 0.75 : F.sy - 12, yPeri = ySun + sgn * (f + 3); // stacked: "Sun" nearest, "perihelion" one line further out
+    h += tx(F.sx, ySun, 'Sun', { fs, anchor: 'middle' });
+    if (Math.hypot(cx - px, cy - py) > 34) h += tx(near ? px + 4 : px - 4, yPeri, 'perihelion', { fs, anchor: near ? 'end' : 'start', fill: T.muted });
+    h += tx(10, 430, (CO.view === 'inner' ? 'Inner Solar System, to scale' : 'Whole orbit, to scale') + (A > 0 ? ' · tail exaggerated' : ''), { fs, fill: T.muted });
+    dy.innerHTML = h;
     coOut(st); drawHead(st);
   }
   function coOut(st) {
@@ -468,7 +507,7 @@
     ['Sedna, farthest', 940, 1, 'middle'], ['Proxima Centauri', 268000, 0, 'end']
   ];
   const LANDMARKS = [['Neptune', 30.07], ['Edge of the Kuiper belt', 50], ['Voyager 1', 173], ['Oort cloud, inner edge', 2000], ['Oort cloud, outer edge', 100000], ['Proxima Centauri', 268000]];
-  const OL = { l: Math.log10(30.07) };
+  const OL = { l: Math.log10(39.48) };
   function drawLog() {
     const svg = $('#sbLog'), f = FS(svg, 14, 12), fs = FSs(svg), ax = 172;
     const lane = (i) => 26 + i * (f + 12);
@@ -476,8 +515,13 @@
     // bands
     const band = (a0, a1, col, op, name, y) => { const x0 = LX(Math.log10(a0)), x1 = LX(Math.log10(a1)); h += `<rect x="${fx(x0, 1)}" y="${ax - 11}" width="${fx(x1 - x0, 1)}" height="22" rx="4" fill="${col}" opacity="${op}"/>`; if (name) h += tx((x0 + x1) / 2, y, name, { fs, anchor: 'middle', fill: T.fg, weight: 600 }); };
     band(30, 50, T.ast, 0.7, 'Kuiper belt', ax + 22 + 2 * f);
+    // the inner edge is uncertain (perhaps 1,000–2,000 AU): fade the band in across that range
+    const xo0 = LX(3), xo1 = LX(Math.log10(2000));
+    h += `<defs><linearGradient id="sbOortIn" x1="0" x2="1"><stop offset="0" stop-color="${T.ion}" stop-opacity="0"/><stop offset="1" stop-color="${T.ion}" stop-opacity="0.35"/></linearGradient></defs><rect x="${fx(xo0, 1)}" y="${ax - 11}" width="${fx(xo1 - xo0, 1)}" height="22" fill="url(#sbOortIn)"/>`;
     band(2000, 100000, T.ion, 0.35, 'Oort cloud (inferred)', ax + 22 + 2 * f);
     band(2000, 20000, T.ion, 0.25, '', 0);
+    const xh = LX(Math.log10(2000)) + 4; // the darker inner part
+    h += tx(xh, ax - 17 - fs * 1.3, 'inner Oort cloud', { fs, fill: T.fg }) + tx(xh, ax - 17, '(Hills cloud), inferred', { fs, fill: T.fg });
     h += `<line x1="${LX(0)}" y1="${ax}" x2="${LX(5.5)}" y2="${ax}" stroke="${T.muted}" stroke-width="1.4"/>`;
     for (let d = 0; d <= 5; d++) { const X = LX(d); h += `<line x1="${X}" y1="${ax - 6}" x2="${X}" y2="${ax + 6}" stroke="${T.muted}"/>` + tx(X, ax + 12 + f, d === 0 ? '1 AU' : n0(Math.pow(10, d)), { fs, anchor: d === 0 ? 'start' : 'middle', fill: T.muted }); for (let m = 2; m < 10 && d < 5.5; m++) { const xm = LX(d + Math.log10(m)); if (xm < LX(5.5)) h += `<line x1="${fx(xm, 1)}" y1="${ax - 3}" x2="${fx(xm, 1)}" y2="${ax + 3}" stroke="${T.muted}" opacity="0.6"/>`; } }
     // light-time axis
@@ -492,19 +536,20 @@
       h += tx(anc === 'end' ? X + 3 : anc === 'start' ? X - 3 : X, y, k, { fs, anchor: anc, fill: T.fg });
     });
     const X = LX(OL.l);
-    h += `<line x1="${fx(X, 1)}" y1="${ax - 24}" x2="${fx(X, 1)}" y2="${ax + 24}" stroke="${T.accent}" stroke-width="2.2"/><circle cx="${fx(X, 1)}" cy="${ax}" r="8" fill="${T.accent}" stroke="${T.surface}" stroke-width="2"/>`;
+    h += `<line x1="${fx(X, 1)}" y1="${ax - 24}" x2="${fx(X, 1)}" y2="${ax + 24}" stroke="${T.accent}" stroke-width="2.2"/><circle cx="${fx(X, 1)}" cy="${ax}" r="${innerWidth < 600 ? 6 : 8}" fill="${T.accent}" stroke="${T.surface}" stroke-width="2"/>`;
     svg.innerHTML = h;
   }
   function logOut() {
     const a = Math.pow(10, OL.l), lt = a * 499.0048; // seconds
     const ltS = lt < 3600 ? fx(lt / 60, 1) + ' minutes' : lt < 86400 * 2 ? fx(lt / 3600, 1) + ' hours' : lt < 86400 * 365.25 ? fx(lt / 86400, 1) + ' days' : fx(lt / 86400 / 365.25, 2) + ' years';
     $('#sbLogXOut').textContent = (a < 100 ? fx(a, 1) : n0(a)) + ' AU';
-    facts($('#sbLogOut'), [['Distance', (a < 100 ? fx(a, 1) : sigf(a, 3)) + ' AU'], ['In kilometres', sci(a * 1.495979e8, 2) + ' km'], ['Light takes', ltS], ['Voyager 1 (3.6 AU a year) takes', yrs(a / 3.57)], ['Sunlight compared with Earth', a < 1.01 ? 'the same' : '1 / ' + sigf(a * a, 3)]]);
+    facts($('#sbLogOut'), [['Distance', (a < 100 ? fx(a, 1) : sigf(a, 3)) + ' AU'], ['In kilometres', sci(a * 1.495979e8, 2) + ' km'], ['Light from the Sun takes', ltS], ['Voyager 1 (3.6 AU a year) takes', yrs(a / 3.57)], ['Sunlight compared with Earth', a < 1.01 ? 'the same' : '1 / ' + sigf(a * a, 3)]].concat(a >= 1000 && a <= 100000 ? [['Region', a < 2000 ? 'possible inner edge of the Oort cloud (1,000–2,000 AU, uncertain)' : a < 20000 ? 'inner Oort cloud (Hills cloud), inferred' : 'outer Oort cloud, inferred']] : []));
     const lm = LANDMARKS.find(([, d]) => Math.abs(Math.log10(d) - OL.l) < 0.003);
     press($('#sbLogMarks'), lm ? lm[0] : '');
   }
   /* Pluto and Neptune, flat model, exact 3:2 */
-  const PN = { frame: 'fixed', t: 0, aN: 30.07, aP: 39.48, eP: 0.2488, PN: 164.79, w: -35 * DEG, path: null, minSep: 0 };
+  const PN = { frame: 'fixed', t: 37, // years since Pluto's 1989 perihelion: 2026
+  aN: 30.07, aP: 39.48, eP: 0.2488, PN: 164.79, w: -35 * DEG, path: null, minSep: 0 };
   PN.PP = 1.5 * PN.PN;
   function pnPos(t) {
     const lN = PN.w + 90 * DEG + TAU * t / PN.PN; // Neptune 90° from Pluto's perihelion when Pluto is there
@@ -521,21 +566,30 @@
     const svg = $('#sbPN'), f = FS(svg, 13.5, 12), fs = FSs(svg), c = 250, s = 228 / (PN.aP * (1 + PN.eP)), st = pnPos(PN.t);
     const rotF = PN.frame === 'rot';
     const rot = rotF ? -st.lN + 90 * DEG : 0, R = (x, y) => [c + s * (x * Math.cos(rot) - y * Math.sin(rot)), c - s * (x * Math.sin(rot) + y * Math.cos(rot))];
-    let h = `<circle cx="${c}" cy="${c}" r="${fx(PN.aN * s, 1)}" fill="none" stroke="${T.nep}" stroke-width="1.6"${rotF ? ' stroke-dasharray="4 5" opacity="0.6"' : ''}/>`;
-    if (rotF) h += `<polyline points="${pts(PN.path.map(([x, y]) => [c + s * x, c - s * y]))}" fill="none" stroke="${T.plu}" stroke-width="1.6" opacity="0.85"/>`;
-    else { const op = []; for (let j = 0; j <= 240; j++) { const E = j / 240 * TAU, x = PN.aP * (Math.cos(E) - PN.eP), y = PN.aP * Math.sqrt(1 - PN.eP * PN.eP) * Math.sin(E); op.push(R(x * Math.cos(PN.w) - y * Math.sin(PN.w), x * Math.sin(PN.w) + y * Math.cos(PN.w))); } h += `<polyline points="${pts(op)}" fill="none" stroke="${T.plu}" stroke-width="1.6"/>`; }
-    // perihelion inside Neptune's orbit
-    const pq = PN.aP * (1 - PN.eP);
-    if (!rotF) { const [qx, qy] = R(pq * Math.cos(PN.w), pq * Math.sin(PN.w)); h += `<circle cx="${fx(qx, 1)}" cy="${fx(qy, 1)}" r="3.5" fill="${T.plu}" stroke="${T.surface}" stroke-width="1.5"/>`; }
-    h += `<circle cx="${c}" cy="${c}" r="6" fill="#ffc94d"/>`;
+    // static: Neptune's orbit, Pluto's orbit (or its path in the turning frame), the Sun, the caption
+    const dy = layered(svg, 'pn' + PN.frame, () => {
+      let h = `<circle cx="${c}" cy="${c}" r="${fx(PN.aN * s, 1)}" fill="none" stroke="${T.nep}" stroke-width="1.6"${rotF ? ' stroke-dasharray="4 5" opacity="0.6"' : ''}/>`;
+      if (rotF) h += `<polyline points="${pts(PN.path.map(([x, y]) => [c + s * x, c - s * y]))}" fill="none" stroke="${T.plu}" stroke-width="1.6" opacity="0.85"/>`;
+      else { const op = []; for (let j = 0; j <= 240; j++) { const E = j / 240 * TAU, x = PN.aP * (Math.cos(E) - PN.eP), y = PN.aP * Math.sqrt(1 - PN.eP * PN.eP) * Math.sin(E); op.push(R(x * Math.cos(PN.w) - y * Math.sin(PN.w), x * Math.sin(PN.w) + y * Math.cos(PN.w))); } h += `<polyline points="${pts(op)}" fill="none" stroke="${T.plu}" stroke-width="1.6"/>`; }
+      // perihelion inside Neptune's orbit
+      const pq = PN.aP * (1 - PN.eP);
+      if (!rotF) { const [qx, qy] = R(pq * Math.cos(PN.w), pq * Math.sin(PN.w)); h += `<circle cx="${fx(qx, 1)}" cy="${fx(qy, 1)}" r="3.5" fill="${T.plu}" stroke="${T.surface}" stroke-width="1.5"/>`; }
+      if (!rotF) { // where Pluto is today (37 years after its 1989 perihelion), labelled on the inside of its orbit
+        const td = pnPos(37), [tx0, ty0] = R(td.px, td.py), dx = tx0 - c, dy0 = ty0 - c, d = Math.hypot(dx, dy0), ox = dx / d, oy = dy0 / d;
+        h += `<circle cx="${fx(tx0, 1)}" cy="${fx(ty0, 1)}" r="9" fill="none" stroke="${T.plu}" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+        h += tx(tx0 - ox * 14, ty0 - oy * 14 + 4 + fs, 'today, in this model', { fs, anchor: ox > 0.3 ? 'end' : ox < -0.3 ? 'start' : 'middle', fill: T.plu });
+      }
+      h += `<circle cx="${c}" cy="${c}" r="6" fill="#ffc94d"/>`;
+      return h + tx(10, 492, rotF ? 'Turning with Neptune: Pluto\'s path never comes near it' : 'Seen from above, to scale', { fs, fill: T.muted });
+    });
+    let h = '';
     const [nx, ny] = R(st.nx, st.ny), [px, py] = R(st.px, st.py);
     h += `<line x1="${fx(nx, 1)}" y1="${fx(ny, 1)}" x2="${fx(px, 1)}" y2="${fx(py, 1)}" stroke="${T.faint}" stroke-dasharray="2 4"/>`;
     h += `<circle cx="${fx(nx, 1)}" cy="${fx(ny, 1)}" r="8" fill="${T.nep}" stroke="${T.surface}" stroke-width="2"/><circle cx="${fx(px, 1)}" cy="${fx(py, 1)}" r="6" fill="${T.plu}" stroke="${T.surface}" stroke-width="2"/>`;
     const lab = (x, y, s2, col) => { const dx = x - c, dy = y - c, d = Math.hypot(dx, dy) || 1, ox = dx / d, oy = dy / d; return tx(x + ox * 14, y + oy * 14 + 4 + (oy > 0.5 ? f * 0.5 : 0), s2, { fs: f, anchor: ox > 0.3 ? 'start' : ox < -0.3 ? 'end' : 'middle', fill: col, weight: 600 }); };
     h += lab(nx, ny, 'Neptune', T.nep) + lab(px, py, 'Pluto', T.plu);
-    h += tx(10, 492, rotF ? 'Turning with Neptune: Pluto\'s path never comes near it' : 'Seen from above, to scale', { fs, fill: T.muted });
-    svg.innerHTML = h;
-    facts($('#sbPNFacts'), [['Years since Pluto\'s perihelion', n0(PN.t % (2 * PN.PP))], ['Neptune laps / Pluto laps', fx(PN.t / PN.PN, 2) + ' / ' + fx(PN.t / PN.PP, 2)], ['Pluto from the Sun', fx(st.r, 1) + ' AU' + (st.r < PN.aN ? ' (inside Neptune\'s orbit)' : '')], ['Pluto to Neptune now', fx(Math.hypot(st.px - st.nx, st.py - st.ny), 1) + ' AU'], ['Closest they ever get (this model)', fx(PN.minSep, 1) + ' AU']]);
+    dy.innerHTML = h;
+    facts($('#sbPNFacts'), [['Years since Pluto\'s perihelion (1989)', n0(PN.t % PN.PP) + (Math.abs(PN.t - 37) < 0.5 ? ' (today, in this model)' : '')], ['Neptune laps / Pluto laps', fx(PN.t / PN.PN, 2) + ' / ' + fx(PN.t / PN.PP, 2)], ['Pluto from the Sun', fx(st.r, 1) + ' AU' + (st.r < PN.aN ? ' (inside Neptune\'s orbit)' : '')], ['Pluto to Neptune now', fx(Math.hypot(st.px - st.nx, st.py - st.ny), 1) + ' AU'], ['Closest they ever get (this model)', fx(PN.minSep, 1) + ' AU']]);
   }
   const DWARFS = [
     { k: 'moon', n: 'Moon (for scale)', d: 3474, col: '#9a9a9a', row: null },
@@ -575,7 +629,7 @@
     const L = makeLoop('outer', $('#sbPN'), (dt) => { PN.t += dt * 25; drawPN(); });
     playBtn($('#sbPNPlay'), L, ['Pause', 'Play']);
     drawPN();
-    $('#sbDwarfTable tbody').innerHTML = DWARFS.slice(1).map((b) => `<tr data-k="${b.k}"><td>${b.n}</td><td>${b.size}</td><td>${b.m}</td><td>${fx(b.a, b.a < 10 ? 2 : 1)} AU</td><td>${b.P < 10 ? fx(b.P, 1) : n0(b.P)} yr</td><td>${b.moons}</td><td>${b.visit}</td></tr>`).join('');
+    $('#sbDwarfTable tbody').innerHTML = DWARFS.slice(1).map((b) => `<tr data-k="${b.k}"><td>${b.n}</td><td>${b.size.replace(/ km$/, '')}</td><td>${b.m.replace(/ kg$/, '')}</td><td>${fx(b.a, b.a < 10 ? 2 : 1)}</td><td>${b.P < 10 ? fx(b.P, 1) : n0(b.P)}</td><td>${b.moons}</td><td>${b.visit}</td></tr>`).join('');
     seg($('#sbDwarfSeg'), DWARFS.slice(1).map((b) => [b.k, b.n]), DW.sel, dwarfPick);
     $('#sbDwarf').addEventListener('click', (e) => { const g = e.target.closest('.sb-hit'); if (g && g.dataset.k !== 'moon') dwarfPick(g.dataset.k); });
     dwarfPick(DW.sel);
@@ -633,20 +687,22 @@
     const Dk = 1.17 * Math.pow(Dtc / 1000, 1.13) / Math.pow(3.2, 0.13);
     return { Dtc, D: Dk * 1000, simple: false, depth: 400 * Math.pow(Dk, 0.3) };
   }
-  // average years between impacts of bodies at least this wide (rough): Brown et al. (2002) fit below ~30 m, then other estimates
+  /* average years between impacts of bodies at least this wide (rough): Brown et al. (2002) fit below ~30 m, then other
+     estimates: Tunguska size (~50 m) about every 500 years (Boslough 2024; Brown et al. 2002 give ~1,000, older work 200–300),
+     1 km about every 500,000 years, 10 km about every 100 million years */
   function brownYears(D) { const E = 0.5 * 3000 * Math.PI / 6 * Math.pow(D, 3) * 4e8 / 4.184e12; return 1 / (3.7 * Math.pow(E, -0.9)); }
   function interval(D) {
     if (D <= 30) return brownYears(D);
-    const N = [[Math.log10(30), Math.log10(brownYears(30))], [Math.log10(50), Math.log10(450)], [3, Math.log10(5e5)], [4, 8]];
+    const N = [[Math.log10(30), Math.log10(brownYears(30))], [Math.log10(50), Math.log10(500)], [3, Math.log10(5e5)], [4, 8]];
     const l = Math.log10(D);
     for (let i = 0; i < N.length - 1; i++) if (l <= N[i + 1][0] || i === N.length - 2) { const u = (l - N[i][0]) / (N[i + 1][0] - N[i][0]); return Math.pow(10, N[i][1] + u * (N[i + 1][1] - N[i][1])); }
     return 1e8;
   }
   const IMP_PRE = {
-    chel: { n: 'Chelyabinsk 2013', D: 19, mat: 'stone', v: 19, a: 18, obs: 'Burst about 30 km up, roughly 0.5 Mt (Popova et al. 2013)' },
+    chel: { n: 'Chelyabinsk 2013', D: 19, mat: 'stone', v: 19, a: 18, obs: 'Fragmentation began ~45 km up; the main burst came about 30 km up, roughly 0.5 Mt. Measured break-up strength ~1 MPa, up to ~18 MPa for the largest pieces (Popova et al. 2013). The model\'s break-up altitude is where crushing starts (the model\'s average stone strength is lower than Chelyabinsk\'s)' },
     tung: { n: 'Tunguska 1908', D: 55, mat: 'stone', v: 20, a: 45, obs: 'Burst a few km up; 3 to 15 Mt, estimates vary' },
-    meteor: { n: 'Meteor Crater', D: 40, mat: 'iron', v: 17, a: 45, obs: 'Crater 1.2 km wide, about 50,000 years ago; impactor about 40 m, hit at ~12 km/s (Melosh & Collins 2005)' },
-    chix: { n: 'Chicxulub', D: 10000, mat: 'stone', v: 20, a: 60, obs: 'Crater about 180 km wide, 66 million years ago' }
+    meteor: { n: 'Meteor Crater', D: 40, mat: 'iron', v: 17, a: 45, obs: 'Crater 1.2 km wide, about 50,000 years ago; impactor about 40 m, entered at ~17 km/s and hit at ~12 km/s (Melosh & Collins 2005)' },
+    chix: { n: 'Chicxulub', D: 14500, mat: 'stone', v: 20, a: 60, obs: 'Crater about 180 km wide, 66 million years ago. Impactor estimates run from about 10 km to 15 km or more; this crater-scaling method needs about 14.5 km at 20 km/s to make a crater of about 180 km (the preset gives ~179 km), so the preset uses 14.5 km' }
   };
   const IM = { pre: 'chel', D: 19, mat: 'stone', v: 19, a: 18 };
   const fmtE = (J) => { const mt = J / MT; return mt >= 1 ? sigf(mt, mt < 1e4 ? 2 : 3) + ' Mt' : mt >= 1e-3 ? sigf(mt * 1e3, 2) + ' kt' : sigf(mt * 1e6, 2) + ' t'; };
@@ -671,10 +727,9 @@
     const lineAt = (z, txt, col, dash, below) => { const yy = Y(z / 1000); h += `<line x1="${x0}" y1="${fx(yy, 1)}" x2="${x1}" y2="${fx(yy, 1)}" stroke="${col}" stroke-width="1.6"${dash ? ' stroke-dasharray="6 4"' : ''}/>` + tx(x1 - 4, below ? yy + f + 3 : yy - 6, txt, { fs, anchor: 'end', fill: col, weight: 600 }); };
     if (en.zBreak !== null) lineAt(en.zBreak, 'breaks up · ' + fx(en.zBreak / 1000, 0) + ' km', T.muted, true, false);
     if (en.zBurst !== null) lineAt(en.zBurst, 'airburst · ' + fx(en.zBurst / 1000, 0) + ' km', T.accent, false, Y(en.zBurst / 1000) + f + 3 < y1 - 4);
-    if (en.vImp > 0) h += tx(x1 - 4, y1 - 8, 'hits the ground at ' + fx(en.vImp / 1000, 1) + ' km/s', { fs, anchor: 'end', fill: T.accent, weight: 600 });
     svg.innerHTML = h;
     // crater cross-section
-    const cs = $('#sbCrater'), gy = 74; let c = '';
+    const cs = $('#sbCrater'), gy = 94; let c = ''; // top 20 units hold the ground-speed label
     c += `<rect x="0" y="${gy}" width="600" height="112" fill="#8a6a4a" opacity="0.35"/><line x1="0" y1="${gy}" x2="600" y2="${gy}" stroke="${T.fg}" stroke-width="1.5"/>`;
     if (R.cr) {
       const W = 420, k = W / R.cr.D, d = Math.max(4, R.cr.depth * k), x0c = 300 - W / 2, x1c = 300 + W / 2, rim = Math.max(2, d * 0.18);
@@ -686,13 +741,15 @@
       c += tx(300, gy - 28, (R.cr.simple ? 'simple crater ' : 'complex crater ') + fmtL(R.cr.D) + ' wide', { fs, anchor: 'middle', fill: T.accent, weight: 600 });
       const ri = Math.max(1.5, IM.D * k / 2);
       c += `<circle cx="${fx(x0c - 50, 1)}" cy="${gy - 22}" r="${fx(ri, 1)}" fill="${T.fg}"/>` + tx(8, Math.max(fs + 2, gy - 30 - ri), 'impactor', { fs, fill: T.muted });
-      c += tx(300, 178, 'cross-section to scale · depth about ' + fmtL(R.cr.depth), { fs, anchor: 'middle', fill: T.fg, hc: T.surface });
+      c += tx(300, 198, 'cross-section to scale · depth about ' + fmtL(R.cr.depth), { fs, anchor: 'middle', fill: T.fg, hc: T.surface });
     } else if (en.zBurst !== null) {
-      c += `<circle cx="300" cy="26" r="12" fill="${T.accent}" opacity="0.9"/><path d="M200,${gy} Q300,-40 400,${gy}" fill="none" stroke="${T.accent}" stroke-width="1.5" stroke-dasharray="5 5"/>`;
-      c += tx(300, 116, 'No crater: it exploded ' + fx(en.zBurst / 1000, 0) + ' km up.', { fs: f, anchor: 'middle', weight: 600 }) + tx(300, 120 + f + 4, 'The blast wave and heat reach the ground.', { fs, anchor: 'middle', fill: T.muted });
+      c += `<circle cx="300" cy="46" r="12" fill="${T.accent}" opacity="0.9"/><path d="M200,${gy} Q300,-20 400,${gy}" fill="none" stroke="${T.accent}" stroke-width="1.5" stroke-dasharray="5 5"/>`;
+      c += tx(300, 136, 'No crater: it exploded ' + fx(en.zBurst / 1000, 0) + ' km up.', { fs: f, anchor: 'middle', weight: 600 }) + tx(300, 140 + f + 4, 'The blast wave and heat reach the ground.', { fs, anchor: 'middle', fill: T.muted });
     } else {
-      c += tx(300, 116, 'No explosion crater: braked by the air', { fs: f, anchor: 'middle', weight: 600 }) + tx(300, 120 + f + 4, 'Pieces may survive as meteorites.', { fs, anchor: 'middle', fill: T.muted });
+      c += tx(300, 136, 'No explosion crater: braked by the air', { fs: f, anchor: 'middle', weight: 600 }) + tx(300, 140 + f + 4, 'Pieces may survive as meteorites.', { fs, anchor: 'middle', fill: T.muted });
     }
+    // ground speed sits in this panel, clear of the energy bars above
+    if (en.vImp > 0) c += tx(592, fs + 3, en.vImp < 300 ? 'slowed to free fall: a few hundred km/h at the ground' : 'hits the ground at ' + fx(en.vImp / 1000, 1) + ' km/s', { fs, anchor: 'end', fill: T.accent, weight: 600 });
     cs.innerHTML = c;
   }
   function impOut(R) {
@@ -700,10 +757,11 @@
     let nm, msg;
     if (R.cr) { nm = 'Crater about ' + fmtL(R.cr.D) + ' wide'; msg = `It reaches the ground at ${fx(en.vImp / 1000, 1)} km/s, keeping ${n0(en.Eimp / en.E0 * 100)}% of its energy. The crater is about ${n0(R.cr.D / IM.D)} times wider than the impactor${R.cr.simple ? ': a simple bowl.' : ': wide enough to collapse into a complex crater with a central peak.'}`; }
     else if (en.zBurst !== null) { nm = 'Airburst ' + fx(en.zBurst / 1000, 0) + ' km up'; msg = `The air in front of it builds up more pressure than the body can stand. It breaks up${en.zBreak ? ' at ' + fx(en.zBreak / 1000, 0) + ' km' : ''}, the fragments spread out, and nearly all its energy goes into the air at once.`; }
-    else { nm = 'Braked by the air'; msg = `It reaches the ground at only ${fx(en.vImp / 1000, 1)} km/s or less: too slow for an explosion crater. Small bodies like this end up falling at a few hundred km/h and land as meteorites.`; }
+    else { nm = 'Braked by the air'; msg = en.vImp < 300 ? 'The air takes away almost all its cosmic speed. It slows to free fall: it drops the last tens of km at a few hundred km/h, far too slow for an explosion crater, and lands as meteorites.' : `It reaches the ground at only ${fx(en.vImp / 1000, 1)} km/s or less: too slow for an explosion crater. Small bodies like this end up falling at a few hundred km/h and land as meteorites.`; }
     $('#sbImpHead').innerHTML = `<p class="h">Result</p><p class="nm">${nm}</p><p>${msg}</p>`;
     const iv = interval(IM.D);
-    facts($('#sbImpFacts'), [['Mass', sci(en.m, 1) + ' kg'], ['Energy entering the air', fmtE(en.E0) + ' of TNT'], ['That is', sigf(en.E0 / (15e-3 * MT), 2) + ' × Hiroshima (15 kt)'], ['Strength (resists crushing to)', sigf(en.Y / 1e6, 2) + ' MPa'], ['Breaks up at', en.zBreak === null ? 'does not break up' : fx(en.zBreak / 1000, 0) + ' km' + (en.zBurst !== null ? '' : en.spread < 1.5 ? ', but lands before the pieces spread' : ', pieces spread to ' + fx(en.spread, 1) + '× its width')], ['This size or bigger hits Earth', 'every ' + yrs(iv) + ', roughly']].concat(p ? [['Observed', p.obs]] : []));
+    facts($('#sbImpFacts'), [['Mass', sci(en.m, 1) + ' kg'], ['Energy entering the air', fmtE(en.E0) + ' of TNT'], ['That is', sigf(en.E0 / (15e-3 * MT), 2) + ' × Hiroshima (15 kt)'], ['Strength (resists crushing to)', sigf(en.Y / 1e6, 2) + ' MPa'], ['Breaks up at', en.zBreak === null ? 'does not break up' : fx(en.zBreak / 1000, 0) + ' km' + (en.zBurst !== null ? '' : en.spread < 1.5 ? ', but lands before the pieces spread' : ', pieces spread to ' + fx(en.spread, 1) + '× its width')], ['This size or bigger hits Earth', 'every ' + yrs(iv) + ', roughly']].concat(p ? [['Observed', p.obs]] : [])
+      .concat(IM.pre === 'meteor' && en.vImp > 0 ? [['Model ground speed', `${fx(en.vImp / 1000, 1)} km/s here, against ~12 km/s observed. The model lets the iron break up${en.zBreak !== null ? ' at ' + fx(en.zBreak / 1000, 0) + ' km' : ''} and treats the pieces as one flattening body, which the air brakes hard; following the separate fragments, Melosh & Collins found about half the mass still hit at ~12 km/s`]] : []));
   }
   function drawFreq() {
     const svg = $('#sbFreq'), f = FS(svg, 13.5, 12), fs = FSs(svg);
@@ -713,40 +771,58 @@
     [[0.01, '4 days'], [1, '1 yr'], [100, '100 yr'], [1e4, '10⁴ yr'], [1e6, '1 Myr'], [1e8, '100 Myr']].forEach(([y, k]) => { h += `<line x1="${x0}" y1="${fx(Y(y), 1)}" x2="${x1}" y2="${fx(Y(y), 1)}" stroke="${T.lineSoft}"/>` + tx(x0 - 6, Y(y) + f * 0.35, k, { fs, anchor: 'end', fill: T.muted }); });
     h += `<line x1="${x0}" y1="${y1}" x2="${x1}" y2="${y1}" stroke="${T.muted}"/><line x1="${x0}" y1="${y0}" x2="${x0}" y2="${y1}" stroke="${T.muted}"/>`;
     h += tx((x0 + x1) / 2, y1 + 12 + 2 * f, 'impactor diameter', { fs, anchor: 'middle', fill: T.muted });
-    const solid = [], dash = [];
-    for (let l = 0; l <= 2.3; l += 0.02) { const D = Math.pow(10, l); (l <= 1.7 ? solid : dash).push([X(D), Y(brownYears(D))]); }
-    dash.unshift(solid[solid.length - 1]);
-    h += `<polyline points="${pts(solid)}" fill="none" stroke="${T.accent}" stroke-width="2.6"/><polyline points="${pts(dash)}" fill="none" stroke="${T.accent}" stroke-width="2" stroke-dasharray="6 5"/>`;
+    // adopted estimate (what the calculator and marker use): Brown's fit to 30 m, then through the 50 m, 1 km and 10 km estimates
+    const adopt = [], solid = [];
+    for (let l = 0; l <= 4.0001; l += 0.02) { const D = Math.pow(10, l); adopt.push([X(D), Y(interval(D))]); if (l <= Math.log10(50) + 1e-9) solid.push([X(D), Y(brownYears(D))]); }
+    solid.push([X(50), Y(brownYears(50))]);
+    h += `<polyline points="${pts(adopt)}" fill="none" stroke="${T.ion}" stroke-width="2" stroke-dasharray="6 5"/><polyline points="${pts(solid)}" fill="none" stroke="${T.accent}" stroke-width="2.6"/>`;
+    h += tx(X(300) - 8, Y(interval(300)) - 8, 'adopted estimate', { fs, anchor: 'end', fill: T.ion, weight: 600 });
     h += tx(X(5), Y(brownYears(5)) + 8 + f, 'Brown et al. 2002', { fs, fill: T.accent, weight: 600 });
     [[19, 50, 100, 'Chelyabinsk size'], [50, 200, 1000, 'Tunguska size'], [1000, 3e5, 8e5, '1 km'], [10000, 5e7, 2e8, 'Chicxulub size']].forEach(([D, lo, hi, k]) => {
       const xx = X(D);
       h += `<line x1="${fx(xx, 1)}" y1="${fx(Y(lo), 1)}" x2="${fx(xx, 1)}" y2="${fx(Y(hi), 1)}" stroke="${T.fg}" stroke-width="2"/><circle cx="${fx(xx, 1)}" cy="${fx(Y(Math.sqrt(lo * hi)), 1)}" r="5" fill="${T.fg}"/>`;
       const right = D < 5000;
-      h += tx(right ? xx + 10 : xx - 10, Y(Math.sqrt(lo * hi)) + f * 0.35, k, { fs, anchor: right ? 'start' : 'end', fill: T.fg });
+      const nudge = (PH() ? (D === 19 ? 1.0 : D === 50 ? 0.45 : D === 1000 ? 0.4 : -0.5) : (D === 19 ? 0.45 : D === 50 ? 0.6 : 0)) * fs; // drop both below the rising adopted curve, kept apart
+      h += tx(right ? xx + 10 : xx - 10, Y(Math.sqrt(lo * hi)) + f * 0.35 + nudge, k, { fs, anchor: right ? 'start' : 'end', fill: T.fg });
     });
     const D = IM.D, iv = interval(D), xm = X(D), ym = Y(iv);
     h += `<line x1="${fx(xm, 1)}" y1="${y0}" x2="${fx(xm, 1)}" y2="${y1}" stroke="${T.ion}" stroke-width="1.6" stroke-dasharray="3 3"/><circle cx="${fx(xm, 1)}" cy="${fx(ym, 1)}" r="7" fill="none" stroke="${T.ion}" stroke-width="2.5"/>`;
-    const lab = fmtL(D) + ': every ~' + yrs(iv), lr = xm + 8 + lab.length * 0.56 * fs < 636;
-    h += tx(lr ? xm + 8 : xm - 8, y1 - 10, lab, { fs, anchor: lr ? 'start' : 'end', fill: T.ion, weight: 600 });
+    const lab = fmtL(D) + ': every ~' + yrs(iv), lw = lab.length * 0.56 * fs, lr = xm + 8 + lw < 636;
+    // bottom of the chart, unless it would sit on the "Brown et al. 2002" label: then at the top
+    const bx0 = X(5), bx1 = bx0 + 17 * 0.56 * fs, by = Y(brownYears(5)) + 8 + f, mx0 = lr ? xm + 8 : xm - 8 - lw, mx1 = mx0 + lw;
+    if (PH()) { const sp = lab.indexOf(': '); h += tx(x0 + 6, y0 + fs + 2, lab.slice(0, sp + 1), { fs, fill: T.ion, weight: 600 }) + tx(x0 + 6, y0 + 2 * fs + 5, lab.slice(sp + 2), { fs, fill: T.ion, weight: 600 }); } // phones: two lines, top left
+    else if (mx0 < bx1 && mx1 > bx0 && by > y1 - 10 - fs * 1.1) h += tx(Math.max(x0 + 6, Math.min(xm + 8, 420 - lw)), y0 + fs + 4, lab, { fs, fill: T.ion, weight: 600 }); // top left, clear of the big-impact labels on the right
+    else h += tx(lr ? xm + 8 : xm - 8, y1 - 10, lab, { fs, anchor: lr ? 'start' : 'end', fill: T.ion, weight: 600 });
     svg.innerHTML = h;
   }
   /* DART: Dimorphos period 11.921 h before, 33.0 min shorter after (Thomas et al. 2023) */
   const DA = { t: 0, P0: 11.921, P1: 11.921 - 33 / 60 };
   function drawDart() {
     const svg = $('#sbDart'), f = FS(svg, 13.5, 12), fs = FSs(svg), c = 210, a0 = 1190, k = 150 / a0, a1 = a0 * Math.pow(DA.P1 / DA.P0, 2 / 3), th = DA.t * 24;
-    const ang0 = -90 * DEG + TAU * th / DA.P0, ang1 = -90 * DEG + TAU * th / DA.P1;
-    let h = `<circle cx="${c}" cy="${c}" r="${fx(a0 * k, 1)}" fill="none" stroke="${T.muted}" stroke-dasharray="4 5"/><circle cx="${c}" cy="${c}" r="${fx(a1 * k, 1)}" fill="none" stroke="${T.accent}" stroke-width="1.4"/>`;
+    /* DART slowed Dimorphos at one point of its circular orbit (r = a0, at the bottom here). That point becomes the far end
+       (apoapsis) of the new, slightly oval orbit: semi-major axis a1, eccentricity e1 = a0 / a1 − 1, closest point at the top. */
+    const e1 = a0 / a1 - 1, b1 = a1 * Math.sqrt(1 - e1 * e1), ang0 = -90 * DEG + TAU * th / DA.P0;
+    const E = keplerE(Math.PI + TAU * th / DA.P1, e1), xp = a1 * (Math.cos(E) - e1), yp = b1 * Math.sin(E), r1 = Math.hypot(xp, yp), ang1 = 90 * DEG + Math.atan2(yp, xp);
+    let h = `<circle cx="${c}" cy="${c}" r="${fx(a0 * k, 1)}" fill="none" stroke="${T.muted}" stroke-dasharray="4 5"/>`;
+    h += `<ellipse cx="${c}" cy="${fx(c + a1 * e1 * k, 2)}" rx="${fx(b1 * k, 2)}" ry="${fx(a1 * k, 2)}" fill="none" stroke="${T.accent}" stroke-width="1.4"/>`;
     h += `<circle cx="${c}" cy="${c}" r="${fx(380 * k, 1)}" fill="#8b8178"/>` + tx(c, c + 5, 'Didymos', { fs: f, anchor: 'middle', fill: '#f5f1ea', hc: '#4a433d' });
-    const g = [c + a0 * k * Math.cos(ang0), c - a0 * k * Math.sin(ang0)], p = [c + a1 * k * Math.cos(ang1), c - a1 * k * Math.sin(ang1)], r = 75 * k;
+    const g = [c + a0 * k * Math.cos(ang0), c - a0 * k * Math.sin(ang0)], p = [c + r1 * k * Math.cos(ang1), c - r1 * k * Math.sin(ang1)], r = 75 * k;
     h += `<circle cx="${fx(g[0], 1)}" cy="${fx(g[1], 1)}" r="${fx(r, 1)}" fill="none" stroke="${T.muted}" stroke-width="2" stroke-dasharray="3 2"/>`;
     h += `<circle cx="${fx(p[0], 1)}" cy="${fx(p[1], 1)}" r="${fx(r, 1)}" fill="${T.accent}"/>`;
-    const side = Math.abs(Math.cos(ang0)) > 0.5, out = (q, ang, d, s2, col, wt) => { const ox = Math.cos(ang), oy = -Math.sin(ang); if (side) return tx(q[0], q[1] + (d > 0 ? r + 6 + fs : -r - 8), s2, { fs, anchor: 'middle', fill: col, weight: wt }); return tx(q[0] + ox * d, q[1] + oy * d + fs * 0.35, s2, { fs, anchor: ox > 0.35 ? 'start' : ox < -0.35 ? 'end' : 'middle', fill: col, weight: wt }); };
-    h += out(g, ang0, 22, 'without DART', T.muted) + out(p, ang1, -24, 'Dimorphos', T.accent, 600);
+    // on the left and right sides the labels go above and below, the ghost's on the side away from Dimorphos
+    const side = Math.abs(Math.cos(ang0)) > 0.5, gDown = g[1] >= p[1] - 0.5;
+    const out = (q, ang, d, down, s2, col, wt) => { const ox = Math.cos(ang), oy = -Math.sin(ang); if (side) return tx(q[0], q[1] + (down ? r + 6 + fs : -r - 8), s2, { fs, anchor: 'middle', fill: col, weight: wt }); return tx(q[0] + ox * d, q[1] + oy * d + fs * 0.35, s2, { fs, anchor: ox > 0.35 ? 'start' : ox < -0.35 ? 'end' : 'middle', fill: col, weight: wt }); };
+    h += out(g, ang0, 22, gDown, 'without DART', T.muted) + out(p, ang1, -24, !gDown, 'Dimorphos', T.accent, 600);
     if (DA.t === 0) h += arrow(c + 175, p[1], p[0] + 14, p[1], T.fg, 2, 10) + tx(c + 175, p[1] - 10, 'DART', { fs, anchor: 'end', weight: 600 });
+    // key in the top-left corner, clear of the orbits and their labels
+    h += `<line x1="6" y1="${fx(fs * 0.7, 1)}" x2="30" y2="${fx(fs * 0.7, 1)}" stroke="${T.muted}" stroke-dasharray="4 5"/><line x1="6" y1="${fx(fs * 1.9 + 4, 1)}" x2="30" y2="${fx(fs * 1.9 + 4, 1)}" stroke="${T.accent}" stroke-width="1.4"/>`;
+    h += tx(36, fs + 1, 'old orbit', { fs, fill: T.muted }) + tx(36, fs * 2.2 + 5, 'new orbit (oval)', { fs, fill: T.accent });
     svg.innerHTML = h;
-    const orbits = th / DA.P1, dAng = ((ang1 - ang0) / DEG % 360 + 360) % 360, early = orbits * 33;
+    // phase gained on the old schedule, in whole laps plus degrees; a full lap is gained every P0·P1/(P0 − P1)
+    const orbits = th / DA.P1, gain = th / DA.P1 - th / DA.P0, laps = Math.floor(gain + 1e-9), dAng = (gain - laps) * 360, early = orbits * 33;
+    const lapOrb = DA.P0 / (DA.P0 - DA.P1);
     $('#sbDartTOut').textContent = DA.t < 2 ? fx(th, 0) + ' hours' : fx(DA.t, 1) + ' days';
-    facts($('#sbDartFacts'), [['Orbits since the impact', fx(orbits, 1)], ['Arrives early by', early < 120 ? fx(early, 0) + ' min' : fx(early / 60, 1) + ' hours'], ['Angle ahead of the old schedule', n0(dAng) + '°'], ['Orbit period before / after', '11 h 55 min / 11 h 22 min'], ['Orbit radius shrank by (Kepler III)', n0(a0 - a1) + ' m']]);
+    facts($('#sbDartFacts'), [['Orbits since the impact', fx(orbits, 1)], ['Arrives early by', early < 120 ? fx(early, 0) + ' min' : fx(early / 60, 1) + ' hours'], ['Gained on the old schedule', laps + (laps === 1 ? ' lap' : ' laps') + ' + ' + n0(dAng) + '°'], ['A full lap is gained every', 'about ' + fx(lapOrb, 1) + ' orbits (' + fx(lapOrb * DA.P1 / 24, 1) + ' days)'], ['Orbit period before / after', '11 h 55 min / 11 h 22 min'], ['Average orbit radius shrank by (Kepler III)', n0(a0 - a1) + ' m'], ['New orbit, nearest / farthest', n0(a1 * (1 - e1)) + ' / ' + n0(a0) + ' m (e ≈ ' + fx(e1, 3) + ')']]);
   }
   function initImpacts() {
     const dI = $('#sbImpD'), vI = $('#sbImpV'), aI = $('#sbImpA');
@@ -780,48 +856,56 @@
   const doy = (m, d) => MD[m - 1] + d - 1;
   const dstr = (dd) => { dd = ((Math.round(dd) % 365) + 365) % 365; let m = 11; while (MD[m] > dd) m--; return (dd - MD[m] + 1) + ' ' + MON[m]; };
   const SHOWERS = [
-    { k: 'qua', n: 'Quadrantids', pk: doy(1, 3), s0: doy(12, 28) - 365, s1: doy(1, 12), zhr: 80, zn: '80 (60–200, varies)', sd: 0.4, rad: 'Boötes', ra: '15h 18m', dec: '+49.5°', v: 41, par: '2003 EH1, an asteroid that may be a dead comet', q: 1.19, e: 0.62, hemi: 'Northern', txt: 'A strong but brief shower: full strength lasts only about six hours, so many years it is missed. Named after an old constellation, Quadrans Muralis, now part of Boötes.' },
+    { k: 'qua', n: 'Quadrantids', pk: doy(1, 3), s0: doy(12, 28) - 365, s1: doy(1, 12), zhr: 80, zn: '80 (60–200, varies)', sd: 0.11, rad: 'Boötes', ra: '15h 18m', dec: '+49.5°', v: 41, par: '2003 EH1, an asteroid that may be a dead comet', q: 1.19, e: 0.62, hemi: 'Northern', txt: 'A strong but brief shower: full strength lasts only about six hours, so many years it is missed. Named after an old constellation, Quadrans Muralis, now part of Boötes.' },
     { k: 'lyr', n: 'Lyrids', pk: doy(4, 22), s0: doy(4, 14), s1: doy(4, 30), zhr: 18, zn: '18', sd: 1.2, rad: 'Lyra', ra: '18h 04m', dec: '+34°', v: 49, par: 'Comet Thatcher (C/1861 G1)', q: 0.92, e: 0.983, hemi: 'Northern', txt: 'The oldest recorded shower: Chinese observers described meteors falling "like rain" in 687 BCE. Its parent comet takes about 415 years per orbit.' },
     { k: 'eta', n: 'Eta Aquariids', pk: doy(5, 6), s0: doy(4, 19), s1: doy(5, 28), zhr: 50, zn: '50', sd: 5, rad: 'Aquarius', ra: '22h 32m', dec: '−1°', v: 66, par: 'Comet Halley (1P)', q: 0.586, e: 0.967, hemi: 'Southern and tropics', txt: 'Dust from Halley\'s Comet, met where its orbit passes Earth\'s in May. The radiant rises only shortly before dawn, so it is best seen from the southern hemisphere.' },
-    { k: 'per', n: 'Perseids', pk: doy(8, 12), s0: doy(7, 17), s1: doy(8, 24), zhr: 100, zn: '100', sd: 2.5, rad: 'Perseus', ra: '03h 12m', dec: '+58°', v: 59, par: 'Comet Swift–Tuttle (109P)', q: 0.96, e: 0.963, hemi: 'Northern', txt: 'The favourite shower of the northern summer, rich in bright meteors. Its parent, 26 km across, is the largest object known to pass repeatedly near Earth; it returns in 2126.' },
+    { k: 'per', n: 'Perseids', pk: doy(8, 13), s0: doy(7, 17), s1: doy(8, 24), zhr: 100, zn: '100', sd: 2.5, rad: 'Perseus', ra: '03h 12m', dec: '+58°', v: 59, par: 'Comet Swift–Tuttle (109P)', q: 0.96, e: 0.963, hemi: 'Northern', txt: 'The favourite shower of the northern summer, rich in bright meteors. Its parent, 26 km across, is the largest object known to pass repeatedly near Earth; it returns in 2126.' },
     { k: 'ori', n: 'Orionids', pk: doy(10, 21), s0: doy(10, 2), s1: doy(11, 7), zhr: 20, zn: '20', sd: 4, rad: 'Orion', ra: '06h 20m', dec: '+16°', v: 66, par: 'Comet Halley (1P)', q: 0.586, e: 0.967, hemi: 'Both hemispheres', txt: 'Halley\'s dust again, where its orbit passes Earth\'s in October. Fast meteors, often leaving glowing trains.' },
-    { k: 'leo', n: 'Leonids', pk: doy(11, 17), s0: doy(11, 6), s1: doy(11, 30), zhr: 10, zn: '10–15; storms in 1833, 1966, 1999–2002', sd: 1.5, rad: 'Leo', ra: '10h 08m', dec: '+22°', v: 71, par: 'Comet Tempel–Tuttle (55P)', q: 0.976, e: 0.906, hemi: 'Both hemispheres', txt: 'The fastest shower: Leonids hit head-on at 71 km/s. Usually modest, but when Earth crosses a fresh, dense trail the rate can jump to thousands per hour, as in 1833 and 1966.' },
-    { k: 'gem', n: 'Geminids', pk: doy(12, 14), s0: doy(12, 1), s1: doy(12, 20), zhr: 150, zn: '150', sd: 1.2, rad: 'Gemini', ra: '07h 28m', dec: '+32°', v: 35, par: 'Asteroid 3200 Phaethon', q: 0.14, e: 0.89, hemi: 'Both (best from the north)', txt: 'The strongest shower of the year, with slow, bright meteors. Its parent is a rocky asteroid that passes very close to the Sun, where heat cracks off its dust.' }
+    { k: 'leo', n: 'Leonids', pk: doy(11, 17), s0: doy(11, 6), s1: doy(11, 30), zhr: 15, zn: '15; storms in 1833, 1966, 1999–2002', sd: 1.5, rad: 'Leo', ra: '10h 08m', dec: '+22°', v: 70, vs: 'about 70', par: 'Comet Tempel–Tuttle (55P)', q: 0.976, e: 0.906, hemi: 'Both hemispheres', txt: 'The fastest shower: Leonids hit head-on at about 70 km/s. Usually modest, but when Earth crosses a fresh, dense trail the rate can jump to thousands per hour, as in 1833 and 1966.' },
+    { k: 'gem', n: 'Geminids', pk: doy(12, 14), s0: doy(12, 4), s1: doy(12, 20), zhr: 150, zn: '150', sd: 1.2, rad: 'Gemini', ra: '07h 28m', dec: '+32°', v: 35, par: 'Asteroid 3200 Phaethon', q: 0.14, e: 0.89, hemi: 'Both (best from the north)', txt: 'The strongest shower of the year, with slow, bright meteors. Its parent is a rocky asteroid that passes very close to the Sun, where heat cracks off a little dust today, but most of the stream was probably shed in an earlier, more violent episode.' }
   ];
-  const ME = { sel: SHOWERS.some((s) => s.k === store.get('shower')) ? store.get('shower') : 'per', day: doy(8, 12) };
+  const todayDoy = () => { const td = new Date(); return doy(td.getMonth() + 1, 1) + td.getDate() - 1; };
+  // default: the next peak from today (a peak within the last day still counts as now)
+  const nextShower = () => { const now = todayDoy(); let best = SHOWERS[0], bd = 1e9; SHOWERS.forEach((s) => { let d = s.pk - now; if (d < -1) d += 365; if (d < bd) { bd = d; best = s; } }); return best.k; };
+  const ME = { sel: SHOWERS.some((s) => s.k === store.get('shower')) ? store.get('shower') : nextShower(), day: 0 };
   const shw = () => SHOWERS.find((s) => s.k === ME.sel);
   const lonE = (dd) => ((dd - 79.3) * 360 / 365.2422 + 180) * DEG; // Earth's heliocentric longitude, about
   function dayDist(a, b) { let d = (a - b) % 365; if (d > 182.5) d -= 365; if (d < -182.5) d += 365; return d; }
   const rateAt = (s, dd) => s.zhr * Math.exp(-0.5 * Math.pow(dayDist(dd, s.pk) / s.sd, 2));
+  const ZK = 1.1; // calendar: px of peak height per unit of ZHR, from zero at the baseline
   function drawCal() {
     const svg = $('#sbCal'), f = FS(svg, 14, 12), fs = FSs(svg), x0 = 40, x1 = 940, base = 214, X = (dd) => x0 + dd / 365 * (x1 - x0);
     let h = `<defs><clipPath id="sbCalClip"><rect x="${x0}" y="0" width="${x1 - x0}" height="${base + 1}"/></clipPath></defs>`;
     MD.forEach((m, i) => { const xa = X(m), xb = X(i < 11 ? MD[i + 1] : 365); h += `<line x1="${fx(xa, 1)}" y1="20" x2="${fx(xa, 1)}" y2="${base + 4}" stroke="${T.lineSoft}"/>` + tx((xa + xb) / 2, base + 8 + f, MON[i], { fs, anchor: 'middle', fill: T.muted }); });
     h += `<line x1="${x0}" y1="${base}" x2="${x1}" y2="${base}" stroke="${T.muted}"/>`;
+    [50, 100, 150].forEach((z) => { const yy = base - z * ZK; h += `<line x1="${x0}" y1="${fx(yy, 1)}" x2="${x1}" y2="${fx(yy, 1)}" stroke="${T.line}" stroke-dasharray="2 5"/>` + tx(x0 - 5, yy + fs * 0.35, String(z), { fs, anchor: 'end', fill: T.muted }); });
     const lev = { lyr: 0, eta: 0 };
     h += `<g clip-path="url(#sbCalClip)">`;
     SHOWERS.forEach((s) => {
-      const on = s.k === ME.sel, ht = 26 + s.zhr * 0.95, col = on ? T.accent : T.muted;
+      const on = s.k === ME.sel, ht = s.zhr * ZK, col = on ? T.accent : T.muted;
       [0, 365].forEach((off) => {
         if (s.s0 + off > 365 || s.s1 + off < 0) return;
         h += `<polygon class="sb-hit" data-k="${s.k}" points="${pts([[X(s.s0 + off), base], [X(s.pk + off), base - ht], [X(s.s1 + off), base]])}" fill="${col}" opacity="${on ? 0.85 : 0.45}" stroke="${col}" stroke-width="1.2"/>`;
       });
     });
     h += '</g>';
+    // "today" line first; any peak label it would cross gets a solid backing so the line stops at the label
+    const xt = X(todayDoy());
+    h += `<line x1="${fx(xt, 1)}" y1="14" x2="${fx(xt, 1)}" y2="${base + 4}" stroke="${T.fg}" stroke-width="1.5" stroke-dasharray="3 3"/>` + tx(xt, base + 14 + 2 * f, 'today', { fs, anchor: 'middle', fill: T.fg, weight: 600 });
     SHOWERS.forEach((s) => {
-      const on = s.k === ME.sel, ht = 26 + s.zhr * 0.95, xx = X(s.pk), y = base - ht - 8 - (lev[s.k] || 0);
-      h += tx(clamp(xx, x0 + 36, x1 - 34), y, s.n, { fs, anchor: 'middle', fill: on ? T.accent : T.fg, weight: on ? 700 : 500, extra: ` class="sb-hit" data-k="${s.k}"` });
+      const on = s.k === ME.sel, ht = s.zhr * ZK, xx = X(s.pk), y = base - ht - 8 - (lev[s.k] || 0);
+      const hw = s.n.length * 0.29 * fs + 4, lx = clamp(xx, x0 + hw, x1 - hw);
+      if (Math.abs(xt - lx) < hw + 4) h += `<rect x="${fx(lx - hw - 2, 1)}" y="${fx(y - fs * 0.95, 1)}" width="${fx(2 * hw + 4, 1)}" height="${fx(fs * 1.3, 1)}" rx="3" fill="${T.surface}"/>`;
+      h += tx(lx, y, s.n, { fs, anchor: 'middle', fill: on ? T.accent : T.fg, weight: on ? 700 : 500, extra: ` class="sb-hit" data-k="${s.k}"` });
     });
-    const td = new Date(), today = doy(td.getMonth() + 1, Math.min(td.getDate(), 28)) + Math.max(0, td.getDate() - 28);
-    h += `<line x1="${fx(X(today), 1)}" y1="14" x2="${fx(X(today), 1)}" y2="${base + 4}" stroke="${T.fg}" stroke-width="1.5" stroke-dasharray="3 3"/>` + tx(X(today), base + 14 + 2 * f, 'today', { fs, anchor: 'middle', fill: T.fg, weight: 600 });
-    h += tx(x0 + 4, 16, 'ZHR (peak rate) ↑', { fs, fill: T.muted });
+    h += tx(x0 + 4, 18, 'ZHR (peak rate) ↑', { fs, fill: T.muted });
     svg.innerHTML = h;
   }
   function shwOut() {
-    const s = shw(), td = new Date(), now = doy(td.getMonth() + 1, 1) + td.getDate() - 1;
+    const s = shw(), now = todayDoy();
     let until = s.pk - now; if (until < -1) until += 365;
     $('#sbShwHead').innerHTML = `<p class="h">Peak around ${dstr(s.pk)}</p><p class="nm">${s.n}</p><p>${s.txt}</p>`;
-    facts($('#sbShwFacts'), [['Next peak', until <= 0 ? 'now' : 'in ' + n0(until) + (until === 1 ? ' day' : ' days')], ['Active', dstr(s.s0) + ' – ' + dstr(s.s1)], ['ZHR at peak', s.zn], ['Radiant', `${s.rad} (RA ${s.ra}, Dec ${s.dec})`], ['Speed into the air', s.v + ' km/s'], ['Parent', s.par], ['Best seen from', s.hemi]]);
+    facts($('#sbShwFacts'), [['Next peak', until <= 0 ? 'now' : 'in ' + n0(until) + (until === 1 ? ' day' : ' days')], ['Active', dstr(s.s0) + ' – ' + dstr(s.s1)], ['ZHR at peak', s.zn], ['Radiant', `${s.rad} (RA ${s.ra}, Dec ${s.dec})`], ['Speed into the air', (s.vs || s.v) + ' km/s'], ['Parent', s.par], ['Best seen from', s.hemi]]);
   }
   /* debris stream: the parent's orbit drawn flat, turned so the stream meets Earth's orbit at Earth's place on the peak date */
   const ST = { parts: null, key: '' };
@@ -839,31 +923,52 @@
     ST.parts = P; ST.key = s.k; ST.nuMax = nuMax;
     return P;
   }
-  function drawStream(dt) {
-    const svg = $('#sbStream'), f = FS(svg, 13.5, 12), fs = FSs(svg), s = shw(), g = streamGeom(s), P = streamParts(s), c = 230, k = 112;
+  function drawStream(dt, force) {
+    const s = shw();
+    // nothing moves unless the date changed or the dust is animating
+    if (!dt && !force && ST.drawn === s.k + '@' + ME.day) return;
+    ST.drawn = s.k + '@' + ME.day;
+    const svg = $('#sbStream'), f = FS(svg, 13.5, 12), fs = FSs(svg), g = streamGeom(s), P = streamParts(s), c = 230, k = 112;
     if (dt) P.forEach((pp) => { const rr = g.p / (1 + g.e * Math.cos(pp.nu)); pp.nu += (g.retro ? -1 : 1) * dt * 0.05 * pp.sp / (rr * rr); if (pp.nu > ST.nuMax) pp.nu -= 2 * ST.nuMax; if (pp.nu < -ST.nuMax) pp.nu += 2 * ST.nuMax; });
     const pos = (nu, off) => { const rr = g.p / (1 + g.e * Math.cos(nu)) + (off || 0), a = g.w + nu; return [c + k * rr * Math.cos(a), c - k * rr * Math.sin(a)]; };
-    let h = `<defs><clipPath id="sbStClip"><rect x="2" y="2" width="456" height="456"/></clipPath></defs><g clip-path="url(#sbStClip)">`;
-    const op = []; for (let j = -180; j <= 180; j++) { const nu = j * DEG * 0.999; const rr = g.p / (1 + g.e * Math.cos(nu)); if (rr < 3) op.push(pos(nu)); }
-    h += `<polyline points="${pts(op)}" fill="none" stroke="${T.dust}" stroke-width="1" opacity="0.6"/>`;
-    h += P.map((pp) => { const [x, y] = pos(pp.nu, pp.off); return `<circle cx="${fx(x, 1)}" cy="${fx(y, 1)}" r="1.5"/>`; }).join('').replace(/^/, `<g fill="${T.dust}" opacity="0.8">`) + '</g>';
-    h += `<circle cx="${c}" cy="${c}" r="${k}" fill="none" stroke="${T.ion}" stroke-width="1.5"/>`;
-    h += `<circle cx="${c}" cy="${c}" r="8" fill="#ffc94d"/>` + tx(c, c + 8 + f + 2, 'Sun', { fs, anchor: 'middle' });
-    // crossing points
-    const cross = g.halley ? [['eta', lonE(doy(5, 6))], ['ori', lonE(doy(10, 21))]] : [[s.k, lonE(s.pk)]];
-    cross.forEach(([kk, l]) => {
-      const x = c + k * Math.cos(l), y = c - k * Math.sin(l), ox = Math.cos(l), oy = -Math.sin(l), sh = SHOWERS.find((z) => z.k === kk);
-      h += `<circle cx="${fx(x, 1)}" cy="${fx(y, 1)}" r="11" fill="none" stroke="${kk === s.k ? T.accent : T.muted}" stroke-width="2"/>`;
-      const anc = ox > 0.3 ? 'start' : ox < -0.3 ? 'end' : 'middle', wd = sh.n.length * 0.56 * fs; let lx = x + ox * 20; const ly = y + oy * 24 + (oy > 0.3 ? fs * 0.4 : oy < -0.3 ? -fs * 0.9 : -fs * 0.3);
-      if (anc === 'end') lx = Math.max(lx, 6 + wd); if (anc === 'start') lx = Math.min(lx, 454 - wd); if (anc === 'middle') lx = clamp(lx, 6 + wd / 2, 454 - wd / 2);
-      const lc = kk === s.k ? T.accent : T.muted;
-      h += tx(lx, ly, sh.n, { fs, anchor: anc, fill: lc, weight: 600 }) + tx(lx, ly + fs + 2, dstr(sh.pk), { fs, anchor: anc, fill: lc });
+    const dy = layered(svg, 'st' + s.k, () => {
+      let h = `<defs><clipPath id="sbStClip"><rect x="2" y="2" width="456" height="456"/></clipPath></defs><g clip-path="url(#sbStClip)">`;
+      const op = []; for (let j = -180; j <= 180; j++) { const nu = j * DEG * 0.999; const rr = g.p / (1 + g.e * Math.cos(nu)); if (rr < 3) op.push(pos(nu)); }
+      h += `<polyline points="${pts(op)}" fill="none" stroke="${T.dust}" stroke-width="1" opacity="0.6"/>`;
+      h += `<circle cx="${c}" cy="${c}" r="${k}" fill="none" stroke="${T.ion}" stroke-width="1.5"/>`;
+      h += `<circle cx="${c}" cy="${c}" r="8" fill="#ffc94d"/>` + tx(c, c + 8 + f + 2, 'Sun', { fs, anchor: 'middle' });
+      // crossing points
+      const cross = g.halley ? [['eta', lonE(doy(5, 6))], ['ori', lonE(doy(10, 21))]] : [[s.k, lonE(s.pk)]];
+      cross.forEach(([kk, l]) => {
+        const x = c + k * Math.cos(l), y = c - k * Math.sin(l), ox = Math.cos(l), oy = -Math.sin(l), sh = SHOWERS.find((z) => z.k === kk);
+        h += `<circle cx="${fx(x, 1)}" cy="${fx(y, 1)}" r="11" fill="none" stroke="${kk === s.k ? T.accent : T.muted}" stroke-width="2"/>`;
+        const anc = ox > 0.3 ? 'start' : ox < -0.3 ? 'end' : 'middle', wd = sh.n.length * 0.56 * fs; let lx = x + ox * 20; const ly = y + oy * 24 + (oy > 0.3 ? fs * 0.4 : oy < -0.3 ? -fs * 0.9 : -fs * 0.3);
+        if (anc === 'end') lx = Math.max(lx, 6 + wd); if (anc === 'start') lx = Math.min(lx, 454 - wd); if (anc === 'middle') lx = clamp(lx, 6 + wd / 2, 454 - wd / 2);
+        const lc = kk === s.k ? T.accent : T.muted;
+        h += tx(lx, ly, sh.n, { fs, anchor: anc, fill: lc, weight: 600 }) + tx(lx, ly + fs + 2, dstr(sh.pk), { fs, anchor: anc, fill: lc });
+      });
+      return h + '</g>';
     });
+    let h = `<g clip-path="url(#sbStClip)"><g fill="${T.dust}" opacity="0.8">`;
+    for (let i = 0; i < P.length; i++) { const [x, y] = pos(P[i].nu, P[i].off); h += `<circle cx="${fx(x, 1)}" cy="${fx(y, 1)}" r="1.5"/>`; }
+    h += '</g>';
     const le = lonE(ME.day), ex = c + k * Math.cos(le), ey = c - k * Math.sin(le);
     h += `<circle cx="${fx(ex, 1)}" cy="${fx(ey, 1)}" r="7" fill="#4f9be8" stroke="${T.surface}" stroke-width="2"/>`;
-    h += tx(ex - Math.cos(le) * 16, ey + Math.sin(le) * 16 + f * 0.35, 'Earth', { fs: f, anchor: Math.cos(le) > 0.3 ? 'end' : Math.cos(le) < -0.3 ? 'start' : 'middle', fill: T.fg, weight: 600 });
-    h += '</g>' + tx(8, 452, 'Dust along ' + s.par.replace(/,.*/, '').replace(/^Comet /, '') + '\'s orbit · not to scale', { fs, fill: T.muted });
-    svg.innerHTML = h;
+    // Earth's label inside or outside its orbit, on whichever side is farther from the dust
+    const ew = 5 * 0.56 * f, cands = [-1, 1].map((sg) => {
+      const ox = sg * Math.cos(le), oy = -sg * Math.sin(le), d = sg < 0 ? 16 : 14, anc = ox > 0.3 ? 'start' : ox < -0.3 ? 'end' : 'middle';
+      const lx = ex + ox * d, ly = ey + oy * d + (oy > 0.3 ? f * 0.9 : oy < -0.3 ? -f * 0.1 : f * 0.35);
+      const cx = anc === 'start' ? lx + ew / 2 : anc === 'end' ? lx - ew / 2 : lx, cy = ly - f * 0.35;
+      let dm = Infinity; for (let i = 0; i < P.length; i++) { const [px, py] = pos(P[i].nu, P[i].off); dm = Math.min(dm, Math.max(Math.abs(px - cx) - ew / 2, Math.abs(py - cy) - f / 2, 0) + Math.hypot(px - cx, py - cy) * 1e-3); }
+      if (cx - ew / 2 < 2 || cx + ew / 2 > 458 || cy - f / 2 < 2 || cy + f / 2 > 432) dm = -1;
+      return { lx, ly, anc, dm };
+    }), eb = cands[0].dm >= cands[1].dm ? cands[0] : cands[1];
+    h += tx(eb.lx, eb.ly, 'Earth', { fs: f, anchor: eb.anc, fill: T.fg, weight: 600 });
+    h += '</g>';
+    // caption over the dust, on an opaque backing
+    const cap = 'Dust along ' + s.par.replace(/,.*/, '').replace(/^Comet /, '') + '\'s orbit · not to scale', cw = cap.length * 0.55 * fs + 10;
+    h += `<rect x="3" y="${fx(452 - fs - 3, 1)}" width="${fx(Math.min(454, cw), 1)}" height="${fx(fs + 8, 1)}" rx="3" fill="${T.surface}"/>` + tx(8, 452, cap, { fs, fill: T.muted });
+    dy.innerHTML = h;
   }
   function dayOut() {
     const s = shw(), r = rateAt(s, ME.day);
@@ -881,14 +986,15 @@
       SKY.acc += dt * (0.25 + rate / 14); while (SKY.acc > 1) { SKY.acc -= 1; spawn(Math.random() < rate / (rate + 3)); }
       SKY.met.forEach((m) => { m.t += dt; }); SKY.met = SKY.met.filter((m) => m.t < m.dur).slice(-40);
     } else if (!SKY.met.length && rate > 1) { const r = mulberry(9); for (let i = 0; i < 14; i++) { const a = r() * TAU, d0 = 20 + r() * 110; SKY.met.push({ x: rx + Math.cos(a) * d0, y: ry + Math.sin(a) * d0, a, len: 30 + r() * 40, t: 0.6, dur: 1, still: true }); } }
-    let h = `<rect width="420" height="300" fill="#070b1c"/>${SKY.stars}`;
+    const dy = layered(svg, 'sky', () => `<rect width="420" height="300" fill="#070b1c"/>${SKY.stars}`);
+    let h = '';
     SKY.met.forEach((m) => {
       const u = m.still ? 1 : m.t / m.dur, head = m.len * Math.min(1, u * 1.3), tail = Math.max(0, head - 28), op = m.still ? 0.7 : Math.sin(Math.PI * u);
       h += `<line x1="${fx(m.x + Math.cos(m.a) * tail, 1)}" y1="${fx(m.y + Math.sin(m.a) * tail, 1)}" x2="${fx(m.x + Math.cos(m.a) * head, 1)}" y2="${fx(m.y + Math.sin(m.a) * head, 1)}" stroke="#fff6d8" stroke-width="1.8" stroke-linecap="round" opacity="${fx(op, 2)}"/>`;
     });
     h += `<circle cx="${rx}" cy="${ry}" r="6" fill="none" stroke="#ffc94d" stroke-width="1.6"/>` + tx(rx + 12, ry - 10, 'radiant · ' + s.rad, { fs: f, fill: '#e8eaf4', hc: '#070b1c', weight: 600 });
     h += tx(10, 290, rate >= 1 ? 'meteor rate sped up for the picture' : 'shower inactive: only sporadic meteors', { fs: FSs(svg), fill: '#c3c8e0', hc: '#070b1c' });
-    svg.innerHTML = h;
+    dy.innerHTML = h;
   }
   const METS = [
     { k: 'oc', n: 'Ordinary chondrites', p: 80.0, col: 'var(--sb-oc)', txt: 'Stony meteorites that were never melted, full of chondrules. They come from S-type asteroids: grains brought back from Itokawa in 2010 proved the link.' },
@@ -911,7 +1017,9 @@
   }
   function initMeteors() {
     const dI = $('#sbDay');
-    const pick = (k) => { ME.sel = k; store.set('shower', k); press($('#sbShw'), k); ME.day = shw().pk; dI.value = ME.day; SKY.met = []; drawCal(); shwOut(); drawStream(); dayOut(); drawSky(); };
+    // on phones the calendar scrolls sideways: bring the chosen peak into view
+    const calScroll = () => { const svg = $('#sbCal'), w = svg.parentElement, sw = svg.getBoundingClientRect().width; if (!sw || w.scrollWidth <= w.clientWidth + 2) return; w.scrollLeft = clamp((40 + shw().pk / 365 * 900) / 960 * sw - w.clientWidth / 2, 0, w.scrollWidth - w.clientWidth); wideSync(w); };
+    const pick = (k) => { ME.sel = k; store.set('shower', k); press($('#sbShw'), k); ME.day = shw().pk; dI.value = ME.day; SKY.met = []; drawCal(); shwOut(); drawStream(); dayOut(); drawSky(); $('#sbStreamQ').hidden = k !== 'qua'; requestAnimationFrame(calScroll); };
     seg($('#sbShw'), SHOWERS.map((s) => [s.k, s.n]), ME.sel, pick);
     $('#sbCal').addEventListener('click', (e) => { const g = e.target.closest('.sb-hit'); if (g) pick(g.dataset.k); });
     dI.addEventListener('input', () => { ME.day = +dI.value; drawStream(); dayOut(); if (!Lsky.raf) { SKY.met = []; drawSky(); } });
@@ -924,11 +1032,11 @@
     $('#sbSkyPlay').addEventListener('click', () => { if (!Lsky.play) { SKY.met = []; drawSky(); } });
     pick(ME.sel);
     initMeteorites();
-    redraw.meteors = () => { drawCal(); drawStream(); drawSky(); };
+    redraw.meteors = () => { drawCal(); drawStream(0, true); drawSky(); };
   }
 
   // hooks for automated checks
-  window.SB = { keplerE, RES, entry, crater, interval, brownYears, coState: (e, q, t) => { const k = [CO.e, CO.q]; CO.e = e; CO.q = q; const r = coState(t); [CO.e, CO.q] = k; return r; }, pnMin: () => PN.minSep, show };
+  window.SB = { keplerE, RES, entry, crater, interval, brownYears, coState: (e, q, t) => { const k = [CO.e, CO.q]; CO.e = e; CO.q = q; const r = coState(t); [CO.e, CO.q] = k; return r; }, pnMin: () => PN.minSep, show, BV, beltDraw };
   // modules are defined above; start once the DOM is ready
   const start = () => { wideInit(); const h = location.hash.slice(1), s = store.get('tab'); show(valid(h) ? h : valid(s) ? s : 'belt'); };
   if (document.readyState === 'loading') addEventListener('DOMContentLoaded', start); else start();

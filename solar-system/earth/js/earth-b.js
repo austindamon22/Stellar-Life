@@ -44,7 +44,8 @@
   const halo = (w) => ({ stroke: tok().surface, 'stroke-width': w || 3.6, 'paint-order': 'stroke', 'stroke-linejoin': 'round' });
   const T = (o) => Object.assign({}, halo(), o);
   // display numbers: true minus sign, and no "−0" after rounding
-  const fmt = (x, d) => { const s = Number(x).toLocaleString('en-US', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); return /^-[0.,]+$/.test(s) ? s.slice(1) : s.replace(/^-/, '−'); };
+  const NF = []; // one Intl.NumberFormat per digit count, built on first use
+  const fmt = (x, d) => { d = d || 0; const s = (NF[d] || (NF[d] = new Intl.NumberFormat('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }))).format(Number(x)); return /^-[0.,]+$/.test(s) ? s.slice(1) : s.replace(/^-/, '−'); };
   const KC = (k) => fmt(k) + ' K (' + fmt(Math.round(k) - 273) + ' °C)'; // °C from the rounded kelvin, so 255 K always reads −18 °C
   function sig(x, n) { if (x === 0) return '0'; const d = Math.max(0, (n || 2) - 1 - Math.floor(Math.log10(Math.abs(x)))); return fmt(x, Math.min(d, 6)); }
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -224,7 +225,9 @@
   const HJ_D = logPts([[0.001, 0.01], [0.01, 0.1], [0.03, 0.3], [0.1, 1.1], [0.3, 3.5], [1, 10], [3, 28], [10, 80], [30, 160], [100, 290], [300, 500], [1000, 850]]);
   const hjE = (ld) => Math.pow(10, crInterp(HJ_E, ld)), hjD = (ld) => Math.pow(10, crInterp(HJ_D, ld));
   const HJ = { ld: -0.3, lv: 1.5 };
-  const HJPRE = [['clay', 'Clay', -2.7], ['silt', 'Silt', -1.5], ['sand', 'Fine sand', -0.7], ['csand', 'Coarse sand', 0], ['peb', 'Pebble', 1.3], ['boul', 'Boulder', 2.7]];
+  // presets: key, label, log10 size, nominal size shown in the readout, noun used in the sentence
+  const HJPRE = [['clay', 'Clay', -2.7, '2 µm', 'clay particle'], ['silt', 'Silt', -1.5, '0.03 mm', 'silt grain'], ['sand', 'Fine sand', -0.7, '0.2 mm', 'fine sand grain'], ['csand', 'Coarse sand', 0, '1 mm', 'coarse sand grain'], ['peb', 'Pebble', 1.3, '20 mm', 'pebble'], ['boul', 'Boulder', 2.7, '500 mm', 'boulder']];
+  const grainNoun = (nm) => nm === 'clay' ? 'clay particle' : nm === 'cobble' || nm === 'boulder' ? nm : nm + ' grain';
   const hx = (ld) => 58 + (ld + 3) / 6 * 328, hy = (lv) => 318 - (lv + 1) / 4 * 264;
   function grainName(d) { return d < 0.004 ? 'clay' : d < 0.0625 ? 'silt' : d < 2 ? 'sand' : d < 64 ? 'gravel' : d < 256 ? 'cobble' : 'boulder'; }
   function mmStr(d) { return d < 0.01 ? sig(d * 1000, 2) + ' µm' : d < 10 ? sig(d, 2) + ' mm' : d < 1000 ? fmt(d) + ' mm' : fmt(d / 1000, 1) + ' m'; }
@@ -269,19 +272,21 @@
     el('circle', { cx: mx, cy: my, r: 7, fill: K.accent, stroke: K.surface, 'stroke-width': 2.5 }, svg);
   }
   function hjUpdate() {
-    const d = Math.pow(10, HJ.ld), v = Math.pow(10, HJ.lv), E = hjE(HJ.ld), D = hjD(HJ.ld), nm = grainName(d);
-    $('#ebHjDOut').textContent = mmStr(d) + ' (' + nm + ')';
+    const pre = HJPRE.find((q) => Math.abs(q[2] - HJ.ld) < 0.005);
+    const d = Math.pow(10, HJ.ld), ds = pre ? pre[3] : mmStr(d), v = Math.pow(10, HJ.lv), E = hjE(HJ.ld), D = hjD(HJ.ld), nm = pre ? pre[1].toLowerCase() : grainName(d), gn = pre ? pre[4] : grainNoun(nm);
+    $('#ebHjDOut').textContent = ds + ' (' + nm + ')';
     $('#ebHjVOut').textContent = vStr(v) + ' (' + sig(v * 0.036, 2) + ' km/h)';
     let h, p;
-    if (v >= E) { h = 'Eroded'; p = `At ${vStr(v)} the flow can lift a ${mmStr(d)} ${nm} grain off the bed and carry it away. It needs at least about ${vStr(E)}.`; }
-    else if (v >= D) { h = 'Kept moving, but not picked up'; p = `Lifting a resting ${nm} grain off the bed needs about ${vStr(E)}. One already in the flow keeps travelling until the water slows below about ${vStr(D)}.`; }
-    else { h = 'Deposited'; p = `Below about ${vStr(D)} a ${mmStr(d)} grain sinks out of the water and settles on the bed.`; }
+    if (v / E >= 0.9 && v / E <= 1.1) { h = 'Right at the threshold'; p = `Lifting a resting ${ds} ${gn} off the bed, this flow is right at the threshold (about ${vStr(E)}): ${v < E ? 'a little faster and it lifts' : 'it just lifts; a little slower and it stays put'}.`; } // one rounded number, so the two speeds never read as a contradiction
+    else if (v >= E) { h = 'Eroded'; p = `At ${vStr(v)} the flow can lift a ${ds} ${gn} off the bed and carry it away. It needs at least about ${vStr(E)}.`; }
+    else if (v >= D) { h = 'Kept moving, but not picked up'; p = `Lifting a resting ${gn} off the bed needs about ${vStr(E)}. One already in the flow keeps travelling until the water slows below about ${vStr(D)}.`; }
+    else { h = 'Deposited'; p = `Below about ${vStr(D)} a ${ds} ${gn} sinks out of the water and settles on the bed.`; }
     let extra = '';
     if (d < 0.02 && v < E) extra = '<p><b>Why is clay so hard to erode?</b> Clay flakes are tiny and flat. They pack into a smooth layer held together by electrical attraction between the flakes (cohesion), and the flow cannot get under any single grain. Yet once stirred up, clay sinks so slowly that almost any current keeps it suspended. That is why muddy rivers stay muddy.</p>';
     else if (d >= 0.1 && d <= 2) extra = '<p>Sand around 0.1 to 2 mm is the easiest sediment to erode: too coarse to stick together, light enough to roll.</p>';
     else if (d > 64) extra = '<p>Boulders mostly move in floods. Flow speed rises a lot in a flood, and the force on a grain grows roughly with the square of the speed.</p>';
-    $('#ebHjOut').innerHTML = `<p class="h">${mmStr(d)} ${nm} at ${vStr(v)}</p><p class="nm">${h}</p><p>${p}</p>${extra}`;
-    segSync($('#ebHjPre'), (HJPRE.find((q) => Math.abs(q[2] - HJ.ld) < 0.005) || [''])[0]);
+    $('#ebHjOut').innerHTML = `<p class="h">${ds.replace('µm', '<span class="eb-nocase">µm</span>')} ${nm} at ${vStr(v)}</p><p class="nm">${h}</p><p>${p}</p>${extra}`;
+    segSync($('#ebHjPre'), pre ? pre[0] : '');
     hjPaint();
   }
 
@@ -536,9 +541,12 @@
       return ok;
     };
     const sunA = half(40, 34, 92, 258, inA), refA = half(118, 252, 150, 40, refl), upA = half(220, 262, 220, 132, up);
-    lab('sunlight', fmt(inA) + ' W/m²', 212, -1, sunA);
+    // incoming S/4 = reflected + absorbed (rounded so the three shown numbers add up exactly)
+    const inR = Math.round(G.S / 4), rR = Math.round(refl), abR = inR - rR;
+    if (!lab('sunlight in', fmt(inR) + ' W/m²', 212, -1, sunA)) { svg.lastChild.remove(); svg.lastChild.remove(); lab('sunlight', 'in ' + fmt(inR), 212, -1, sunA); }
+    txt(svg, 8, 292, 'absorbed ' + fmt(abR), { 'font-size': 13, 'font-weight': 600, fill: '#ffffff', stroke: '#00000066', 'stroke-width': 3, 'paint-order': 'stroke', id: 'ebGhAbs' });
     // reflected: right of its arrow if that clears the upward IR arrow, else high up on its left, clear of the sunlight shaft
-    if (!lab('reflected', fmt(refl), 84, 1, refA, 220 - upA.w(200) - 8)) { svg.lastChild.remove(); svg.lastChild.remove(); lab('reflected', fmt(refl), 56, -1, refA); }
+    if (!lab('reflected', fmt(rR), 84, 1, refA, 220 - upA.w(200) - 8)) { svg.lastChild.remove(); svg.lastChild.remove(); lab('reflected', fmt(rR), 56, -1, refA); }
     lab('surface IR', fmt(up), 200, 1, upA);
     if (thru >= 0.5) lab('escapes', fmt(thru), 62, 1, half(220, 128, 220, 36, thru));
     if (lay >= 0.5) { lab('layer IR', fmt(lay), 84, 1, half(300, 128, 300, 36, lay)); lab('back', fmt(lay), 232, -1, half(345, 162, 345, 258, lay)); }
@@ -646,8 +654,7 @@
     lb(X(0) + 12, Y(1.1) - 6, 'aurora', { 'font-size': 13, fill: L ? '#127a50' : '#5ee6a8', 'data-halo': 0.45 });
     lb(X(24), Y(0) - 10, 'plasma sheet', { 'text-anchor': 'middle', 'font-size': 13 });
     lb(X(24), Y(7.6 * sc) + 5, 'Magnetotail (to hundreds of Earth radii) →', { 'text-anchor': 'middle', 'font-weight': 600 });
-    lb(890, 438, 'Moon: 60 Earth radii away, far off the right edge', { 'text-anchor': 'end', 'font-size': 13, fill: K.muted });
-    lb(12, 460, 'Distances along the Sun–Earth line to scale (Earth = small blue dot); shapes and field lines sketched', { 'font-size': 13, fill: K.muted });
+    lb(888, 458, 'Moon: 60 Earth radii away, far off the right edge', { 'text-anchor': 'end', 'font-size': 13, fill: K.muted, 'data-halo': 0.45 });
     if (inside) lb(X(-6.6), Y(0) - 14, 'satellites exposed!', { 'text-anchor': 'middle', 'font-size': 13, fill: K.bad, 'font-weight': 600 });
   }
   function magUpdate() {
@@ -897,9 +904,9 @@
   const sunState = (alt) => (Math.abs(alt) < 0.5 ? 'hz' : alt > 0 ? 'up' : 'down');
   const circles = (phi, dec) => Math.abs(phi) > 89.5 && Math.abs(dec) < 0.5; // pole at an equinox: the Sun runs round the horizon
   function hzWords(phi, dec) { return circles(phi, dec) ? 'on the horizon (it circles the sky all day)' : 'on the horizon (it just touches it at noon)'; }
-  function segHits(b, x1, y1, x2, y2) { // does segment cross box b (with 2 px margin)?
-    const L = b.x - 2, R = b.x + b.width + 2, Tp = b.y - 2, B = b.y + b.height + 2;
-    for (let i = 0; i <= 40; i++) { const t = i / 40, x = x1 + (x2 - x1) * t, y = y1 + (y2 - y1) * t; if (x > L && x < R && y > Tp && y < B) return true; }
+  function segHits(b, x1, y1, x2, y2, pad) { // does segment come within pad (default 2) of box b?
+    const m = pad == null ? 2 : pad, L = b.x - m, R = b.x + b.width + m, Tp = b.y - m, B = b.y + b.height + m;
+    for (let i = 0; i <= 80; i++) { const t = i / 80, x = x1 + (x2 - x1) * t, y = y1 + (y2 - y1) * t; if (x > L && x < R && y > Tp && y < B) return true; }
     return false;
   }
   function seasonPaint() {
@@ -913,8 +920,8 @@
     el('circle', { cx, cy, r: R, fill: L ? '#4f7fb0' : '#2c5a8c' }, svg);
     el('circle', { cx, cy, r: R, fill: L ? '#8fbbe6' : '#5c95cf', 'clip-path': 'url(#ebSeClip)' }, svg);
     el('line', { x1: cx, x2: cx, y1: cy - R, y2: cy + R, stroke: K.fg, 'stroke-dasharray': '3 4', opacity: 0.6 }, svg);
-    txt(svg, cx + 8, cy + R - 10, 'night', T({ 'font-size': 13, fill: '#e8eef8', stroke: L ? '#4f7fb0' : '#2c5a8c' }));
-    txt(svg, cx - 8, cy + R - 10, 'day', T({ 'font-size': 13, fill: '#0f1b33', 'text-anchor': 'end', stroke: L ? '#8fbbe6' : '#5c95cf' }));
+    const nightT = txt(svg, cx + 8, cy + R - 10, 'night', T({ 'font-size': 13, fill: '#e8eef8', stroke: L ? '#4f7fb0' : '#2c5a8c' }));
+    const dayT = txt(svg, cx - 8, cy + R - 10, 'day', T({ 'font-size': 13, fill: '#0f1b33', 'text-anchor': 'end', stroke: L ? '#8fbbe6' : '#5c95cf' }));
     // axis and equator
     const [nx, ny] = P(90 - dl);
     const ex = (nx - cx) / R, ey = (ny - cy) / R; // unit axis vector
@@ -937,27 +944,31 @@
     const ray = alt >= 0 || st === 'hz' ? [ox - 70, oy, ox, oy] : null;
     if (ray) { el('line', { x1: ray[0], y1: ray[1], x2: ray[2], y2: ray[3], stroke: sunC, 'stroke-width': 2.5 }, svg); head(svg, ox - 70, oy, ox - 2, oy, 9, sunC); }
     el('circle', { cx: ox, cy: oy, r: 6, fill: K.accent, stroke: '#ffffff', 'stroke-width': 2 }, svg);
-    // label: on the side of the ray away from Earth's centre, clear of the ray, horizon and axis
+    // label: offset perpendicular to the sunlight ray (above or below it), clear of every line by a few px.
+    // Candidates are placed by measuring the label box, so the gap holds at any font size (phone or desktop).
     const lab = txt(svg, 0, 0, st === 'up' ? 'you · ' + fmt(alt) + '°' : st === 'hz' ? 'you · Sun on horizon' : 'you · night', T({ 'font-size': 13, 'font-weight': 600, fill: K.accent, stroke: bg }));
-    const up = oy <= cy, sv = up ? -1 : 1; // away from the ray, outward
-    const cand = [[ox - 10, oy + sv * (up ? 14 : 24), 'end'], [ox - 10, oy + sv * (up ? 28 : 38), 'end'], [ox - 34, oy + sv * (up ? 14 : 24), 'end'], [ox + 12, oy + sv * (up ? 14 : 24), 'start'], [ox - 10, oy + sv * (up ? 46 : 56), 'end'], [ox - 10, oy - sv * (up ? 24 : 14), 'end']];
-    const segs = [hz, axis]; if (ray) segs.push(ray);
-    for (let i = 0; i < 5; i++) [-5, 0, 5].forEach((o) => segs.push([0, 70 + i * 50 + o, 66, 70 + i * 50 + o])); // the decorative sunbeams on the left (with their arrowheads)
-    // more fallbacks (right of the observer, further out) for the poles and big tilts; if every spot clashes, take the one
-    // that clashes least, and never one that covers the N label
-    cand.push([ox + 12, oy - sv * (up ? 24 : 14), 'start'], [ox + 12, oy + sv * (up ? 30 : 40), 'start'], [ox - 10, oy + sv * (up ? 64 : 74), 'end'], [ox + 40, oy + sv * (up ? 14 : 24), 'start'], [ox - 50, oy - sv * (up ? 24 : 14), 'end']);
+    const up = oy <= cy; // prefer the side of the ray away from Earth's centre
+    const segs = [[...hz, 4], [...axis, 4], [qx, qy, qx2, qy2, 3], [cx, cy - R, cx, cy + R, 3]]; // [x1, y1, x2, y2, clearance]
+    if (Math.abs(phi) < 89.9) { const [ax, ay] = P(phi - dl), [bx, by] = P(180 - phi - dl); segs.push([ax, ay, bx, by, 4]); }
+    if (ray) segs.push([ray[0], ray[1], ray[2] + 2, ray[3], 7]); // ray plus its arrowhead
+    segs.push([ox - 9, oy - 9, ox + 9, oy + 9, 0], [ox - 9, oy + 9, ox + 9, oy - 9, 0]); // the observer dot
+    for (let i = 0; i < 5; i++) [-5, 0, 5].forEach((o) => segs.push([0, 70 + i * 50 + o, 66, 70 + i * 50 + o, 3])); // the decorative sunbeams on the left
+    const cand = [];
+    [up ? -1 : 1, up ? 1 : -1].forEach((sd) => [9, 16, 26, 38, 52, 68, 88, 110].forEach((gap) => [[ox - 35, 'middle'], [ox - 8, 'end'], [ox - 60, 'middle'], [ox + 12, 'start'], [ox + 40, 'start'], [ox - 90, 'middle'], [ox + 70, 'start'], [ox - 40, 'end']].forEach(([x, an]) => cand.push([x, sd, gap, an]))));
+    const boxes = [nLab, dayT, nightT].map((t) => { try { return t.getBBox(); } catch (e) { return null; } }).filter(Boolean);
     let pick = null, best = 1e9;
-    for (const c of cand) {
-      lab.setAttribute('x', c[0]); lab.setAttribute('y', c[1]); lab.setAttribute('text-anchor', c[2]);
+    for (const [x, sd, gap, an] of cand) {
+      lab.setAttribute('x', x); lab.setAttribute('y', oy); lab.setAttribute('text-anchor', an);
       let b; try { b = lab.getBBox(); } catch (e) { break; }
-      const nb = (() => { try { return nLab.getBBox(); } catch (e) { return null; } })();
-      const nHit = nb && !(b.x > nb.x + nb.width + 2 || b.x + b.width < nb.x - 2 || b.y > nb.y + nb.height + 2 || b.y + b.height < nb.y - 2);
+      const y = sd < 0 ? oy - gap - (b.y + b.height - oy) : oy + gap + (oy - b.y); // box bottom (or top) sits gap px off the ray
+      lab.setAttribute('y', y); b = lab.getBBox();
+      const nHit = boxes.some((nb) => !(b.x > nb.x + nb.width + 2 || b.x + b.width < nb.x - 2 || b.y > nb.y + nb.height + 2 || b.y + b.height < nb.y - 2));
       const out = b.x < 2 || b.x + b.width > 398 || b.y < 30 || b.y + b.height > 318;
-      const score = (nHit ? 100 : 0) + (out ? 50 : 0) + segs.filter((q) => segHits(b, q[0], q[1], q[2], q[3])).length;
-      if (score < best) { best = score; pick = c; }
+      const score = (nHit ? 100 : 0) + (out ? 50 : 0) + 10 * segs.filter((q) => segHits(b, q[0], q[1], q[2], q[3], q[4])).length;
+      if (score < best) { best = score; pick = [x, y, an]; }
       if (!score) break;
     }
-    pick = pick || cand[0];
+    pick = pick || [ox - 10, oy - 14, 'end'];
     lab.setAttribute('x', pick[0]); lab.setAttribute('y', pick[1]); lab.setAttribute('text-anchor', pick[2]);
     txt(svg, 392, 334, 'View at noon; not to scale', T({ 'font-size': 13, fill: K.muted, 'text-anchor': 'end', stroke: bg }));
     txt(svg, 8, 334, SDATES[SE.date][0], T({ 'font-size': 13, 'font-weight': 600, fill: K.fg, stroke: bg }));
@@ -995,12 +1006,12 @@
       el('line', { x1: x, y1: y + 13, x2: x, y2: y - 14, stroke: K.fg, 'stroke-width': 1.8 }, g); head(g, x, y - 8, x, y - 19, 7, K.fg);
       const right = th === 0 || th === 90, side = right ? 'start' : 'end', lx = right ? x + 22 : x - 22, ly = y - 3; // December label right of Earth, June left: clear of the perihelion and aphelion ticks
       txt(g, lx, ly, w1, T({ 'font-size': 13, 'font-weight': on ? 700 : 400, fill: on ? K.accent : K.fg, 'text-anchor': side, stroke: bg }));
-      txt(g, lx, ly + 15, w2, T({ 'font-size': 13, fill: on ? K.accent : K.muted, 'text-anchor': side, stroke: bg }));
+      txt(g, lx, ly, w2, T({ dy: '1.15em', 'font-size': 13, fill: on ? K.accent : K.muted, 'text-anchor': side, stroke: bg }));
       asButton(g, SDATES[k][0] + (on ? ' (shown)' : ''), () => { SE.date = k; seasonUpdate(); });
       g.setAttribute('aria-pressed', String(on));
     });
     txt(svg, 8, 278, 'arrows: spin axis, fixed in space', T({ 'font-size': 13, fill: K.muted, stroke: bg }));
-    txt(svg, 8, 295, 'orbit shape exaggerated about 7 times', T({ 'font-size': 13, fill: K.muted, stroke: bg }));
+    txt(svg, 8, 278, 'orbit shape exaggerated about 7 times', T({ dy: '1.15em', 'font-size': 13, fill: K.muted, stroke: bg }));
     if (fk) { const g = svg.querySelector(`[data-k="${fk}"]`); if (g) g.focus(); }
   }
   function dayLenPaint() {
@@ -1015,7 +1026,7 @@
     Object.entries(SDATES).forEach(([k, [, s, day]]) => { const on = k === SE.date, h = dayLen(SE.lat, s * SE.tilt); el('circle', { cx: X(day), cy: Y(h), r: on ? 6 : 4, fill: on ? K.accent : K.surface, stroke: K.accent, 'stroke-width': 2 }, svg); });
     [[3, 'perihelion: early January'], [185, 'aphelion: early July']].forEach(([day, s]) => {
       el('line', { x1: X(day), x2: X(day), y1: Y1, y2: Y1 + 6, stroke: K.muted, 'stroke-width': 1.5 }, svg);
-      txt(svg, X(day) - 1, 205, s, { 'font-size': 13, fill: K.muted, 'text-anchor': 'start' });
+      txt(svg, X(day) - 1, 211, s, { 'font-size': 13, fill: K.muted, 'text-anchor': 'start' });
     });
   }
   function seasonUpdate() {

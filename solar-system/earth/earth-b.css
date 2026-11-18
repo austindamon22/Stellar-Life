@@ -57,6 +57,7 @@
 .eb-key.soft { opacity: 0.5; }
 /* seasons: facts rows and orbit inset */
 #ebOrbit { margin-top: 8px; }
+#ebDayLen { margin-top: 8px; }
 .eb-orb { outline: none; }
 .eb-orb:hover .eb-orb-ring { stroke: var(--line); }
 .eb-orb.eb-on .eb-orb-ring { stroke: var(--accent); }
@@ -68,3 +69,6 @@
 :root[data-theme="dark"] { --eb-space: #060914; }
 .gx-svgbox.eb-space { padding: 0; overflow: hidden; background: var(--eb-space); }
 .gx-svgbox.eb-space svg { margin-inline: auto; } /* capped like the other charts (540 / 1000 px) so labels keep one size; the card's backdrop fills the bands beside it */
+
+/* the readout heading is upper-cased; keep µ from becoming a Greek capital Mu */
+#ebHjOut .h .eb-nocase { text-transform: none; }
